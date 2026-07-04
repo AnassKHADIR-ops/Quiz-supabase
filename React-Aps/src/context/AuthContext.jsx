@@ -7,35 +7,28 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount, restore session from localStorage token
+  // Supabase restores the persisted session, then we load the public profile.
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
     authApi.me()
       .then((data) => setUser(data.user))
-      .catch(() => localStorage.removeItem("token"))
+      .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);
 
   const login = async (email, password) => {
     const data = await authApi.login(email, password);
-    localStorage.setItem("token", data.token);
     setUser(data.user);
     return data.user;
   };
 
   const register = async (name, email, password) => {
     const data = await authApi.register(name, email, password);
-    localStorage.setItem("token", data.token);
     setUser(data.user);
     return data.user;
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
+  const logout = async () => {
+    await authApi.logout();
     setUser(null);
   };
 

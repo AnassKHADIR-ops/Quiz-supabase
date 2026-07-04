@@ -2,7 +2,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../hooks/useTheme.js";
 
-const TEACHER_EMAIL = "anass.khadir@usmba.ac.ma";
 
 // Logo premium — hexagone gradient indigo/violet
 function AKLogo({ size = 42 }) {
@@ -101,7 +100,7 @@ function Navbar() {
               Examens
             </Link>
           )}
-          {user?.email === TEACHER_EMAIL && (
+          {user?.role === "teacher" && (
             <Link to="/dashboard" className={`nav-link ${isActive("/dashboard") ? "active" : ""}`}>
               Tableau de bord
             </Link>

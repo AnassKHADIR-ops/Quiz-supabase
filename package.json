@@ -1,0 +1,9 @@
+{
+  "name": "math-exams-supabase",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:migrate": "supabase db push",
+    "db:push": "supabase db push"
+  }
+}

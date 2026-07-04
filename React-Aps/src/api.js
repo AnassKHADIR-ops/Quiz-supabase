@@ -1,57 +1,74 @@
-// Central API service — all calls go through here.
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+import { supabase } from "./lib/supabase.js";
 
-function getToken() {
-  return localStorage.getItem("token");
+function message(error) {
+  return error?.message || "Une erreur est survenue. Réessayez.";
 }
 
-async function request(path, options = {}) {
-  const headers = { "Content-Type": "application/json", ...options.headers };
-  const token = getToken();
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+async function rpc(name, args = {}) {
+  const { data, error } = await supabase.rpc(name, args);
+  if (error) throw new Error(message(error));
   return data;
 }
 
 // Auth
 export const authApi = {
-  register: (name, email, password) =>
-    request("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ name, email, password }),
-    }),
-  login: (email, password) =>
-    request("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    }),
-  me: () => request("/api/auth/me"),
+  async register(name, email, password) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: name } },
+    });
+    if (error) throw new Error(message(error));
+    if (!data.session) {
+      throw new Error("Compte créé. Vérifiez votre e-mail pour confirmer votre inscription.");
+    }
+    return authApi.me();
+  },
+  async login(email, password) {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(message(error));
+    return authApi.me();
+  },
+  async me() {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) throw new Error("Session expirée. Connectez-vous de nouveau.");
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, role")
+      .eq("id", user.id)
+      .single();
+    if (profileError) throw new Error(message(profileError));
+    return { user: { id: profile.id, name: profile.full_name, email: profile.email, role: profile.role } };
+  },
+  logout: () => supabase.auth.signOut(),
 };
 
 // Exams
 export const examsApi = {
-  list: () => request("/api/exams"),
-  get: (id) => request(`/api/exams/${id}`),
+  list: () => rpc("get_exams"),
+  get: (examId) => rpc("get_exam_for_view", { p_exam_id: examId }),
+  create: (payload) => rpc("create_exam", { p_payload: payload }),
+  update: (examId, payload) => rpc("update_exam", { p_exam_id: examId, p_payload: payload }),
+  delete: (examId) => rpc("delete_exam", { p_exam_id: examId }),
+  addQuestion: (examId, payload) => rpc("add_question", { p_exam_id: examId, p_payload: payload }),
 };
 
 // Universities
 export const universitiesApi = {
-  list: () => request("/api/universities"),
-  get: (id) => request(`/api/universities/${id}`),
+  list: () => rpc("get_universities_with_exams"),
+  get: (universityId) => rpc("get_university", { p_university_id: universityId }),
 };
 
 // Results
 export const resultsApi = {
-  submit: (payload) =>
-    request("/api/results", { method: "POST", body: JSON.stringify(payload) }),
-  mine: () => request("/api/results/me"),
-  forExam: (examId) => request(`/api/results/exam/${examId}`),
-  details: (resultId) => request(`/api/results/${resultId}/details`),
-  deleteResult: (resultId) =>
-    request(`/api/results/${resultId}`, { method: "DELETE" }),
-  studentAnalytics: (studentId) => request(`/api/results/student/${studentId}`),
+  submit: ({ exam_id, started_at, answers }) => rpc("submit_exam_attempt", {
+    p_exam_id: exam_id,
+    p_started_at: started_at,
+    p_answers: answers,
+  }),
+  mine: () => rpc("get_my_results"),
+  forExam: (examId) => rpc("get_exam_results", { p_exam_id: examId }),
+  details: (resultId) => rpc("get_result_details", { p_result_id: resultId }),
+  deleteResult: (resultId) => rpc("delete_result", { p_result_id: resultId }),
+  studentAnalytics: (studentId) => rpc("get_student_analytics", { p_student_id: studentId }),
 };

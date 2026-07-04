@@ -8,7 +8,6 @@ import {
 import { resultsApi } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
-const TEACHER_EMAIL = "anass.khadir@usmba.ac.ma";
 
 function StatCard({ label, value, sub, color }) {
   return (
@@ -29,7 +28,7 @@ function StudentProfile() {
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(null);
 
-  const isTeacher = user?.email === TEACHER_EMAIL;
+  const isTeacher = user?.role === "teacher";
 
   const load = () => {
     setLoading(true);
