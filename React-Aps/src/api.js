@@ -57,6 +57,18 @@ export const examsApi = {
 export const universitiesApi = {
   list: () => rpc("get_universities_with_exams"),
   get: (universityId) => rpc("get_university", { p_university_id: universityId }),
+  create: (payload) => rpc("create_university", { p_payload: payload }),
+  update: (universityId, payload) => rpc("update_university", { p_university_id: universityId, p_payload: payload }),
+};
+
+export const branchesApi = {
+  create: (payload) => rpc("create_branch", { p_payload: payload }),
+  update: (branchId, payload) => rpc("update_branch", { p_branch_id: branchId, p_payload: payload }),
+};
+
+export const subjectsApi = {
+  create: (payload) => rpc("create_subject", { p_payload: payload }),
+  update: (subjectId, payload) => rpc("update_subject", { p_subject_id: subjectId, p_payload: payload }),
 };
 
 // Results

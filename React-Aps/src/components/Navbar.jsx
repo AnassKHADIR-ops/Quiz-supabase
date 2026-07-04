@@ -105,6 +105,7 @@ function Navbar() {
               Tableau de bord
             </Link>
           )}
+          {user?.role === "teacher" && <Link to="/management" className={`nav-link ${isActive("/management") ? "active" : ""}`}>Gestion</Link>}
 
           {/* Dark mode toggle */}
           <button

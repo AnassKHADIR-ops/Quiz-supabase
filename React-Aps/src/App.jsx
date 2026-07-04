@@ -10,6 +10,7 @@ import Dashboard from "./components/Dashboard.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Home from "./pages/Home.jsx";
 import StudentProfile from "./pages/StudentProfile.jsx";
+import Management from "./pages/Management.jsx";
 
 function App() {
   const location = useLocation();
@@ -59,6 +60,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/management" element={<ProtectedRoute teacherOnly><Management /></ProtectedRoute>} />
       </Routes>
     </>
   );
