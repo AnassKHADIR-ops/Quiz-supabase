@@ -11,6 +11,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Home from "./pages/Home.jsx";
 import StudentProfile from "./pages/StudentProfile.jsx";
 import Management from "./pages/Management.jsx";
+import QcmEditor from "./pages/QcmEditor.jsx";
 
 function App() {
   const location = useLocation();
@@ -61,6 +62,7 @@ function App() {
           }
         />
         <Route path="/management" element={<ProtectedRoute teacherOnly><Management /></ProtectedRoute>} />
+        <Route path="/management/qcm/:examId" element={<ProtectedRoute teacherOnly><QcmEditor /></ProtectedRoute>} />
       </Routes>
     </>
   );

@@ -187,7 +187,8 @@ function Quiz() {
     try {
       // 1) Soumettre l'examen
       const submitted = await resultsApi.submit({
-        exam_id: Number(examId),
+        // Supabase uses UUID exam IDs; converting them with Number() produces null.
+        exam_id: ex.id,
         started_at: startedAt.current,
         answers: ex.questions.map((q, i) => ({
           question_id: q.id,
