@@ -61,16 +61,19 @@ export const universitiesApi = {
   get: (universityId) => rpc("get_university", { p_university_id: universityId }),
   create: (payload) => rpc("create_university", { p_payload: payload }),
   update: (universityId, payload) => rpc("update_university", { p_university_id: universityId, p_payload: payload }),
+  delete: (universityId) => rpc("delete_university", { p_university_id: universityId }),
 };
 
 export const branchesApi = {
   create: (payload) => rpc("create_branch", { p_payload: payload }),
   update: (branchId, payload) => rpc("update_branch", { p_branch_id: branchId, p_payload: payload }),
+  delete: (branchId) => rpc("delete_branch", { p_branch_id: branchId }),
 };
 
 export const subjectsApi = {
   create: (payload) => rpc("create_subject", { p_payload: payload }),
   update: (subjectId, payload) => rpc("update_subject", { p_subject_id: subjectId, p_payload: payload }),
+  delete: (subjectId) => rpc("delete_subject", { p_subject_id: subjectId }),
 };
 
 // Results
