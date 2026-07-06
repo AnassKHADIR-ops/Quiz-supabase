@@ -10,7 +10,8 @@ différentes technologies collaborent, et comment développer / déployer au quo
 C'est une application web de QCM de mathématiques : le **frontend** (ce que voit
 l'utilisateur dans son navigateur) est écrit en **React**, et il parle directement à
 **Supabase**, qui joue le rôle de **backend complet** (base de données + authentification
-+ logique métier), sans serveur intermédiaire à faire tourner soi-même.
+
+- logique métier), sans serveur intermédiaire à faire tourner soi-même.
 
 ```
 Navigateur (React / Vite)  <-- HTTPS -->  Supabase (Postgres + Auth + fonctions SQL)
@@ -27,6 +28,7 @@ l'ancienne version, elle n'est plus utilisée (voir le README).
 ## 2. Le rôle de chaque brique
 
 ### React + Vite (dans `React-Aps/`)
+
 - **React** : bibliothèque pour construire l'interface (pages, boutons, formulaires).
 - **Vite** : l'outil qui transforme le code React en fichiers HTML/CSS/JS optimisés
   (`npm run dev` pour développer, `npm run build` pour produire la version finale).
@@ -35,22 +37,23 @@ l'ancienne version, elle n'est plus utilisée (voir le README).
   vérifient les droits et calculent les résultats côté serveur.
 
 ### Supabase
+
 Supabase fournit trois choses que ce projet utilise :
 
 1. **Authentification** (`supabase.auth.*`) : inscription/connexion par email + mot de
    passe. Chaque utilisateur a une ligne dans `auth.users` (géré par Supabase) et une
    ligne miroir dans `public.profiles` (créée automatiquement par un trigger) qui
    contient son `role` (`student` ou `teacher`).
-2. **Base de données Postgres** : toutes les tables (`universities`, `branches`,
+2. **Base de données Postgres** : toutes les tables (`schools`,
    `subjects`, `exams`, `questions`, `choices`, `results`, `profiles`...) vivent ici.
 3. **Fonctions RPC** (`create or replace function public.xxx(...)`) : au lieu de laisser
    le frontend écrire des requêtes SQL directement (dangereux), tout passe par des
    fonctions PostgreSQL prédéfinies, appelées via `supabase.rpc("nom_fonction", {...})`.
    Ces fonctions vivent dans `supabase/migrations/*.sql` et sont la seule porte d'entrée
-   pour lire/écrire des données sensibles (ex. `create_exam`, `delete_university`,
+   pour lire/écrire des données sensibles (ex. `create_exam`, `delete_school`,
    `submit_exam_attempt`, `get_exam_results`...).
    - Ce fichier `React-Aps/src/api.js` est la **seule** partie du frontend qui appelle
-     Supabase : chaque fonction JS (`examsApi.create`, `universitiesApi.delete`, etc.)
+     Supabase : chaque fonction JS (`examsApi.create`, `schoolsApi.delete`, etc.)
      correspond à une fonction RPC côté base de données.
 4. **RLS (Row Level Security)** : chaque table a des règles qui disent qui peut lire ou
    écrire quoi (ex. un étudiant ne peut jamais lire `choices.is_correct` directement).
@@ -58,12 +61,14 @@ Supabase fournit trois choses que ce projet utilise :
    publiques par design, la sécurité vient des RLS + fonctions `security definer`).
 
 ### GitHub
+
 - **Stocke le code** et son historique (`git log`, branches, etc.).
 - **Déclenche le déploiement** : dès qu'on pousse (`git push`) sur la branche `master`,
   Vercel est prévenu automatiquement et republie le site.
 - Le dépôt de ce projet : `https://github.com/AnassKHADIR-ops/Quiz-supabase`
 
 ### Vercel
+
 - Héberge la version "buildée" du frontend (résultat de `npm run build`, dossier `dist/`).
 - Détecte automatiquement que c'est un projet Vite et sait comment le construire.
 - Ne touche jamais à la base de données : Vercel héberge uniquement le frontend, la base
@@ -143,7 +148,7 @@ npm run preview
 5. Dans **Environment Variables**, ajoute :
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
-   (les mêmes valeurs que dans ton `.env.local`)
+     (les mêmes valeurs que dans ton `.env.local`)
 6. Clique **Deploy**.
 
 **Une fois configuré**, tout nouveau `git push` sur `master` republie automatiquement le
@@ -160,15 +165,18 @@ Le schéma (tables, fonctions, règles de sécurité) vit dans
 Deux façons d'appliquer une migration à ta base réelle :
 
 **Option A — via le CLI Supabase (méthode "propre", garde un historique) :**
+
 ```bash
 cd Quiz-supabase
 supabase login
 supabase link --project-ref rucpggahyiwufbzjznhf
 supabase db push          # applique les migrations pas encore appliquées
 ```
-*(Sur ce poste, le téléchargement du CLI a échoué à cause du réseau — voir Option B.)*
+
+_(Sur ce poste, le téléchargement du CLI a échoué à cause du réseau — voir Option B.)_
 
 **Option B — via le SQL Editor du dashboard (dépannage rapide) :**
+
 1. Dashboard Supabase → **SQL Editor → New query**.
 2. Copie-colle le contenu du fichier `.sql` concerné.
 3. **Run**.
@@ -186,13 +194,15 @@ le SQL avant de l'exécuter.
 ## 8. Rôles utilisateurs
 
 - **student** (par défaut à l'inscription) : passe les QCM, voit ses résultats.
-- **teacher** : accède en plus à `/management` (créer universités/branches/matières/QCM,
+- **teacher** : accède en plus à `/management` (créer écoles/matières/QCM,
   rédiger les questions) et `/dashboard`.
 
 Pour promouvoir un compte en professeur (une fois qu'il existe) :
+
 ```sql
 update public.profiles set role = 'teacher' where email = 'quelquun@example.com';
 ```
+
 (à exécuter dans le SQL Editor Supabase).
 
 ---
@@ -221,10 +231,10 @@ code frontend qui l'utilise.
 
 ## 10. Glossaire express
 
-| Terme | Explication |
-|---|---|
-| RPC | "Remote Procedure Call" — le frontend appelle une fonction Postgres par son nom, comme un appel de fonction normal. |
-| RLS | Row Level Security — règles Postgres qui filtrent qui peut voir/modifier quelle ligne. |
-| Migration | Fichier `.sql` qui décrit un changement de schéma, horodaté, appliqué une fois. |
+| Terme              | Explication                                                                                                                                           |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RPC                | "Remote Procedure Call" — le frontend appelle une fonction Postgres par son nom, comme un appel de fonction normal.                                   |
+| RLS                | Row Level Security — règles Postgres qui filtrent qui peut voir/modifier quelle ligne.                                                                |
+| Migration          | Fichier `.sql` qui décrit un changement de schéma, horodaté, appliqué une fois.                                                                       |
 | `security definer` | Une fonction SQL qui s'exécute avec les droits de son créateur (pas de l'appelant) — permet de contrôler précisément ce qu'un utilisateur peut faire. |
-| Anon key | Clé publique du projet Supabase, sûre à exposer côté client grâce aux RLS. |
+| Anon key           | Clé publique du projet Supabase, sûre à exposer côté client grâce aux RLS.                                                                            |

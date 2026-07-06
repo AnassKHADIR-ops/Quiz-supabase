@@ -1,22 +1,17 @@
 -- Optional demo data. Run with `supabase db push --include-seed` or locally with `supabase db reset`.
 -- In production, create a teacher through Supabase Auth, then promote them with:
 -- update public.profiles set role = 'teacher' where email = 'teacher@example.com';
-insert into public.universities (name, category, description, icon)
-values ('Demo University', 'Engineering Schools', 'Sample competitive-exam preparation', '⚙️') on conflict (name) do nothing;
-insert into public.branches (university_id, name, description)
-select id, 'Demo Engineering Branch', 'Sample branch'
-from public.universities where name = 'Demo University'
-on conflict (university_id, name) do nothing;
-insert into public.subjects (branch_id, name, level)
-select b.id, 'Mathematics', 'Baccalaureate'
-from public.branches b join public.universities u on u.id = b.university_id
-where u.name = 'Demo University' and b.name = 'Demo Engineering Branch'
-on conflict (branch_id, name) do nothing;
+insert into public.schools (name, type, description, icon)
+values ('Demo ENSA', 'post_bac', 'Sample competitive-exam preparation', '⚙️') on conflict (name) do nothing;
+insert into public.subjects (school_id, name, level)
+select id, 'Mathematics', 'Baccalaureate'
+from public.schools where name = 'Demo ENSA'
+on conflict (school_id, name) do nothing;
 
-insert into public.exams (title, description, subject_id, university_id, year, is_published, show_results)
-select 'Mathematics Quiz', 'Basic math MCQ exam', s.id, u.id, 2026, true, 'instant'
-from public.subjects s join public.branches b on b.id = s.branch_id join public.universities u on u.id = b.university_id
-where s.name = 'Mathematics' and u.name = 'Demo University' and b.name = 'Demo Engineering Branch'
+insert into public.exams (title, description, subject_id, school_id, year, is_published, show_results)
+select 'Mathematics Quiz', 'Basic math MCQ exam', s.id, sc.id, 2026, true, 'instant'
+from public.subjects s join public.schools sc on sc.id = s.school_id
+where s.name = 'Mathematics' and sc.name = 'Demo ENSA'
   and not exists (select 1 from public.exams where title = 'Mathematics Quiz');
 
 insert into public.questions (exam_id, question_text, question_type, solution_text, position)

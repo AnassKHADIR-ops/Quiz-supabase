@@ -1,63 +1,67 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { universitiesApi } from "../api.js";
-import { useAuth } from "../context/AuthContext.jsx";
+import { schoolsApi } from "../api.js";
+
+const typeOptions = [
+  { id: "post_bac", label: "Post-Bac", hint: "Accès direct après le baccalauréat" },
+  { id: "bac_plus_2", label: "Bac+2", hint: "Concours après classes préparatoires" },
+];
 
 function Card({ children, onClick }) {
   return <button className="exam-card" onClick={onClick} style={{ textAlign: "left", border: 0, width: "100%", cursor: "pointer" }}>{children}</button>;
 }
 
 function Home() {
-  const { user } = useAuth();
-  const [universities, setUniversities] = useState([]);
-  const [university, setUniversity] = useState(null);
-  const [branch, setBranch] = useState(null);
+  const [schools, setSchools] = useState([]);
+  const [type, setType] = useState(null);
+  const [school, setSchool] = useState(null);
   const [subject, setSubject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    universitiesApi.list().then(setUniversities).catch((err) => setError(err.message)).finally(() => setLoading(false));
+    schoolsApi.list().then(setSchools).catch((err) => setError(err.message)).finally(() => setLoading(false));
   }, []);
 
   const back = () => {
     if (subject) setSubject(null);
-    else if (branch) setBranch(null);
-    else setUniversity(null);
+    else if (school) setSchool(null);
+    else setType(null);
   };
-  const title = subject ? subject.name : branch ? branch.name : university ? university.name : "Choisissez votre université";
+  const typeLabel = type ? typeOptions.find((t) => t.id === type)?.label : null;
+  const title = subject ? subject.name : school ? school.name : typeLabel || "Choisissez un type de concours";
+  const visibleSchools = schools.filter((item) => item.type === type);
 
   return <div className="page">
     <div className="page-header fade-up">
       <div className="section-label">⊙ PRÉPARATION AUX CONCOURS</div>
       <h1>{title}</h1>
-      <p>Université → branche → matière → QCM par année</p>
+      <p>Type → école → matière → QCM par année</p>
     </div>
     {loading && <div className="center-msg"><span className="spinner" /></div>}
     {error && <p className="error-msg">⚠ {error}</p>}
-    {!loading && !error && (university || branch || subject) && <button className="btn btn-secondary" onClick={back} style={{ marginBottom: 24 }}>← Retour</button>}
+    {!loading && !error && (type || school || subject) && <button className="btn btn-secondary" onClick={back} style={{ marginBottom: 24 }}>← Retour</button>}
 
-    {!loading && !error && !university && <div className="exam-grid">
-      {universities.map((item) => <Card key={item.id} onClick={() => setUniversity(item)}>
-        <div className="exam-card-icon">{item.icon || "🎓"}</div><h3>{item.name}</h3><p>{item.description || ""}</p>
-        <div className="exam-card-meta"><span className="badge">{item.branches.length} branche(s)</span></div>
+    {!loading && !error && !type && <div className="exam-grid">
+      {typeOptions.map((opt) => <Card key={opt.id} onClick={() => setType(opt.id)}>
+        <div className="exam-card-icon">🎯</div><h3>{opt.label}</h3><p>{opt.hint}</p>
       </Card>)}
     </div>}
 
-    {university && !branch && <div className="exam-grid">
-      {university.branches.map((item) => <Card key={item.id} onClick={() => setBranch(item)}>
-        <div className="exam-card-icon">🏫</div><h3>{item.name}</h3><p>{item.description || ""}</p>
+    {type && !school && <div className="exam-grid">
+      {visibleSchools.map((item) => <Card key={item.id} onClick={() => setSchool(item)}>
+        <div className="exam-card-icon">{item.icon || "🎓"}</div><h3>{item.name}</h3><p>{item.description || ""}</p>
         <div className="exam-card-meta"><span className="badge">{item.subjects.length} matière(s)</span></div>
       </Card>)}
-      {university.branches.length === 0 && <p className="empty-state">Aucune branche disponible.</p>}
+      {visibleSchools.length === 0 && <p className="empty-state">Aucune école disponible pour ce type de concours.</p>}
     </div>}
 
-    {branch && !subject && <div className="exam-grid">
-      {branch.subjects.map((item) => <Card key={item.id} onClick={() => setSubject(item)}>
+    {school && !subject && <div className="exam-grid">
+      {school.subjects.map((item) => <Card key={item.id} onClick={() => setSubject(item)}>
         <div className="exam-card-icon">📘</div><h3>{item.name}</h3><p>{item.level || "Matière"}</p>
         <div className="exam-card-meta"><span className="badge">{item.exams.length} QCM</span></div>
       </Card>)}
-      {branch.subjects.length === 0 && <p className="empty-state">Aucune matière disponible.</p>}
+      {school.subjects.length === 0 && <p className="empty-state">Aucune matière disponible.</p>}
     </div>}
 
     {subject && <div className="exam-grid">

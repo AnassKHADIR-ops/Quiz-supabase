@@ -55,19 +55,13 @@ export const examsApi = {
   deleteQuestion: (questionId) => rpc("delete_question", { p_question_id: questionId }),
 };
 
-// Universities
-export const universitiesApi = {
-  list: () => rpc("get_universities_with_exams"),
-  get: (universityId) => rpc("get_university", { p_university_id: universityId }),
-  create: (payload) => rpc("create_university", { p_payload: payload }),
-  update: (universityId, payload) => rpc("update_university", { p_university_id: universityId, p_payload: payload }),
-  delete: (universityId) => rpc("delete_university", { p_university_id: universityId }),
-};
-
-export const branchesApi = {
-  create: (payload) => rpc("create_branch", { p_payload: payload }),
-  update: (branchId, payload) => rpc("update_branch", { p_branch_id: branchId, p_payload: payload }),
-  delete: (branchId) => rpc("delete_branch", { p_branch_id: branchId }),
+// Schools
+export const schoolsApi = {
+  list: () => rpc("get_schools_with_exams"),
+  get: (schoolId) => rpc("get_school", { p_school_id: schoolId }),
+  create: (payload) => rpc("create_school", { p_payload: payload }),
+  update: (schoolId, payload) => rpc("update_school", { p_school_id: schoolId, p_payload: payload }),
+  delete: (schoolId) => rpc("delete_school", { p_school_id: schoolId }),
 };
 
 export const subjectsApi = {

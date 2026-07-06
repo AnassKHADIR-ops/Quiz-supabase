@@ -57,19 +57,19 @@ function StudentProfile() {
   if (error)   return <div className="center-msg error-msg">{error}</div>;
   if (!data)   return null;
 
-  const { stats, history, byUniversity } = data;
+  const { stats, history, bySchool } = data;
 
   const lineData = history.map((r, i) => ({
-    name: `#${i + 1} ${r.university_name || ""}`,
+    name: `#${i + 1} ${r.school_name || ""}`,
     score: Number(r.percentage),
     exam: r.exam_title,
     date: new Date(r.submitted_at).toLocaleDateString("fr-FR"),
   }));
 
-  const barData = byUniversity.map((u) => ({
-    name: u.name,
-    avg: u.avg,
-    count: u.count,
+  const barData = bySchool.map((s) => ({
+    name: s.name,
+    avg: s.avg,
+    count: s.count,
   }));
 
   const gradeLabel = (pct) =>
@@ -175,7 +175,7 @@ function StudentProfile() {
                       <td style={{ fontWeight: 500 }}>{r.exam_title}</td>
                       <td>
                         <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          {r.icon} {r.university_name || "—"}
+                          {r.icon} {r.school_name || "—"}
                         </span>
                       </td>
                       <td>{r.year || "—"}</td>
