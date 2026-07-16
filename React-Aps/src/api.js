@@ -53,6 +53,7 @@ export const examsApi = {
   addQuestion: (examId, payload) => rpc("add_question", { p_exam_id: examId, p_payload: payload }),
   updateQuestion: (questionId, payload) => rpc("update_question", { p_question_id: questionId, p_payload: payload }),
   deleteQuestion: (questionId) => rpc("delete_question", { p_question_id: questionId }),
+  reorderQuestions: (examId, questionIds) => rpc("reorder_questions", { p_exam_id: examId, p_question_ids: questionIds }),
 };
 
 // Schools
