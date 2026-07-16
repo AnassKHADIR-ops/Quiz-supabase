@@ -12,16 +12,11 @@ function AKLogo({ size = 42 }) {
           <stop offset="0%"   stopColor="#4361ee" />
           <stop offset="100%" stopColor="#7c3aed" />
         </linearGradient>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="2" result="blur" />
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
       </defs>
       {/* Hexagone */}
       <polygon
         points="50,4 93,27 93,73 50,96 7,73 7,27"
         fill="url(#logoGrad)"
-        filter="url(#glow)"
       />
       {/* Bordure subtile */}
       <polygon

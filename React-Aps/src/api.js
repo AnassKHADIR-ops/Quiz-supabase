@@ -70,6 +70,13 @@ export const subjectsApi = {
   delete: (subjectId) => rpc("delete_subject", { p_subject_id: subjectId }),
 };
 
+// School programmes (per-year curriculum documents, hosted externally e.g. Google Drive)
+export const programmesApi = {
+  create: (payload) => rpc("create_school_programme", { p_payload: payload }),
+  update: (id, payload) => rpc("update_school_programme", { p_id: id, p_payload: payload }),
+  delete: (id) => rpc("delete_school_programme", { p_id: id }),
+};
+
 // Results
 export const resultsApi = {
   submit: ({ exam_id, started_at, answers }) => rpc("submit_exam_attempt", {

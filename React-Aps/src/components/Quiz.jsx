@@ -3,6 +3,65 @@ import { useParams, useNavigate } from "react-router-dom";
 import MathText from "./MathText.jsx";
 import Results from "./Results.jsx";
 import { examsApi, resultsApi } from "../api.js";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Clock, ClipboardList, HelpCircle, Hourglass, Inbox, ListIcon, PlayCircle, X, Zap } from "./Icon.jsx";
+
+// Durée totale de l'examen : celle fixée par le professeur (duration_minutes),
+// avec un repli à 90s/question pour les anciens QCM créés sans durée.
+const examTotalSeconds = (exam) => (exam.duration_minutes ? exam.duration_minutes * 60 : exam.questions.length * 90);
+const formatDuration = (sec) => {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  if (m === 0) return `${s} s`;
+  return s > 0 ? `${m} min ${s} s` : `${m} min`;
+};
+/* ─────────────────────────────────────────
+   Panneau latéral — toutes les questions
+───────────────────────────────────────── */
+function QuestionNavigator({ open, onClose, questions, current, answers, onJump }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+  }, [open, onClose]);
+
+  const answeredCount = answers.filter((a) => a !== null).length;
+
+  return (
+    <>
+      <div className={`qnav-drawer-backdrop ${open ? "open" : ""}`} onClick={onClose} />
+      <div className={`qnav-drawer ${open ? "open" : ""}`} role="dialog" aria-label="Navigation entre les questions">
+        <div className="qnav-drawer-head">
+          <div>
+            <h3>Toutes les questions</h3>
+            <p>{answeredCount} / {questions.length} répondues</p>
+          </div>
+          <button className="qnav-drawer-close" onClick={onClose} aria-label="Fermer"><X size={16} /></button>
+        </div>
+        <div className="qnav-drawer-list">
+          {questions.map((q, i) => {
+            const isCurrent = i === current;
+            const isAnswered = answers[i] !== null;
+            return (
+              <button
+                key={q.id}
+                className={`qnav-drawer-item ${isCurrent ? "current" : ""} ${isAnswered ? "answered" : ""}`}
+                onClick={() => onJump(i)}
+              >
+                <span className="qnav-drawer-num">{isAnswered && !isCurrent ? <Check size={13} /> : i + 1}</span>
+                <span className="qnav-drawer-body">
+                  <span className="qnav-drawer-preview"><MathText text={q.question_text || "Question sans énoncé"} /></span>
+                  <span className="qnav-drawer-status">{isCurrent ? "En cours" : isAnswered ? "Répondu" : "Non répondu"}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
 
 /* ─────────────────────────────────────────
    Minuterie globale (anneau SVG)
@@ -22,18 +81,7 @@ function GlobalTimer({ secondsLeft, totalSeconds }) {
   const urgent = pct < 0.2;
 
   return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      background: urgent ? "var(--danger-light)" : "var(--surface-2)",
-      border: `1.5px solid ${urgent ? "var(--danger)" : "var(--border)"}`,
-      borderRadius: "var(--radius)",
-      padding: "10px 16px",
-      transition: "all .4s",
-      animation: urgent ? "pulse 1s infinite" : "none",
-      flexShrink: 0,
-    }}>
+    <div className={`timer-pill ${urgent ? "timer-pill--urgent" : ""}`}>
       <svg width="52" height="52" viewBox="0 0 52 52" style={{ transform: "rotate(-90deg)" }}>
         <circle cx="26" cy="26" r={radius} fill="none" stroke="var(--border)" strokeWidth="4" />
         <circle
@@ -47,20 +95,9 @@ function GlobalTimer({ secondsLeft, totalSeconds }) {
           style={{ transition: "stroke-dashoffset 1s linear, stroke .4s" }}
         />
       </svg>
-      <div style={{ lineHeight: 1.1 }}>
-        <div style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: "1.4rem",
-          fontWeight: 700,
-          color,
-          letterSpacing: "-.02em",
-          transition: "color .4s",
-        }}>
-          {mm}:{ss}
-        </div>
-        <div style={{ fontSize: "0.62rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: ".07em" }}>
-          temps restant
-        </div>
+      <div>
+        <div className="timer-value" style={{ color }}>{mm}:{ss}</div>
+        <div className="timer-caption">temps restant</div>
       </div>
     </div>
   );
@@ -70,67 +107,54 @@ function GlobalTimer({ secondsLeft, totalSeconds }) {
    Écran de départ
 ───────────────────────────────────────── */
 function ExamStartScreen({ exam, onStart, onBack }) {
-  const totalSec = exam.questions.length * 90;
-  const totalMin = Math.floor(totalSec / 60);
-  const totalRemSec = totalSec % 60;
-  const totalLabel = totalRemSec > 0 ? `${totalMin} min ${totalRemSec} s` : `${totalMin} min`;
+  const totalSec = examTotalSeconds(exam);
+  const totalLabel = formatDuration(totalSec);
+  const avgLabel = formatDuration(exam.questions.length > 0 ? Math.round(totalSec / exam.questions.length) : 0);
+  const infoTiles = [
+    { Icon: HelpCircle, val: exam.questions.length, label: "Questions" },
+    { Icon: Hourglass, val: totalLabel, label: "Durée totale" },
+    { Icon: Zap, val: `~${avgLabel} / question`, label: "Régulation" },
+  ];
+  const rules = [
+    `Le chronomètre démarre au lancement et compte ${totalLabel} en continu pour l'ensemble des ${exam.questions.length} question(s).`,
+    "Naviguer entre les questions ne réinitialise PAS le chronomètre.",
+    "À la fin du temps, l'examen est soumis automatiquement.",
+    "Aucune modification n'est possible après la soumission.",
+    "Les questions sans réponse comptent comme incorrectes.",
+  ];
   return (
     <div className="page-narrow" style={{ textAlign: "center", paddingTop: 60 }}>
-      <div style={{
-        width: 80, height: 80,
-        background: "var(--gradient)",
-        borderRadius: "var(--radius-lg)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: "2.2rem",
-        margin: "0 auto 24px",
-        boxShadow: "var(--shadow-lg)",
-      }}>⏱</div>
+      <div className="exam-icon-badge"><Clock size={30} /></div>
 
       <h1 style={{ fontSize: "1.8rem", fontWeight: 800, marginBottom: 8 }}>{exam.title}</h1>
       <p style={{ color: "var(--text-muted)", marginBottom: 36, fontSize: "1rem" }}>
         Lisez les conditions avant de commencer
       </p>
 
-      {/* Infos */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 36 }}>
-        {[
-          { icon: "❓", val: exam.questions.length,  label: "Questions" },
-          { icon: "⏳", val: totalLabel,               label: "Durée totale" },
-          { icon: "⚡", val: "1 min 30 s / question", label: "Régulation" },
-        ].map((item) => (
-          <div key={item.label} className="card" style={{ padding: "18px 12px", textAlign: "center" }}>
-            <div style={{ fontSize: "1.5rem", marginBottom: 6 }}>{item.icon}</div>
-            <div style={{ fontSize: "1.1rem", fontWeight: 800, fontFamily: "'Outfit', sans-serif", color: "var(--primary)" }}>
-              {item.val}
-            </div>
-            <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: ".06em", fontWeight: 600 }}>
-              {item.label}
-            </div>
+      <div className="exam-info-grid">
+        {infoTiles.map(({ Icon, val, label }) => (
+          <div key={label} className="card exam-info-tile">
+            <Icon size={22} />
+            <div className="exam-info-tile-value">{val}</div>
+            <div className="exam-info-tile-label">{label}</div>
           </div>
         ))}
       </div>
 
-      {/* Règles */}
-      <div className="card" style={{ textAlign: "left", marginBottom: 32, padding: "22px 24px" }}>
-        <p style={{ fontWeight: 700, marginBottom: 12, fontSize: "0.9rem" }}>📋 Règles de l'examen :</p>
-        {[
-          `Le chronomètre démarre au lancement et compte ${totalLabel} en continu (1 min 30 s × ${exam.questions.length} questions).`,
-          "Naviguer entre les questions ne réinitialise PAS le chronomètre.",
-          "À la fin du temps, l'examen est soumis automatiquement.",
-          "Aucune modification n'est possible après la soumission.",
-          "Les questions sans réponse comptent comme incorrectes.",
-        ].map((rule, i) => (
-          <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8, fontSize: "0.875rem", color: "var(--text-muted)" }}>
-            <span style={{ color: "var(--primary)", fontWeight: 700, flexShrink: 0 }}>{i + 1}.</span>
+      <div className="card exam-rules">
+        <p className="exam-rules-title"><ClipboardList size={17} /> Règles de l'examen</p>
+        {rules.map((rule, i) => (
+          <div key={i} className="exam-rules-item">
+            <span>{i + 1}.</span>
             {rule}
           </div>
         ))}
       </div>
 
       <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-        <button className="btn btn-secondary" onClick={onBack}>← Retour</button>
+        <button className="btn btn-secondary" onClick={onBack}><ArrowLeft size={16} /> Retour</button>
         <button className="btn btn-primary btn-lg" onClick={onStart}>
-          Lancer l'examen ▶
+          <PlayCircle size={18} /> Lancer l'examen
         </button>
       </div>
     </div>
@@ -154,6 +178,7 @@ function Quiz() {
   const [result,    setResult]    = useState(null);
   const [saving,    setSaving]    = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [navOpen,   setNavOpen]   = useState(false);
 
   // Timer global — une seule valeur pour tout l'examen
   const [timeLeft,  setTimeLeft]  = useState(0);
@@ -170,7 +195,7 @@ function Quiz() {
         examRef.current = data;
         setAnswers(Array(data.questions.length).fill(null));
         answersRef.current = Array(data.questions.length).fill(null);
-        setTimeLeft(data.questions.length * 90); // 1 min par question
+        setTimeLeft(examTotalSeconds(data));
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -239,15 +264,14 @@ function Quiz() {
 
   const handleRetry = () => {
     clearInterval(timerRef.current);
-    const len = exam.questions.length;
-    const fresh = Array(len).fill(null);
+    const fresh = Array(exam.questions.length).fill(null);
     answersRef.current = fresh;
     setAnswers(fresh);
     setSubmitted(false);
     setResult(null);
     setSaveError("");
     setCurrent(0);
-    setTimeLeft(len * 60);
+    setTimeLeft(examTotalSeconds(exam));
     setStarted(false);
   };
 
@@ -260,20 +284,20 @@ function Quiz() {
 
   if (error) return (
     <div className="center-msg">
-      <div className="empty-state-icon">⚠️</div>
+      <AlertTriangle size={40} style={{ color: "var(--danger)", marginBottom: 14 }} />
       <p className="error-msg" style={{ fontSize: "1rem" }}>{error}</p>
       <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => navigate("/")}>
-        ← Retour aux examens
+        <ArrowLeft size={16} /> Retour aux examens
       </button>
     </div>
   );
 
   if (exam && exam.questions.length === 0) return (
     <div className="center-msg">
-      <div className="empty-state-icon">📭</div>
+      <Inbox size={40} style={{ color: "var(--text-faint)", marginBottom: 14 }} />
       <h3 style={{ marginBottom: 8 }}>Examen bientôt disponible</h3>
       <p style={{ marginBottom: 20 }}>Les questions de cet examen n'ont pas encore été ajoutées.</p>
-      <button className="btn btn-secondary" onClick={() => navigate("/")}>← Retour</button>
+      <button className="btn btn-secondary" onClick={() => navigate("/")}><ArrowLeft size={16} /> Retour</button>
     </div>
   );
 
@@ -297,22 +321,22 @@ function Quiz() {
   const answeredCount = answers.filter((a) => a !== null).length;
   const progress      = ((current + 1) / exam.questions.length) * 100;
   const isLast        = current === exam.questions.length - 1;
-  const totalSeconds  = exam.questions.length * 90;
+  const totalSeconds  = examTotalSeconds(exam);
 
   return (
     <div className="page-narrow">
       {/* ── En-tête : titre + timer global ── */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20, gap: 16 }}>
+      <div className="quiz-header">
         <div>
           <button
             onClick={() => navigate("/")}
             className="btn btn-secondary btn-sm"
             style={{ marginBottom: 10 }}
           >
-            ← Quitter
+            <ArrowLeft size={14} /> Quitter
           </button>
           <h1 style={{ fontSize: "1.3rem", fontWeight: 800 }}>{exam.title}</h1>
-          <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
+          <p className="quiz-meta">
             {answeredCount} / {exam.questions.length} réponses données
           </p>
         </div>
@@ -326,18 +350,32 @@ function Quiz() {
         <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* Navigation numéros */}
-      <div className="question-nav">
-        {exam.questions.map((_, i) => (
-          <button
-            key={i}
-            className={`qnav-dot ${i === current ? "current" : answers[i] !== null ? "answered" : ""}`}
-            onClick={() => setCurrent(i)}
-          >
-            {i + 1}
-          </button>
-        ))}
+      {/* Navigation numéros + accès au panneau complet */}
+      <div className="quiz-nav-row">
+        <div className="question-nav" style={{ marginBottom: 0 }}>
+          {exam.questions.map((_, i) => (
+            <button
+              key={i}
+              className={`qnav-dot ${i === current ? "current" : answers[i] !== null ? "answered" : ""}`}
+              onClick={() => setCurrent(i)}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+        <button className="btn btn-secondary btn-sm" onClick={() => setNavOpen(true)} style={{ flexShrink: 0 }}>
+          <ListIcon size={14} /> Toutes les questions
+        </button>
       </div>
+
+      <QuestionNavigator
+        open={navOpen}
+        onClose={() => setNavOpen(false)}
+        questions={exam.questions}
+        current={current}
+        answers={answers}
+        onJump={(i) => { setCurrent(i); setNavOpen(false); }}
+      />
 
       {/* Carte question */}
       <div className="card question-card">
@@ -369,12 +407,12 @@ function Quiz() {
           onClick={() => setCurrent((c) => c - 1)}
           disabled={current === 0}
         >
-          ← Précédent
+          <ArrowLeft size={16} /> Précédent
         </button>
 
         {!isLast ? (
           <button className="btn btn-primary" onClick={() => setCurrent((c) => c + 1)}>
-            Suivant →
+            Suivant <ArrowRight size={16} />
           </button>
         ) : (
           <button
@@ -384,15 +422,15 @@ function Quiz() {
           >
             {saving
               ? <><span className="spinner" style={{ width: 14, height: 14, borderWidth: 2, borderTopColor: "white" }} /> Envoi…</>
-              : "Soumettre ✓"}
+              : <><Check size={16} /> Soumettre</>}
           </button>
         )}
       </div>
 
       {saveError && <p className="error-msg" style={{ marginTop: 12 }}>{saveError}</p>}
       {!allAnswered && isLast && (
-        <p className="hint" style={{ marginTop: 12, textAlign: "center" }}>
-          ⚠ Répondez à toutes les questions avant de soumettre.
+        <p className="hint" style={{ marginTop: 12, textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          <AlertTriangle size={14} /> Répondez à toutes les questions avant de soumettre.
         </p>
       )}
     </div>

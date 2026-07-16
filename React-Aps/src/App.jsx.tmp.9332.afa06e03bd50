@@ -55,14 +55,6 @@ function App() {
           }
         />
         <Route
-          path="/result/:resultId"
-          element={
-            <ProtectedRoute>
-              <ResultDetail />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/dashboard"
           element={
             <ProtectedRoute teacherOnly>

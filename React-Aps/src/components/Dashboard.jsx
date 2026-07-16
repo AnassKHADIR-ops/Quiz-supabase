@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { examsApi, resultsApi } from "../api.js";
 import { useScrollAnimation, useCounter } from "../hooks/useScrollAnimation.js";
+import { AlertTriangle, ClipboardList, Eye, Inbox, Medal, Trophy } from "./Icon.jsx";
 
 function AnimatedStat({ label, value, sub, colorClass, suffix = "" }) {
   const [ref, visible] = useScrollAnimation();
@@ -21,77 +22,28 @@ function AnimatedStat({ label, value, sub, colorClass, suffix = "" }) {
 function Podium({ ranked }) {
   if (ranked.length === 0) return null;
   const top3 = ranked.slice(0, 3);
-  // Ordre visuel : 2e - 1er - 3e
-  const order = [top3[1], top3[0], top3[2]].filter(Boolean);
-  const heights = [top3[1] ? 80 : 0, 110, top3[2] ? 60 : 0];
-  const colors  = ["#94a3b8", "#f59e0b", "#cd7c2f"];
-  const medals  = ["🥈", "🥇", "🥉"];
+  const heights = [110, 80, 60];
   const visualOrder = top3[1] ? [1, 0, 2] : [0, 2];
 
   return (
-    <div style={{
-      display: "flex",
-      alignItems: "flex-end",
-      justifyContent: "center",
-      gap: 12,
-      marginBottom: 40,
-      padding: "32px 0 0",
-    }}>
-      {visualOrder.map((rankIdx, vi) => {
+    <div className="podium">
+      {visualOrder.map((rankIdx) => {
         const r = top3[rankIdx];
         if (!r) return null;
-        const podiumH = [110, 80, 60][rankIdx];
-        const medal   = ["🥇","🥈","🥉"][rankIdx];
-        const color   = ["#f59e0b","#94a3b8","#cd7c2f"][rankIdx];
-        const pct     = Number(r.percentage);
+        const pct = Number(r.percentage);
 
         return (
-          <div key={r.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-            {/* Medal */}
-            <div style={{ fontSize: "1.8rem" }}>{medal}</div>
-            {/* Avatar */}
-            <Link to={`/student/${r.student_id}`} style={{ textDecoration: "none" }}>
-              <div style={{
-                width: 54, height: 54,
-                borderRadius: "50%",
-                background: `linear-gradient(135deg, ${color}, ${color}aa)`,
-                border: `3px solid ${color}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "1.2rem", fontWeight: 800, color: "white",
-                fontFamily: "'Outfit', sans-serif",
-                boxShadow: `0 4px 14px ${color}55`,
-                cursor: "pointer",
-                transition: "transform .2s",
-              }}
-                onMouseEnter={e => e.currentTarget.style.transform = "scale(1.08)"}
-                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-              >
-                {r.student_name?.[0]?.toUpperCase() || "?"}
-              </div>
+          <div key={r.id} className={`podium-item podium-item--${rankIdx + 1}`}>
+            <Medal className="podium-medal" size={24} />
+            <Link to={`/student/${r.student_id}`}>
+              <div className="podium-avatar">{r.student_name?.[0]?.toUpperCase() || "?"}</div>
             </Link>
-            {/* Nom + score */}
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text)", maxWidth: 90, wordBreak: "break-word", lineHeight: 1.2 }}>
-                {r.student_name?.split(" ")[0] || "—"}
-              </div>
-              <div style={{ fontWeight: 800, fontSize: "1rem", color, fontFamily: "'Outfit', sans-serif" }}>
-                {pct}%
-              </div>
+            <div>
+              <div className="podium-name">{r.student_name?.split(" ")[0] || "—"}</div>
+              <div className="podium-pct" style={{ textAlign: "center" }}>{pct}%</div>
             </div>
-            {/* Barre de podium */}
-            <div style={{
-              width: 80,
-              height: podiumH,
-              background: `linear-gradient(180deg, ${color}33, ${color}88)`,
-              border: `2px solid ${color}66`,
-              borderRadius: "8px 8px 0 0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}>
-              <span style={{ fontSize: "1.3rem", fontWeight: 900, color, fontFamily: "'Outfit', sans-serif" }}>
-                #{rankIdx + 1}
-              </span>
+            <div className="podium-bar" style={{ height: heights[rankIdx] }}>
+              <span>#{rankIdx + 1}</span>
             </div>
           </div>
         );
@@ -106,7 +58,7 @@ function Podium({ ranked }) {
 function RankingTable({ ranked }) {
   if (ranked.length === 0) return (
     <div className="empty-state">
-      <div className="empty-state-icon">🏆</div>
+      <Trophy size={40} className="empty-state-icon" style={{ color: "var(--text-faint)" }} />
       <h3>Aucun résultat</h3>
       <p>Les étudiants n'ont pas encore soumis cet examen.</p>
     </div>
@@ -128,20 +80,21 @@ function RankingTable({ ranked }) {
             <th style={{ minWidth: 140 }}>Progression</th>
             <th>Mention</th>
             <th>Date</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           {ranked.map((r, i) => {
             const pct = Number(r.percentage);
             const barClass = pct >= 75 ? "" : pct >= 50 ? "medium" : "low";
-            const rankMedal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null;
+            const rankColor = i === 0 ? "var(--warning)" : i === 1 ? "var(--text-muted)" : i === 2 ? "#b5651d" : null;
 
             return (
               <tr key={r.id} style={i < 3 ? { background: "var(--surface-2)" } : {}}>
                 {/* Rang */}
                 <td style={{ textAlign: "center" }}>
-                  {rankMedal
-                    ? <span style={{ fontSize: "1.3rem" }}>{rankMedal}</span>
+                  {rankColor
+                    ? <Medal size={18} style={{ color: rankColor }} />
                     : <span style={{
                         fontFamily: "'JetBrains Mono', monospace",
                         fontWeight: 700,
@@ -189,6 +142,11 @@ function RankingTable({ ranked }) {
                 {/* Date */}
                 <td style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
                   {new Date(r.submitted_at).toLocaleString("fr-FR")}
+                </td>
+                <td>
+                  <Link to={`/result/${r.id}`} className="btn btn-secondary btn-sm">
+                    <Eye size={14} /> Voir
+                  </Link>
                 </td>
               </tr>
             );
@@ -255,7 +213,7 @@ function Dashboard() {
         <p>Suivi des résultats et classement de vos étudiants</p>
       </div>
 
-      {error && <p className="error-msg">⚠ {error}</p>}
+      {error && <p className="error-msg"><AlertTriangle size={15} /> {error}</p>}
 
       {/* Sélecteur d'examen */}
       {exams.length > 0 && (
@@ -283,15 +241,15 @@ function Dashboard() {
       {/* Tabs : Classement / Liste */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
         {[
-          { key: "classement", icon: "🏆", label: "Classement" },
-          { key: "liste",      icon: "📋", label: "Liste complète" },
+          { key: "classement", Icon: Trophy, label: "Classement" },
+          { key: "liste",      Icon: ClipboardList, label: "Liste complète" },
         ].map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`btn ${activeTab === tab.key ? "btn-primary" : "btn-secondary"}`}
           >
-            {tab.icon} {tab.label}
+            <tab.Icon size={15} /> {tab.label}
           </button>
         ))}
       </div>
@@ -299,8 +257,9 @@ function Dashboard() {
       {/* Contenu */}
       <div className="card fade-up">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--primary)" }}>
-            {activeTab === "classement" ? "🏆 Classement —" : "📋 Résultats —"}{" "}
+          <h2 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--primary)", display: "flex", alignItems: "center", gap: 8 }}>
+            {activeTab === "classement" ? <Trophy size={18} /> : <ClipboardList size={18} />}
+            {activeTab === "classement" ? "Classement —" : "Résultats —"}{" "}
             {exams.find((e) => e.id === selectedExamId)?.title || ""}
           </h2>
           <span className="tag">{ranked.length} étudiant{ranked.length !== 1 ? "s" : ""}</span>
@@ -319,7 +278,7 @@ function Dashboard() {
           /* Liste complète (toutes soumissions, pas de déduplication) */
           results.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-state-icon">📭</div>
+              <Inbox size={40} className="empty-state-icon" style={{ color: "var(--text-faint)" }} />
               <h3>Aucun résultat</h3>
               <p>Les étudiants n'ont pas encore soumis cet examen.</p>
             </div>
@@ -334,6 +293,7 @@ function Dashboard() {
                     <th style={{ minWidth: 140 }}>Progression</th>
                     <th>Mention</th>
                     <th>Date</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -375,6 +335,11 @@ function Dashboard() {
                         </td>
                         <td style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
                           {new Date(r.submitted_at).toLocaleString("fr-FR")}
+                        </td>
+                        <td>
+                          <Link to={`/result/${r.id}`} className="btn btn-secondary btn-sm">
+                            <Eye size={14} /> Voir
+                          </Link>
                         </td>
                       </tr>
                     );

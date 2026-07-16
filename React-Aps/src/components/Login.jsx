@@ -2,23 +2,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../hooks/useTheme.js";
+import { AlertTriangle, ArrowRight } from "./Icon.jsx";
 
-// Logo hexagone premium
+// Logo hexagone
 function AKLogoLarge() {
   return (
-    <svg width="72" height="72" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="lgLarge" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%"   stopColor="rgba(255,255,255,0.95)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0.6)" />
-        </linearGradient>
-        <filter id="glowLarge">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      </defs>
-      <polygon points="50,4 93,27 93,73 50,96 7,73 7,27" fill="url(#lgLarge)" filter="url(#glowLarge)" opacity="0.9" />
-      <polygon points="50,4 93,27 93,73 50,96 7,73 7,27" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+    <svg width="64" height="64" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="50,4 93,27 93,73 50,96 7,73 7,27" fill="rgba(255,255,255,.95)" />
       <text x="50" y="60" textAnchor="middle" fontFamily="'Outfit', sans-serif" fontWeight="800" fontSize="28" fill="#4361ee" letterSpacing="-1">A.K</text>
     </svg>
   );
@@ -71,9 +61,7 @@ function Login() {
       {/* ── Panel gauche décoratif ── */}
       <div className="auth-panel-left">
         <div className="auth-panel-left-content">
-          <div className="float">
-            <AKLogoLarge />
-          </div>
+          <AKLogoLarge />
           <h2>Préparez votre<br />avenir académique</h2>
           <p>
             Des examens de qualité, des corrections détaillées,
@@ -126,7 +114,7 @@ function Login() {
             <p>Pr. Anass Khadir — USMBA</p>
           </div>
 
-          <h2>Bienvenue 👋</h2>
+          <h2>Bienvenue</h2>
           <p className="auth-sub">Connectez-vous pour accéder à vos examens</p>
 
           <form onSubmit={handleSubmit}>
@@ -151,7 +139,7 @@ function Login() {
                 required
               />
             </div>
-            {error && <p className="error-msg">⚠ {error}</p>}
+            {error && <p className="error-msg"><AlertTriangle size={15} /> {error}</p>}
             <button
               type="submit"
               className="btn btn-primary btn-lg"
@@ -160,7 +148,7 @@ function Login() {
             >
               {loading
                 ? <><span className="spinner" style={{ width: 16, height: 16, borderWidth: 2, borderTopColor: "white" }} /> Connexion…</>
-                : "Se connecter →"}
+                : <>Se connecter <ArrowRight size={16} /></>}
             </button>
           </form>
 

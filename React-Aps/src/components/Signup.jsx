@@ -2,18 +2,12 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../hooks/useTheme.js";
+import { AlertTriangle, ArrowRight, Check } from "./Icon.jsx";
 
 function AKLogoLarge() {
   return (
-    <svg width="72" height="72" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="lgLarge2" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%"   stopColor="rgba(255,255,255,0.95)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0.6)" />
-        </linearGradient>
-      </defs>
-      <polygon points="50,4 93,27 93,73 50,96 7,73 7,27" fill="url(#lgLarge2)" opacity="0.9" />
-      <polygon points="50,4 93,27 93,73 50,96 7,73 7,27" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+    <svg width="64" height="64" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="50,4 93,27 93,73 50,96 7,73 7,27" fill="rgba(255,255,255,.95)" />
       <text x="50" y="60" textAnchor="middle" fontFamily="'Outfit', sans-serif" fontWeight="800" fontSize="28" fill="#4361ee" letterSpacing="-1">A.K</text>
     </svg>
   );
@@ -67,9 +61,7 @@ function Signup() {
       {/* ── Panel gauche décoratif ── */}
       <div className="auth-panel-left">
         <div className="auth-panel-left-content">
-          <div className="float">
-            <AKLogoLarge />
-          </div>
+          <AKLogoLarge />
           <h2>Rejoignez des milliers<br />d'étudiants</h2>
           <p>
             Accédez gratuitement à des centaines d'annales corrigées,
@@ -78,12 +70,12 @@ function Signup() {
 
           <div style={{ marginTop: 36, display: "flex", flexDirection: "column", gap: 14 }}>
             {[
-              "✓  Accès illimité aux examens",
-              "✓  Corrections détaillées avec LaTeX",
-              "✓  Suivi de vos résultats en temps réel",
+              "Accès illimité aux examens",
+              "Corrections détaillées avec LaTeX",
+              "Suivi de vos résultats en temps réel",
             ].map((item) => (
-              <div key={item} style={{ fontSize: "0.9rem", color: "rgba(255,255,255,.85)", fontWeight: 500 }}>
-                {item}
+              <div key={item} style={{ fontSize: "0.9rem", color: "rgba(255,255,255,.85)", fontWeight: 500, display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                <Check size={16} /> {item}
               </div>
             ))}
           </div>
@@ -120,7 +112,7 @@ function Signup() {
             <p>Créez votre compte étudiant</p>
           </div>
 
-          <h2>Inscription 🎓</h2>
+          <h2>Inscription</h2>
           <p className="auth-sub">Rejoignez la plateforme pour passer vos examens</p>
 
           <form onSubmit={handleSubmit}>
@@ -159,7 +151,7 @@ function Signup() {
                 required
               />
             </div>
-            {error && <p className="error-msg">⚠ {error}</p>}
+            {error && <p className="error-msg"><AlertTriangle size={15} /> {error}</p>}
             <button
               type="submit"
               className="btn btn-primary btn-lg"
@@ -168,7 +160,7 @@ function Signup() {
             >
               {loading
                 ? <><span className="spinner" style={{ width: 16, height: 16, borderWidth: 2, borderTopColor: "white" }} /> Création…</>
-                : "Créer mon compte →"}
+                : <>Créer mon compte <ArrowRight size={16} /></>}
             </button>
           </form>
 

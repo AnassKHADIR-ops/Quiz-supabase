@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -7,6 +7,9 @@ import {
 } from "recharts";
 import { resultsApi } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { ArrowLeft, Eye, Inbox } from "../components/Icon.jsx";
+
+const tooltipStyle = { background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)", fontSize: "0.85rem" };
 
 
 function StatCard({ label, value, sub, color }) {
@@ -82,7 +85,7 @@ function StudentProfile() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
         <button className="btn btn-secondary" style={{ padding: "7px 14px" }} onClick={() => navigate(-1)}>
-          ← Retour
+          <ArrowLeft size={16} /> Retour
         </button>
         <div>
           <h1 style={{ fontSize: "1.6rem", fontWeight: 800 }}>Analyse de l'étudiant</h1>
@@ -110,6 +113,7 @@ function StudentProfile() {
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} hide />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
                 <Tooltip
+                  contentStyle={tooltipStyle}
                   formatter={(val) => [`${val}%`, "Score"]}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.exam || ""}
                 />
@@ -131,7 +135,7 @@ function StudentProfile() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
-                <Tooltip formatter={(val) => [`${val}%`, "Moy."]} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(val) => [`${val}%`, "Moy."]} />
                 <ReferenceLine y={50} stroke="var(--warning)" strokeDasharray="4 2" />
                 <Bar dataKey="avg" fill="var(--primary)" radius={[6, 6, 0, 0]} />
               </BarChart>
@@ -149,7 +153,7 @@ function StudentProfile() {
 
         {history.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon">📭</div>
+            <Inbox size={40} className="empty-state-icon" style={{ color: "var(--text-faint)" }} />
             <h3>Aucun examen passé</h3>
           </div>
         ) : (
@@ -164,6 +168,7 @@ function StudentProfile() {
                   <th>Résultat</th>
                   <th>Mention</th>
                   <th>Date</th>
+                  <th></th>
                   {isTeacher && <th>Action</th>}
                 </tr>
               </thead>
@@ -195,11 +200,16 @@ function StudentProfile() {
                       <td style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
                         {new Date(r.submitted_at).toLocaleDateString("fr-FR")}
                       </td>
+                      <td>
+                        <Link to={`/result/${r.id}`} className="btn btn-secondary btn-sm">
+                          <Eye size={14} /> Voir
+                        </Link>
+                      </td>
                       {isTeacher && (
                         <td>
                           <button
                             className="btn"
-                            style={{ padding: "4px 10px", fontSize: "0.78rem", background: "#fef2f2", color: "var(--danger)", border: "1px solid #fecaca" }}
+                            style={{ padding: "4px 10px", fontSize: "0.78rem", background: "var(--danger-light)", color: "var(--danger)", border: "1px solid var(--danger)" }}
                             disabled={deleting === r.id}
                             onClick={() => handleDelete(r.id)}
                           >

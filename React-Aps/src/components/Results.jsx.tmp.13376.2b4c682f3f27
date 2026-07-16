@@ -1,33 +1,6 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MathText from "./MathText.jsx";
-import { AlertTriangle, ArrowLeft, Award, Check, CheckCircle, Lightbulb, RefreshCw, Trash, Trophy, Video, X } from "./Icon.jsx";
-
-function youtubeEmbedUrl(url) {
-  const match = (url || "").match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{6,})/);
-  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
-}
-
-function VideoModal({ url, onClose }) {
-  const embedUrl = youtubeEmbedUrl(url);
-  return (
-    <div className="modal-backdrop" onMouseDown={onClose}>
-      <div className="video-modal" onMouseDown={(e) => e.stopPropagation()}>
-        <button className="management-modal-close" onClick={onClose} style={{ position: "absolute", right: 12, top: 12, zIndex: 1 }}><X size={16} /></button>
-        {embedUrl
-          ? <iframe
-              className="video-modal-frame"
-              src={embedUrl}
-              title="Vidéo explicative"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          : <p className="error-msg" style={{ padding: 24 }}>Lien vidéo invalide.</p>
-        }
-      </div>
-    </div>
-  );
-}
+import { AlertTriangle, ArrowLeft, Award, Check, CheckCircle, Lightbulb, RefreshCw, Trash, Trophy, X } from "./Icon.jsx";
 
 function ScoreCircle({ percentage }) {
   const radius = 68;
@@ -73,7 +46,6 @@ function ScoreCircle({ percentage }) {
 */
 function Results({ exam, result, onRetry, saveError, studentName, onBack, onDelete }) {
   const navigate = useNavigate();
-  const [activeVideo, setActiveVideo] = useState(null);
   const { score, total, percentage } = result;
 
   let grade = "À améliorer";
@@ -163,43 +135,20 @@ function Results({ exam, result, onRetry, saveError, studentName, onBack, onDele
                     <span><strong>Solution :</strong> <MathText text={ans.solution_text} /></span>
                   </div>
                 )}
-
-                {/* Vidéo explicative (si renseignée par le professeur) */}
-                {ans.resource_url && (
-                  <button className="btn btn-secondary btn-sm" style={{ marginTop: 12 }} onClick={() => setActiveVideo(ans.resource_url)}>
-                    <Video size={14} /> Voir l'explication
-                  </button>
-                )}
               </div>
             );
           })}
         </div>
       )}
 
-      {activeVideo && <VideoModal url={activeVideo} onClose={() => setActiveVideo(null)} />}
-
       {/* ── Actions ── */}
       <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-        {onRetry && (
-          <>
-            <button className="btn btn-primary btn-lg" onClick={onRetry}>
-              <RefreshCw size={16} /> Recommencer
-            </button>
-            <button className="btn btn-secondary btn-lg" onClick={() => navigate("/")}>
-              <ArrowLeft size={16} /> Retour aux examens
-            </button>
-          </>
-        )}
-        {onBack && (
-          <button className="btn btn-secondary btn-lg" onClick={onBack}>
-            <ArrowLeft size={16} /> Retour
-          </button>
-        )}
-        {onDelete && (
-          <button className="btn btn-danger btn-lg" onClick={onDelete}>
-            <Trash size={16} /> Supprimer cette soumission
-          </button>
-        )}
+        <button className="btn btn-primary btn-lg" onClick={onRetry}>
+          <RefreshCw size={16} /> Recommencer
+        </button>
+        <button className="btn btn-secondary btn-lg" onClick={() => navigate("/")}>
+          <ArrowLeft size={16} /> Retour aux examens
+        </button>
       </div>
     </div>
   );

@@ -1,0 +1,1440 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Programmes officiels des CPGE françaises – Anass Khadir</title>
+    <meta
+      name="description"
+      content="Programmes officiels de mathématiques des classes préparatoires françaises : MPSI, MP2I, PCSI, PTSI, MP, MPI, PC, PSI, PT, BCPST, TSI, TPC, TB, ECG, ECT."
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+
+    <style>
+      /* ══════════════════════════════════════════════════
+   1. VARIABLES — modifiez les couleurs ici uniquement
+   ══════════════════════════════════════════════════ */
+      :root {
+        --fond-creme: #f5f0e8;
+        --blanc: #ffffff;
+        --bleu-marine: #1a2b4a;
+        --bleu-marine-clair: #2f4470;
+        --bleu-pale: #eef1f6;
+        --texte: #1a2b4a;
+        --texte-doux: #5c6780;
+        --bordure: #e0dbd0;
+        --bordure-forte: #cfc8b8;
+
+        --police-titre: Georgia, "Times New Roman", "Droid Serif", serif;
+        --police-texte:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+
+        --arrondi: 10px;
+        --transition: 0.2s ease;
+      }
+
+      /* ══════════════════════════════════════════════════
+   2. BASE
+   ══════════════════════════════════════════════════ */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--police-texte);
+        background: var(--fond-creme);
+        color: var(--texte);
+        line-height: 1.55;
+        padding: 2.5rem 1rem 3rem;
+        -webkit-font-smoothing: antialiased;
+      }
+      .conteneur {
+        max-width: 1060px;
+        margin: 0 auto;
+      }
+
+      a {
+        color: var(--bleu-marine);
+      }
+      :focus-visible {
+        outline: 2px solid var(--bleu-marine);
+        outline-offset: 3px;
+        border-radius: 4px;
+      }
+
+      /* ══════════════════════════════════════════════════
+   3. EN-TÊTE
+   ══════════════════════════════════════════════════ */
+      .lien-retour {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--bleu-marine);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .lien-retour:hover {
+        text-decoration: underline;
+      }
+
+      .entete {
+        text-align: center;
+        margin-bottom: 2.5rem;
+      }
+      .entete .lien-retour {
+        margin-bottom: 22px;
+      }
+      .entete h1 {
+        font-family: var(--police-titre);
+        font-size: clamp(28px, 5vw, 40px);
+        font-weight: normal;
+        letter-spacing: -0.5px;
+        margin-bottom: 12px;
+      }
+      .entete p {
+        font-size: 15.5px;
+        color: var(--texte-doux);
+        max-width: 620px;
+        margin: 0 auto;
+      }
+      .entete .drapeau {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        color: var(--texte-doux);
+        margin-bottom: 10px;
+      }
+
+      /* ══════════════════════════════════════════════════
+   4. RECHERCHE RAPIDE
+   ══════════════════════════════════════════════════ */
+      .barre-recherche {
+        position: relative;
+        max-width: 460px;
+        margin: 0 auto 3rem;
+      }
+      .barre-recherche i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--texte-doux);
+        font-size: 19px;
+      }
+      .barre-recherche input {
+        width: 100%;
+        padding: 14px 16px 14px 46px;
+        font-family: var(--police-texte);
+        font-size: 15px;
+        color: var(--texte);
+        background: var(--blanc);
+        border: 1.5px solid var(--bordure);
+        border-radius: var(--arrondi);
+        transition: border-color var(--transition);
+      }
+      .barre-recherche input:focus {
+        outline: none;
+        border-color: var(--bleu-marine);
+      }
+      .barre-recherche input::placeholder {
+        color: var(--texte-doux);
+      }
+
+      .aucun-resultat {
+        display: none;
+        text-align: center;
+        color: var(--texte-doux);
+        font-size: 15px;
+        padding: 2rem 0;
+      }
+
+      /* ══════════════════════════════════════════════════
+   5. TITRES DE SECTION
+   ══════════════════════════════════════════════════ */
+      .titre-section {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        margin: 3.2rem 0 1.4rem;
+      }
+      .titre-section h2 {
+        font-family: var(--police-titre);
+        font-size: 20px;
+        font-weight: normal;
+        white-space: nowrap;
+      }
+      .titre-section .trait {
+        flex: 1;
+        height: 1px;
+        background: var(--bordure-forte);
+      }
+      .titre-section .compte {
+        font-size: 12px;
+        color: var(--texte-doux);
+        white-space: nowrap;
+      }
+
+      /* ══════════════════════════════════════════════════
+   6. GRILLE ET CARTES
+   ══════════════════════════════════════════════════ */
+      .grille {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+        gap: 18px;
+      }
+
+      .carte {
+        background: var(--blanc);
+        border: 1.5px solid var(--bordure);
+        border-radius: var(--arrondi);
+        display: flex;
+        flex-direction: column;
+        transition:
+          border-color var(--transition),
+          box-shadow var(--transition);
+      }
+      .carte:hover {
+        border-color: var(--bleu-marine);
+        box-shadow: 0 4px 18px rgba(26, 43, 74, 0.08);
+      }
+      .carte.masquee {
+        display: none;
+      }
+
+      .carte-entete {
+        padding: 18px 20px 16px;
+        border-bottom: 1px solid var(--bordure);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .carte-icone {
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+        background: var(--bleu-pale);
+        color: var(--bleu-marine);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+      }
+      .carte-entete h3 {
+        font-family: var(--police-titre);
+        font-size: 17px;
+        font-weight: normal;
+      }
+      .carte-entete p {
+        font-size: 12.5px;
+        color: var(--texte-doux);
+        margin-top: 1px;
+      }
+
+      .carte-corps {
+        padding: 4px 0;
+      }
+
+      .ligne {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--bordure);
+      }
+      .ligne:last-child {
+        border-bottom: none;
+      }
+
+      .ligne-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+      .pastille {
+        width: 26px;
+        height: 26px;
+        flex-shrink: 0;
+        background: var(--bleu-pale);
+        color: var(--bleu-marine);
+        border: 1px solid var(--bordure);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .ligne-nom {
+        font-size: 14px;
+        font-weight: 600;
+        display: block;
+      }
+      .ligne-detail {
+        font-size: 11.5px;
+        color: var(--texte-doux);
+        display: block;
+      }
+
+      /* Bouton « Consulter » */
+      .btn-consulter {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        padding: 8px 13px;
+        border-radius: 7px;
+        background: var(--bleu-marine);
+        color: var(--blanc);
+        border: 1.5px solid var(--bleu-marine);
+        font-family: var(--police-texte);
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background var(--transition);
+      }
+      .btn-consulter:hover {
+        background: var(--bleu-marine-clair);
+        border-color: var(--bleu-marine-clair);
+      }
+      .btn-consulter i {
+        font-size: 15px;
+      }
+
+      /* Bouton pour un programme pas encore mis en ligne */
+      .btn-consulter.a-venir {
+        background: transparent;
+        color: var(--texte-doux);
+        border-color: var(--bordure-forte);
+        cursor: default;
+      }
+      .btn-consulter.a-venir:hover {
+        background: transparent;
+        border-color: var(--bordure-forte);
+      }
+
+      /* ══════════════════════════════════════════════════
+   7. VISIONNEUSE PDF (modale)
+   ══════════════════════════════════════════════════ */
+      .voile {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(26, 43, 74, 0.55);
+        align-items: center;
+        justify-content: center;
+        padding: 1.2rem;
+      }
+      .voile.ouvert {
+        display: flex;
+      }
+
+      .modale {
+        background: var(--blanc);
+        border-radius: 12px;
+        width: 100%;
+        max-width: 920px;
+        height: min(92vh, 1000px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(26, 43, 74, 0.35);
+      }
+
+      .modale-entete {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 14px 18px;
+        border-bottom: 1.5px solid var(--bordure);
+        flex-shrink: 0;
+      }
+      .modale-titre {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+      .modale-titre .badge {
+        width: 38px;
+        height: 38px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        background: var(--bleu-marine);
+        color: var(--blanc);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+      }
+      .modale-titre strong {
+        display: block;
+        font-family: var(--police-titre);
+        font-size: 15px;
+        font-weight: normal;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .modale-titre small {
+        font-size: 11.5px;
+        color: var(--texte-doux);
+      }
+
+      .modale-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .btn-telecharger {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 15px;
+        border-radius: 7px;
+        background: var(--bleu-marine);
+        color: var(--blanc);
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background var(--transition);
+      }
+      .btn-telecharger:hover {
+        background: var(--bleu-marine-clair);
+      }
+
+      .btn-icone {
+        width: 37px;
+        height: 37px;
+        border-radius: 7px;
+        background: var(--blanc);
+        border: 1.5px solid var(--bordure);
+        color: var(--texte-doux);
+        cursor: pointer;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+        transition: all var(--transition);
+      }
+      .btn-icone:hover {
+        background: var(--bleu-pale);
+        color: var(--bleu-marine);
+        border-color: var(--bleu-marine);
+      }
+
+      .modale-corps {
+        flex: 1;
+        min-height: 0;
+        background: var(--fond-creme);
+        position: relative;
+      }
+      .modale-corps iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+        position: relative;
+        z-index: 2;
+      }
+
+      .chargement {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background: var(--fond-creme);
+      }
+      .chargement.cache {
+        display: none;
+      }
+      .rondelle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 3px solid var(--bordure-forte);
+        border-top-color: var(--bleu-marine);
+        animation: tourner 0.8s linear infinite;
+      }
+      @keyframes tourner {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .chargement p {
+        font-size: 13.5px;
+        color: var(--texte-doux);
+      }
+
+      .etat-vide {
+        display: none;
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: var(--fond-creme);
+        color: var(--texte-doux);
+        text-align: center;
+        padding: 1.5rem;
+      }
+      .etat-vide i {
+        font-size: 42px;
+        color: var(--bordure-forte);
+      }
+      .etat-vide p {
+        font-size: 14.5px;
+        max-width: 320px;
+      }
+
+      /* ══════════════════════════════════════════════════
+   8. ENCADRÉ ET PIED DE PAGE
+   ══════════════════════════════════════════════════ */
+      .encadre {
+        margin-top: 3.5rem;
+        background: var(--blanc);
+        border: 1.5px solid var(--bordure);
+        border-left: 4px solid var(--bleu-marine);
+        border-radius: var(--arrondi);
+        padding: 20px 22px;
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+      }
+      .encadre > i {
+        font-size: 24px;
+        color: var(--bleu-marine);
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .encadre h4 {
+        font-family: var(--police-titre);
+        font-size: 16px;
+        font-weight: normal;
+        margin-bottom: 5px;
+      }
+      .encadre p {
+        font-size: 14px;
+        color: var(--texte-doux);
+      }
+      .encadre p + p {
+        margin-top: 8px;
+      }
+
+      .pied {
+        margin-top: 3rem;
+        padding-top: 1.8rem;
+        border-top: 1px solid var(--bordure-forte);
+        text-align: center;
+      }
+      .pied .source {
+        display: block;
+        margin-top: 12px;
+        font-size: 12px;
+        color: var(--texte-doux);
+      }
+
+      /* ══════════════════════════════════════════════════
+   9. MOBILE
+   ══════════════════════════════════════════════════ */
+      @media (max-width: 620px) {
+        body {
+          padding: 1.5rem 1rem 2.5rem;
+        }
+        .grille {
+          grid-template-columns: 1fr;
+        }
+        .modale {
+          height: 94vh;
+          border-radius: 10px;
+        }
+        .btn-telecharger span {
+          display: none;
+        }
+        .btn-telecharger {
+          padding: 9px 12px;
+        }
+        .titre-section .compte {
+          display: none;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="conteneur">
+      <header class="entete">
+        <!-- LIEN À MODIFIER — retour accueil -->
+        <a href="https://anasskhadir.com" class="lien-retour">
+          <i class="ti ti-arrow-left"></i> Retour à l'accueil
+        </a>
+        <span class="drapeau">Classes préparatoires — France</span>
+        <h1>Programmes officiels</h1>
+        <p>
+          Les programmes de mathématiques des CPGE françaises, filière par
+          filière. Consultez-les en ligne ou téléchargez-les.
+        </p>
+      </header>
+
+      <!-- RECHERCHE : tape « MPI », « ECG », « BCPST »… -->
+      <div class="barre-recherche">
+        <i class="ti ti-search"></i>
+        <input
+          type="search"
+          id="recherche"
+          placeholder="Chercher une filière : MPSI, MPI, PCSI, ECG, BCPST…"
+          aria-label="Chercher une filière"
+        />
+      </div>
+
+      <p class="aucun-resultat" id="aucun-resultat">
+        Aucune filière ne correspond à cette recherche.
+      </p>
+
+      <!-- ═══════════════════════════════════════════════
+         SECTION 1 — FILIÈRES SCIENTIFIQUES
+         ═══════════════════════════════════════════════ -->
+      <div class="titre-section" data-section>
+        <h2>Filières scientifiques</h2>
+        <span class="trait"></span>
+        <span class="compte">8 voies</span>
+      </div>
+
+      <div class="grille">
+        <!-- ─── MPSI → MP ─── -->
+        <article
+          class="carte"
+          data-mots="mpsi mp maths physique sciences ingenieur scientifique"
+        >
+          <div class="carte-entete">
+            <div class="carte-icone"><i class="ti ti-math-function"></i></div>
+            <div>
+              <h3>MPSI &rarr; MP</h3>
+              <p>Mathématiques, physique, sciences de l'ingénieur</p>
+            </div>
+          </div>
+          <div class="carte-corps">
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">1</span>
+                <span>
+                  <span class="ligne-nom">MPSI</span>
+                  <span class="ligne-detail">Première année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — MPSI -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — MPSI', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">2</span>
+                <span>
+                  <span class="ligne-nom">MP / MP*</span>
+                  <span class="ligne-detail">Deuxième année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — MP -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — MP', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- ─── MP2I → MPI ─── -->
+        <article
+          class="carte"
+          data-mots="mp2i mpi informatique ingenierie scientifique"
+        >
+          <div class="carte-entete">
+            <div class="carte-icone"><i class="ti ti-binary-tree"></i></div>
+            <div>
+              <h3>MP2I &rarr; MPI</h3>
+              <p>Mathématiques, physique, ingénierie, informatique</p>
+            </div>
+          </div>
+          <div class="carte-corps">
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">1</span>
+                <span>
+                  <span class="ligne-nom">MP2I</span>
+                  <span class="ligne-detail">Première année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — MP2I
+                         Le programme de maths MP2I est IDENTIQUE à celui de MPSI :
+                         collez ici le MÊME lien Drive que pour MPSI. -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — MP2I', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">2</span>
+                <span>
+                  <span class="ligne-nom">MPI / MPI*</span>
+                  <span class="ligne-detail"
+                    >Deuxième année — option informatique</span
+                  >
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — MPI
+                         Le programme de maths MPI est IDENTIQUE à celui de MP :
+                         collez ici le MÊME lien Drive que pour MP. -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — MPI', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- ─── PCSI → PC / PSI ─── -->
+        <article
+          class="carte"
+          data-mots="pcsi pc psi physique chimie scientifique"
+        >
+          <div class="carte-entete">
+            <div class="carte-icone"><i class="ti ti-flask"></i></div>
+            <div>
+              <h3>PCSI &rarr; PC / PSI</h3>
+              <p>Physique, chimie, sciences de l'ingénieur</p>
+            </div>
+          </div>
+          <div class="carte-corps">
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">1</span>
+                <span>
+                  <span class="ligne-nom">PCSI</span>
+                  <span class="ligne-detail">Première année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — PCSI -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — PCSI', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">2</span>
+                <span>
+                  <span class="ligne-nom">PC / PC*</span>
+                  <span class="ligne-detail">Deuxième année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — PC -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — PC', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">2</span>
+                <span>
+                  <span class="ligne-nom">PSI / PSI*</span>
+                  <span class="ligne-detail">Deuxième année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — PSI -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — PSI', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- ─── PTSI → PT ─── -->
+        <article
+          class="carte"
+          data-mots="ptsi pt physique technologie scientifique"
+        >
+          <div class="carte-entete">
+            <div class="carte-icone">
+              <i class="ti ti-settings-automation"></i>
+            </div>
+            <div>
+              <h3>PTSI &rarr; PT</h3>
+              <p>Physique, technologie, sciences de l'ingénieur</p>
+            </div>
+          </div>
+          <div class="carte-corps">
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">1</span>
+                <span>
+                  <span class="ligne-nom">PTSI</span>
+                  <span class="ligne-detail">Première année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — PTSI -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — PTSI', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">2</span>
+                <span>
+                  <span class="ligne-nom">PT / PT*</span>
+                  <span class="ligne-detail">Deuxième année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — PT -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — PT', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- ─── BCPST ─── -->
+        <article
+          class="carte"
+          data-mots="bcpst biologie chimie physique sciences terre veterinaire agro scientifique"
+        >
+          <div class="carte-entete">
+            <div class="carte-icone"><i class="ti ti-plant-2"></i></div>
+            <div>
+              <h3>BCPST</h3>
+              <p>Biologie, chimie, physique, sciences de la Terre</p>
+            </div>
+          </div>
+          <div class="carte-corps">
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">1</span>
+                <span>
+                  <span class="ligne-nom">BCPST 1</span>
+                  <span class="ligne-detail">Première année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — BCPST 1 -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — BCPST 1', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">2</span>
+                <span>
+                  <span class="ligne-nom">BCPST 2</span>
+                  <span class="ligne-detail">Deuxième année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — BCPST 2 -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — BCPST 2', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- ─── TSI ─── -->
+        <article
+          class="carte"
+          data-mots="tsi technologie sciences industrielles scientifique"
+        >
+          <div class="carte-entete">
+            <div class="carte-icone"><i class="ti ti-gauge"></i></div>
+            <div>
+              <h3>TSI</h3>
+              <p>Technologie et sciences industrielles</p>
+            </div>
+          </div>
+          <div class="carte-corps">
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">1</span>
+                <span>
+                  <span class="ligne-nom">TSI 1</span>
+                  <span class="ligne-detail">Première année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — TSI 1 -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — TSI 1', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">2</span>
+                <span>
+                  <span class="ligne-nom">TSI 2</span>
+                  <span class="ligne-detail">Deuxième année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — TSI 2 -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — TSI 2', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- ─── TPC ─── -->
+        <article
+          class="carte"
+          data-mots="tpc technologie physique chimie scientifique"
+        >
+          <div class="carte-entete">
+            <div class="carte-icone"><i class="ti ti-atom"></i></div>
+            <div>
+              <h3>TPC</h3>
+              <p>Technologie, physique et chimie</p>
+            </div>
+          </div>
+          <div class="carte-corps">
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">1</span>
+                <span>
+                  <span class="ligne-nom">TPC 1</span>
+                  <span class="ligne-detail">Première année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — TPC 1 -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — TPC 1', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">2</span>
+                <span>
+                  <span class="ligne-nom">TPC 2</span>
+                  <span class="ligne-detail">Deuxième année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — TPC 2 -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — TPC 2', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- ─── TB ─── -->
+        <article class="carte" data-mots="tb technologie biologie scientifique">
+          <div class="carte-entete">
+            <div class="carte-icone"><i class="ti ti-microscope"></i></div>
+            <div>
+              <h3>TB</h3>
+              <p>Technologie et biologie</p>
+            </div>
+          </div>
+          <div class="carte-corps">
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">1</span>
+                <span>
+                  <span class="ligne-nom">TB 1</span>
+                  <span class="ligne-detail">Première année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — TB 1 -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — TB 1', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">2</span>
+                <span>
+                  <span class="ligne-nom">TB 2</span>
+                  <span class="ligne-detail">Deuxième année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — TB 2 -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — TB 2', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════
+         SECTION 2 — FILIÈRES ÉCONOMIQUES ET COMMERCIALES
+         ═══════════════════════════════════════════════ -->
+      <div class="titre-section" data-section>
+        <h2>Filières économiques et commerciales</h2>
+        <span class="trait"></span>
+        <span class="compte">3 voies</span>
+      </div>
+
+      <div class="grille">
+        <!-- ─── ECG — maths approfondies ─── -->
+        <article
+          class="carte"
+          data-mots="ecg economique commerciale generale maths approfondies economique"
+        >
+          <div class="carte-entete">
+            <div class="carte-icone"><i class="ti ti-chart-line"></i></div>
+            <div>
+              <h3>ECG — maths approfondies</h3>
+              <p>Voie générale, parcours mathématiques approfondies</p>
+            </div>
+          </div>
+          <div class="carte-corps">
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">1</span>
+                <span>
+                  <span class="ligne-nom">ECG 1</span>
+                  <span class="ligne-detail">Première année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — ECG 1 maths approfondies -->
+              <button
+                class="btn-consulter"
+                onclick="
+                  ouvrirPDF('Programme — ECG 1, mathématiques approfondies', '')
+                "
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">2</span>
+                <span>
+                  <span class="ligne-nom">ECG 2</span>
+                  <span class="ligne-detail">Deuxième année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — ECG 2 maths approfondies -->
+              <button
+                class="btn-consulter"
+                onclick="
+                  ouvrirPDF('Programme — ECG 2, mathématiques approfondies', '')
+                "
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- ─── ECG — maths appliquées ─── -->
+        <article
+          class="carte"
+          data-mots="ecg economique commerciale generale maths appliquees economique"
+        >
+          <div class="carte-entete">
+            <div class="carte-icone"><i class="ti ti-chart-histogram"></i></div>
+            <div>
+              <h3>ECG — maths appliquées</h3>
+              <p>Voie générale, parcours mathématiques appliquées</p>
+            </div>
+          </div>
+          <div class="carte-corps">
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">1</span>
+                <span>
+                  <span class="ligne-nom">ECG 1</span>
+                  <span class="ligne-detail">Première année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — ECG 1 maths appliquées -->
+              <button
+                class="btn-consulter"
+                onclick="
+                  ouvrirPDF('Programme — ECG 1, mathématiques appliquées', '')
+                "
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">2</span>
+                <span>
+                  <span class="ligne-nom">ECG 2</span>
+                  <span class="ligne-detail">Deuxième année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — ECG 2 maths appliquées -->
+              <button
+                class="btn-consulter"
+                onclick="
+                  ouvrirPDF('Programme — ECG 2, mathématiques appliquées', '')
+                "
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- ─── ECT ─── -->
+        <article
+          class="carte"
+          data-mots="ect economique commerciale technologique economique"
+        >
+          <div class="carte-entete">
+            <div class="carte-icone"><i class="ti ti-chart-pie"></i></div>
+            <div>
+              <h3>ECT</h3>
+              <p>Voie technologique (bac STMG)</p>
+            </div>
+          </div>
+          <div class="carte-corps">
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">1</span>
+                <span>
+                  <span class="ligne-nom">ECT 1</span>
+                  <span class="ligne-detail">Première année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — ECT 1 -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — ECT 1', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+            <div class="ligne">
+              <div class="ligne-info">
+                <span class="pastille">2</span>
+                <span>
+                  <span class="ligne-nom">ECT 2</span>
+                  <span class="ligne-detail">Deuxième année</span>
+                </span>
+              </div>
+              <!-- LIEN À MODIFIER — ECT 2 -->
+              <button
+                class="btn-consulter"
+                onclick="ouvrirPDF('Programme de mathématiques — ECT 2', '')"
+              >
+                <i class="ti ti-eye"></i> Consulter
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- ─── ENCADRÉ D'AIDE ─── -->
+      <div class="encadre">
+        <i class="ti ti-info-circle"></i>
+        <div>
+          <h4>Comment lire un programme</h4>
+          <p>
+            Cliquez sur <strong>Consulter</strong> pour ouvrir le programme sans
+            quitter la page, puis sur <strong>Télécharger</strong> pour
+            l'enregistrer sur votre appareil.
+          </p>
+          <p>
+            Les programmes sont définis par arrêté ministériel et publiés au
+            <em>Bulletin officiel</em>. Ils sont identiques dans tous les lycées
+            de France.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="pied">
+      <!-- LIEN À MODIFIER — retour accueil -->
+      <a href="https://anasskhadir.com" class="lien-retour">
+        <i class="ti ti-arrow-left"></i> Retour à l'accueil
+      </a>
+      <span class="source"
+        >Filières conformes au Bulletin officiel n° 16 du 16 avril 2026.</span
+      >
+    </footer>
+
+    <!-- ═══════════════════════════════════════════════
+     VISIONNEUSE PDF
+     ═══════════════════════════════════════════════ -->
+    <div class="voile" id="voile" onclick="fermerPDF(event)">
+      <div
+        class="modale"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modale-titre"
+      >
+        <div class="modale-entete">
+          <div class="modale-titre">
+            <span class="badge"><i class="ti ti-file-type-pdf"></i></span>
+            <span>
+              <strong id="modale-titre">Programme</strong>
+              <small>Document officiel · PDF</small>
+            </span>
+          </div>
+          <div class="modale-actions">
+            <a
+              id="btn-onglet"
+              href="#"
+              target="_blank"
+              rel="noopener"
+              class="btn-icone"
+              title="Ouvrir dans un nouvel onglet"
+            >
+              <i class="ti ti-external-link"></i>
+            </a>
+            <a
+              id="btn-telecharger"
+              href="#"
+              class="btn-telecharger"
+              target="_blank"
+              rel="noopener"
+            >
+              <i class="ti ti-download"></i><span>Télécharger</span>
+            </a>
+            <button
+              class="btn-icone"
+              onclick="fermerPDF(null)"
+              aria-label="Fermer"
+            >
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="modale-corps">
+          <div class="chargement" id="chargement">
+            <div class="rondelle"></div>
+            <p>Chargement du programme…</p>
+          </div>
+          <div class="etat-vide" id="etat-vide">
+            <i class="ti ti-file-off"></i>
+            <p>
+              Ce programme n'est pas encore en ligne. Il sera ajouté
+              prochainement.
+            </p>
+          </div>
+          <iframe
+            id="cadre-pdf"
+            src=""
+            title="Programme officiel"
+            style="display: none"
+          ></iframe>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* ══════════════════════════════════════════════════════════════
+   COMMENT AJOUTER UN PROGRAMME
+
+   Chaque bouton contient un appel de la forme :
+       ouvrirPDF('Titre affiché', 'LIEN')
+
+   Dans 'LIEN', vous pouvez mettre au choix :
+
+   1) Un lien Google Drive complet
+      https://drive.google.com/file/d/ABC123XYZ/view?usp=sharing
+      (pensez à passer le partage sur « Tout le monde avec le lien »)
+
+   2) Un identifiant Drive seul
+      ABC123XYZ
+
+   3) L'adresse directe d'un PDF
+      https://www.education.gouv.fr/.../programme-MP.pdf
+
+   Laissez '' (deux apostrophes) tant que le fichier n'est pas prêt :
+   le visiteur verra un message « pas encore en ligne » au lieu d'une erreur.
+   ══════════════════════════════════════════════════════════════ */
+
+      function estUnPdfDirect(lien) {
+        return /^https?:\/\//i.test(lien) && !/drive\.google\.com/i.test(lien);
+      }
+
+      function extraireIdDrive(lien) {
+        var trouve = lien.match(/\/d\/([a-zA-Z0-9_-]+)/); // lien complet
+        if (trouve) return trouve[1];
+        trouve = lien.match(/[?&]id=([a-zA-Z0-9_-]+)/); // ancien format
+        if (trouve) return trouve[1];
+        return lien; // identifiant brut
+      }
+
+      function ouvrirPDF(titre, lien) {
+        var voile = document.getElementById("voile");
+        var cadre = document.getElementById("cadre-pdf");
+        var chargement = document.getElementById("chargement");
+        var vide = document.getElementById("etat-vide");
+        var btnDl = document.getElementById("btn-telecharger");
+        var btnOnglet = document.getElementById("btn-onglet");
+
+        document.getElementById("modale-titre").textContent = titre;
+        voile.classList.add("ouvert");
+        document.body.style.overflow = "hidden";
+
+        /* Aucun lien renseigné → état vide, pas d'erreur */
+        if (!lien || !lien.trim()) {
+          cadre.src = "";
+          cadre.style.display = "none";
+          chargement.classList.add("cache");
+          vide.style.display = "flex";
+          btnDl.style.display = "none";
+          btnOnglet.style.display = "none";
+          return;
+        }
+
+        vide.style.display = "none";
+        btnDl.style.display = "";
+        btnOnglet.style.display = "";
+        chargement.classList.remove("cache");
+        cadre.style.display = "none";
+
+        var urlApercu, urlTelechargement, urlOnglet;
+
+        if (estUnPdfDirect(lien)) {
+          urlApercu = urlTelechargement = urlOnglet = lien;
+        } else {
+          var id = extraireIdDrive(lien);
+          urlApercu = "https://drive.google.com/file/d/" + id + "/preview";
+          urlTelechargement =
+            "https://drive.google.com/uc?export=download&id=" + id;
+          urlOnglet = "https://drive.google.com/file/d/" + id + "/view";
+        }
+
+        btnDl.href = urlTelechargement;
+        btnOnglet.href = urlOnglet;
+
+        cadre.onload = function () {
+          chargement.classList.add("cache");
+          cadre.style.display = "block";
+        };
+        cadre.src = urlApercu;
+      }
+
+      function fermerPDF(evenement) {
+        /* On ferme au clic sur le fond ou sur la croix, pas à l'intérieur de la modale */
+        if (evenement && evenement.target !== document.getElementById("voile"))
+          return;
+
+        document.getElementById("voile").classList.remove("ouvert");
+        var cadre = document.getElementById("cadre-pdf");
+        cadre.src = "";
+        cadre.style.display = "none";
+        document.getElementById("chargement").classList.remove("cache");
+        document.getElementById("etat-vide").style.display = "none";
+        document.body.style.overflow = "";
+      }
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") fermerPDF(null);
+      });
+
+      /* ══════════════════════════════════════════════════════════════
+   RECHERCHE : masque les cartes qui ne correspondent pas
+   ══════════════════════════════════════════════════════════════ */
+      document
+        .getElementById("recherche")
+        .addEventListener("input", function (e) {
+          var terme = e.target.value.trim().toLowerCase();
+          var cartes = document.querySelectorAll(".carte");
+          var visibles = 0;
+
+          cartes.forEach(function (carte) {
+            var contenu = (
+              carte.dataset.mots +
+              " " +
+              carte.textContent
+            ).toLowerCase();
+            var trouve = contenu.indexOf(terme) !== -1;
+            carte.classList.toggle("masquee", !trouve);
+            if (trouve) visibles++;
+          });
+
+          /* On masque aussi les titres de section et l'encadré pendant une recherche */
+          var enRecherche = terme.length > 0;
+          document.querySelectorAll("[data-section]").forEach(function (titre) {
+            titre.style.display = enRecherche ? "none" : "";
+          });
+          document.querySelector(".encadre").style.display = enRecherche
+            ? "none"
+            : "";
+          document.getElementById("aucun-resultat").style.display =
+            visibles === 0 ? "block" : "none";
+        });
+    </script>
+  </body>
+</html>
