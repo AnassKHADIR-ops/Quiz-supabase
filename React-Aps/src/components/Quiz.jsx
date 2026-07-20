@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import MathText from "./MathText.jsx";
 import Results from "./Results.jsx";
 import { examsApi, resultsApi } from "../api.js";
+import { useAuth } from "../context/AuthContext.jsx";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, Clock, ClipboardList, HelpCircle, Hourglass, Inbox, ListIcon, PlayCircle, X, Zap } from "./Icon.jsx";
 
 // Durée totale de l'examen : celle fixée par le professeur (duration_minutes),
@@ -13,6 +14,24 @@ const formatDuration = (sec) => {
   const s = sec % 60;
   if (m === 0) return `${s} s`;
   return s > 0 ? `${m} min ${s} s` : `${m} min`;
+};
+
+// Persistance locale de la progression : survit à un rafraîchissement de page.
+// On y stocke soit une tentative en cours (réponses + heure de départ), soit
+// l'id du résultat déjà soumis, pour rouvrir directement l'écran de correction.
+const loadProgress = (key) => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+const saveProgress = (key, data) => {
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* stockage indisponible, tant pis */ }
+};
+const clearProgress = (key) => {
+  try { localStorage.removeItem(key); } catch { /* rien à faire */ }
 };
 /* ─────────────────────────────────────────
    Panneau latéral — toutes les questions
@@ -120,7 +139,7 @@ function ExamStartScreen({ exam, onStart, onBack }) {
     "Naviguer entre les questions ne réinitialise PAS le chronomètre.",
     "À la fin du temps, l'examen est soumis automatiquement.",
     "Aucune modification n'est possible après la soumission.",
-    "Les questions sans réponse comptent comme incorrectes.",
+    "Vous pouvez soumettre sans répondre à toutes les questions ; vous choisirez ensuite d'afficher votre score sur l'examen entier ou seulement sur vos réponses.",
   ];
   return (
     <div className="page-narrow" style={{ textAlign: "center", paddingTop: 60 }}>
@@ -167,6 +186,8 @@ function ExamStartScreen({ exam, onStart, onBack }) {
 function Quiz() {
   const { examId } = useParams();
   const navigate   = useNavigate();
+  const { user }   = useAuth();
+  const storageKey = `quiz_progress:${user?.id || "anon"}:${examId}`;
 
   const [exam,      setExam]      = useState(null);
   const [loading,   setLoading]   = useState(true);
@@ -189,16 +210,55 @@ function Quiz() {
   const examRef    = useRef(null);
 
   useEffect(() => {
-    examsApi.get(examId)
-      .then((data) => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await examsApi.get(examId);
+        if (cancelled) return;
         setExam(data);
         examRef.current = data;
-        setAnswers(Array(data.questions.length).fill(null));
-        answersRef.current = Array(data.questions.length).fill(null);
-        setTimeLeft(examTotalSeconds(data));
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+
+        const saved = loadProgress(storageKey);
+
+        // Une soumission a déjà eu lieu pour cette tentative : rouvrir directement la correction.
+        if (saved?.submittedResultId) {
+          try {
+            const details = await resultsApi.details(saved.submittedResultId);
+            if (cancelled) return;
+            setAnswers(Array(data.questions.length).fill(null));
+            setResult(details);
+            setSubmitted(true);
+            setStarted(true);
+            return;
+          } catch {
+            clearProgress(storageKey); // résultat introuvable (supprimé...) → repartir de zéro
+          }
+        }
+
+        // Une tentative était en cours : la restaurer (le temps continue de s'écouler
+        // pendant l'absence — on le recalcule à partir de l'heure de départ réelle).
+        if (saved?.started && Array.isArray(saved.answers) && saved.answers.length === data.questions.length) {
+          const elapsed = Math.max(0, Math.floor((Date.now() - new Date(saved.startedAt).getTime()) / 1000));
+          answersRef.current = saved.answers;
+          setAnswers(saved.answers);
+          setCurrent(Math.min(saved.current || 0, data.questions.length - 1));
+          startedAt.current = saved.startedAt;
+          setTimeLeft(Math.max(0, examTotalSeconds(data) - elapsed));
+          setStarted(true);
+        } else {
+          const fresh = Array(data.questions.length).fill(null);
+          answersRef.current = fresh;
+          setAnswers(fresh);
+          setTimeLeft(examTotalSeconds(data));
+        }
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [examId]);
 
   /* ── Soumission (stable, ne dépend que des refs) ── */
@@ -210,7 +270,7 @@ function Quiz() {
 
     setSaving(true);
     try {
-      // 1) Soumettre l'examen
+      // 1) Soumettre l'examen (les questions sans réponse partent avec une liste vide)
       const submitted = await resultsApi.submit({
         // Supabase uses UUID exam IDs; converting them with Number() produces null.
         exam_id: ex.id,
@@ -224,12 +284,14 @@ function Quiz() {
       const details = await resultsApi.details(submitted.id);
       setResult(details);
       setSubmitted(true);
+      // On ne garde que l'id du résultat : un refresh rouvrira la correction, pas l'examen.
+      saveProgress(storageKey, { submittedResultId: submitted.id });
     } catch (err) {
       setSaveError(err.message);
     } finally {
       setSaving(false);
     }
-  }, [examId]);
+  }, [examId, storageKey]);
 
   /* ── Lancer le timer UNE SEULE FOIS au démarrage ── */
   useEffect(() => {
@@ -258,9 +320,25 @@ function Quiz() {
     updated[current] = choiceId;
     answersRef.current = updated;
     setAnswers([...updated]);
+    saveProgress(storageKey, { started: true, startedAt: startedAt.current, answers: updated, current });
   };
 
-  const handleManualSubmit = () => doSubmit();
+  // Changer de question sauvegarde aussi la position courante, pour reprendre au bon endroit après un refresh.
+  const goToQuestion = (index) => {
+    setCurrent(index);
+    saveProgress(storageKey, { started: true, startedAt: startedAt.current, answers: answersRef.current, current: index });
+  };
+
+  const handleManualSubmit = () => {
+    if (!answers.every((a) => a !== null)) {
+      const remaining = exam.questions.length - answers.filter((a) => a !== null).length;
+      const ok = window.confirm(
+        `Il vous reste ${remaining} question(s) sans réponse. Elles ne seront pas comptées comme correctes. Soumettre quand même ?`
+      );
+      if (!ok) return;
+    }
+    doSubmit();
+  };
 
   const handleRetry = () => {
     clearInterval(timerRef.current);
@@ -273,6 +351,7 @@ function Quiz() {
     setCurrent(0);
     setTimeLeft(examTotalSeconds(exam));
     setStarted(false);
+    clearProgress(storageKey);
   };
 
   /* ── Rendu ── */
@@ -309,8 +388,10 @@ function Quiz() {
     <ExamStartScreen
       exam={exam}
       onStart={() => {
-        startedAt.current = new Date().toISOString();
+        const now = new Date().toISOString();
+        startedAt.current = now;
         setStarted(true);
+        saveProgress(storageKey, { started: true, startedAt: now, answers: answersRef.current, current });
       }}
       onBack={() => navigate("/")}
     />
@@ -341,8 +422,16 @@ function Quiz() {
           </p>
         </div>
 
-        {/* Timer — ne se réinitialise PAS au changement de question */}
-        <GlobalTimer secondsLeft={timeLeft} totalSeconds={totalSeconds} />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
+          {/* Timer — ne se réinitialise PAS au changement de question */}
+          <GlobalTimer secondsLeft={timeLeft} totalSeconds={totalSeconds} />
+          {/* Disponible à tout moment : l'étudiant n'a pas besoin d'atteindre la dernière question pour soumettre */}
+          <button className="btn btn-success btn-sm" onClick={handleManualSubmit} disabled={saving}>
+            {saving
+              ? <><span className="spinner" style={{ width: 12, height: 12, borderWidth: 2, borderTopColor: "white" }} /> Envoi…</>
+              : <><Check size={14} /> Soumettre</>}
+          </button>
+        </div>
       </div>
 
       {/* Barre de progression globale */}
@@ -357,7 +446,7 @@ function Quiz() {
             <button
               key={i}
               className={`qnav-dot ${i === current ? "current" : answers[i] !== null ? "answered" : ""}`}
-              onClick={() => setCurrent(i)}
+              onClick={() => goToQuestion(i)}
             >
               {i + 1}
             </button>
@@ -374,7 +463,7 @@ function Quiz() {
         questions={exam.questions}
         current={current}
         answers={answers}
-        onJump={(i) => { setCurrent(i); setNavOpen(false); }}
+        onJump={(i) => { goToQuestion(i); setNavOpen(false); }}
       />
 
       {/* Carte question */}
@@ -404,21 +493,21 @@ function Quiz() {
       <div className="quiz-footer">
         <button
           className="btn btn-secondary"
-          onClick={() => setCurrent((c) => c - 1)}
+          onClick={() => goToQuestion(current - 1)}
           disabled={current === 0}
         >
           <ArrowLeft size={16} /> Précédent
         </button>
 
         {!isLast ? (
-          <button className="btn btn-primary" onClick={() => setCurrent((c) => c + 1)}>
+          <button className="btn btn-primary" onClick={() => goToQuestion(current + 1)}>
             Suivant <ArrowRight size={16} />
           </button>
         ) : (
           <button
             className="btn btn-success"
             onClick={handleManualSubmit}
-            disabled={!allAnswered || saving}
+            disabled={saving}
           >
             {saving
               ? <><span className="spinner" style={{ width: 14, height: 14, borderWidth: 2, borderTopColor: "white" }} /> Envoi…</>
@@ -430,7 +519,7 @@ function Quiz() {
       {saveError && <p className="error-msg" style={{ marginTop: 12 }}>{saveError}</p>}
       {!allAnswered && isLast && (
         <p className="hint" style={{ marginTop: 12, textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-          <AlertTriangle size={14} /> Répondez à toutes les questions avant de soumettre.
+          <AlertTriangle size={14} /> {exam.questions.length - answeredCount} question(s) sans réponse — vous pourrez choisir comment elles comptent dans votre score après soumission.
         </p>
       )}
     </div>

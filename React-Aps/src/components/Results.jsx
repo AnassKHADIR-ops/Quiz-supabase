@@ -74,7 +74,18 @@ function ScoreCircle({ percentage }) {
 function Results({ exam, result, onRetry, saveError, studentName, onBack, onDelete }) {
   const navigate = useNavigate();
   const [activeVideo, setActiveVideo] = useState(null);
-  const { score, total, percentage } = result;
+
+  // Les réponses viennent directement de details — elles ont choices + is_correct
+  const allAnswers = result.answers || [];
+  const answeredOnly = allAnswers.filter((a) => (a.selected_choice_ids || []).length > 0);
+  const hasUnanswered = answeredOnly.length < allAnswers.length;
+
+  // Si tout a été répondu, les deux modes sont identiques : pas besoin de choix.
+  const [scoreMode, setScoreMode] = useState("all"); // "all" | "answered"
+  const answers    = hasUnanswered && scoreMode === "answered" ? answeredOnly : allAnswers;
+  const total      = answers.length;
+  const score      = answers.filter((a) => a.is_correct).length;
+  const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
 
   let grade = "À améliorer";
   let gradeClass = "grade-fail";
@@ -83,11 +94,55 @@ function Results({ exam, result, onRetry, saveError, studentName, onBack, onDele
   else if (percentage >= 75) { grade = "Très bien";  gradeClass = "grade-good"; GradeIcon = Award; }
   else if (percentage >= 50) { grade = "Passable";   gradeClass = "grade-pass"; GradeIcon = Check; }
 
-  // Les réponses viennent directement de details — elles ont choices + is_correct
-  const answers = result.answers || [];
-
   return (
     <div className="page-narrow">
+      {/* ── Actions (en haut, accessibles sans avoir à défiler) ── */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
+        {onRetry && (
+          <>
+            <button className="btn btn-primary btn-lg" onClick={onRetry}>
+              <RefreshCw size={16} /> Recommencer
+            </button>
+            <button className="btn btn-secondary btn-lg" onClick={() => navigate("/")}>
+              <ArrowLeft size={16} /> Retour aux examens
+            </button>
+          </>
+        )}
+        {onBack && (
+          <button className="btn btn-secondary btn-lg" onClick={onBack}>
+            <ArrowLeft size={16} /> Retour
+          </button>
+        )}
+        {onDelete && (
+          <button className="btn btn-danger btn-lg" onClick={onDelete}>
+            <Trash size={16} /> Supprimer cette soumission
+          </button>
+        )}
+      </div>
+
+      {/* ── Choix du mode de score (seulement si des questions sont restées sans réponse) ── */}
+      {hasUnanswered && (
+        <div className="card" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, justifyContent: "space-between", marginBottom: 16, padding: "14px 18px" }}>
+          <span style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
+            {answeredOnly.length} / {allAnswers.length} questions répondues — comment afficher le score ?
+          </span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              className={`btn btn-sm ${scoreMode === "all" ? "btn-primary" : "btn-secondary"}`}
+              onClick={() => setScoreMode("all")}
+            >
+              Sur les {allAnswers.length} questions
+            </button>
+            <button
+              className={`btn btn-sm ${scoreMode === "answered" ? "btn-primary" : "btn-secondary"}`}
+              onClick={() => setScoreMode("answered")}
+            >
+              Sur les {answeredOnly.length} répondues
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Hero score ── */}
       <div className="card results-hero">
         <div className="score-circle-wrap">
@@ -177,30 +232,6 @@ function Results({ exam, result, onRetry, saveError, studentName, onBack, onDele
       )}
 
       {activeVideo && <VideoModal url={activeVideo} onClose={() => setActiveVideo(null)} />}
-
-      {/* ── Actions ── */}
-      <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-        {onRetry && (
-          <>
-            <button className="btn btn-primary btn-lg" onClick={onRetry}>
-              <RefreshCw size={16} /> Recommencer
-            </button>
-            <button className="btn btn-secondary btn-lg" onClick={() => navigate("/")}>
-              <ArrowLeft size={16} /> Retour aux examens
-            </button>
-          </>
-        )}
-        {onBack && (
-          <button className="btn btn-secondary btn-lg" onClick={onBack}>
-            <ArrowLeft size={16} /> Retour
-          </button>
-        )}
-        {onDelete && (
-          <button className="btn btn-danger btn-lg" onClick={onDelete}>
-            <Trash size={16} /> Supprimer cette soumission
-          </button>
-        )}
-      </div>
     </div>
   );
 }
