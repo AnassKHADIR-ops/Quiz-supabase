@@ -191,16 +191,26 @@ le SQL avant de l'exécuter.
 
 ---
 
-## 8. Rôles utilisateurs
+## 8. Rôles et Système d'Accès Privé (Modèle d'approbation)
 
-- **student** (par défaut à l'inscription) : passe les QCM, voit ses résultats.
-- **teacher** : accède en plus à `/management` (créer écoles/matières/QCM,
-  rédiger les questions) et `/dashboard`.
+La plateforme est **privée** : l'inscription seule ne donne pas accès aux contenus.
 
-Pour promouvoir un compte en professeur (une fois qu'il existe) :
+### Statuts d'un utilisateur :
+- **`pending`** (par défaut à l'inscription) : le compte est créé mais ne peut accéder à aucun examen ni matière. Un écran d'attente s'affiche.
+- **`approved`** : accès autorisé par l'administrateur. L'utilisateur peut passer les examens et consulter ses résultats.
+- **`rejected`** : demande refusée par l'administrateur.
+- **`revoked`** : accès retiré immédiatement par l'administrateur (même avec une session active).
+
+### Rôles :
+- **`student`** (par défaut) : utilisateur standard accédant aux QCM une fois validé.
+- **`teacher` / `admin`** : administrateur de la plateforme. Accède au tableau de bord (`/dashboard`) pour gérer les demandes d'accès et au panneau de gestion (`/management`).
+
+Pour promouvoir un compte en administrateur / professeur :
 
 ```sql
-update public.profiles set role = 'teacher' where email = 'quelquun@example.com';
+update public.profiles
+set role = 'teacher', status = 'approved', approved_at = now()
+where email = 'anass.khadir@usmba.ac.ma';
 ```
 
 (à exécuter dans le SQL Editor Supabase).

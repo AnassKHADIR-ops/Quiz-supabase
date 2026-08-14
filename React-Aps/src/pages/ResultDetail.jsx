@@ -8,7 +8,7 @@ function ResultDetail() {
   const { resultId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isTeacher = user?.role === "teacher";
+  const isTeacher = user?.role === "teacher" || user?.role === "admin";
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

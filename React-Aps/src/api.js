@@ -1,7 +1,19 @@
 import { supabase } from "./lib/supabase.js";
 
 function message(error) {
-  return error?.message || "Une erreur est survenue. Réessayez.";
+  if (!error) return "Une erreur est survenue. Réessayez.";
+  const msg = error.message || error.error_description || String(error);
+  
+  if (msg.includes("User already registered") || msg.includes("already exists")) {
+    return "Cette adresse e-mail est déjà associée à un compte.";
+  }
+  if (msg.includes("Invalid login credentials") || msg.includes("invalid_credentials")) {
+    return "Adresse e-mail ou mot de passe incorrect.";
+  }
+  if (msg.includes("Password should be at least")) {
+    return "Le mot de passe doit comporter au moins 6 caractères.";
+  }
+  return msg;
 }
 
 async function rpc(name, args = {}) {
@@ -13,19 +25,22 @@ async function rpc(name, args = {}) {
 // Auth
 export const authApi = {
   async register(name, email, password) {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: cleanEmail,
       password,
-      options: { data: { full_name: name } },
+      options: { data: { full_name: cleanName } },
     });
     if (error) throw new Error(message(error));
     if (!data.session) {
-      throw new Error("Compte créé. Vérifiez votre e-mail pour confirmer votre inscription.");
+      throw new Error("Votre inscription a été enregistrée. Elle est en attente d'approbation par l'administrateur.");
     }
     return authApi.me();
   },
   async login(email, password) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const cleanEmail = email.trim().toLowerCase();
+    const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
     if (error) throw new Error(message(error));
     return authApi.me();
   },
@@ -34,13 +49,35 @@ export const authApi = {
     if (error || !user) throw new Error("Session expirée. Connectez-vous de nouveau.");
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, email, role")
+      .select("id, full_name, email, role, status, approved_at, revoked_at, created_at, updated_at")
       .eq("id", user.id)
       .single();
     if (profileError) throw new Error(message(profileError));
-    return { user: { id: profile.id, name: profile.full_name, email: profile.email, role: profile.role } };
+    return {
+      user: {
+        id: profile.id,
+        name: profile.full_name,
+        email: profile.email,
+        role: profile.role,
+        status: profile.status || "pending",
+        approved_at: profile.approved_at,
+        revoked_at: profile.revoked_at,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at,
+      },
+    };
   },
   logout: () => supabase.auth.signOut(),
+};
+
+// Users & Access Management (Admin/Teacher)
+export const usersApi = {
+  list: () => rpc("get_users_list"),
+  approve: (userId) => rpc("approve_user", { p_user_id: userId }),
+  reject: (userId) => rpc("reject_user", { p_user_id: userId }),
+  revoke: (userId) => rpc("revoke_user", { p_user_id: userId }),
+  restore: (userId) => rpc("restore_user", { p_user_id: userId }),
+  deleteAccess: (userId) => rpc("delete_user_access", { p_user_id: userId }),
 };
 
 // Exams
@@ -89,5 +126,26 @@ export const resultsApi = {
   forExam: (examId) => rpc("get_exam_results", { p_exam_id: examId }),
   details: (resultId) => rpc("get_result_details", { p_result_id: resultId }),
   deleteResult: (resultId) => rpc("delete_result", { p_result_id: resultId }),
+  deleteBulkResults: async (resultIds) => {
+    try {
+      return await rpc("delete_bulk_results", { p_result_ids: resultIds });
+    } catch {
+      // Fallback if bulk RPC is not yet migrated
+      await Promise.all(resultIds.map((id) => rpc("delete_result", { p_result_id: id })));
+      return resultIds.length;
+    }
+  },
+  deleteForExam: async (examId) => {
+    try {
+      return await rpc("delete_exam_results", { p_exam_id: examId });
+    } catch {
+      // Fallback
+      const res = await rpc("get_exam_results", { p_exam_id: examId });
+      if (res && res.length > 0) {
+        await Promise.all(res.map((r) => rpc("delete_result", { p_result_id: r.id })));
+      }
+      return res?.length || 0;
+    }
+  },
   studentAnalytics: (studentId) => rpc("get_student_analytics", { p_student_id: studentId }),
 };

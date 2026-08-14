@@ -31,7 +31,7 @@ function StudentProfile() {
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(null);
 
-  const isTeacher = user?.role === "teacher";
+  const isTeacher = user?.role === "teacher" || user?.role === "admin";
 
   const load = () => {
     setLoading(true);

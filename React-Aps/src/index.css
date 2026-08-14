@@ -362,7 +362,7 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   box-shadow: var(--shadow-sm);
-  transition: border-color .15s, box-shadow .15s, transform .15s;
+  transition: border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -370,13 +370,23 @@ a:hover { text-decoration: underline; }
   text-decoration: none;
   color: inherit;
   position: relative;
+  overflow: hidden;
 }
 
 .exam-card:hover {
-  box-shadow: var(--shadow);
-  transform: translateY(-2px);
+  box-shadow: 0 16px 32px -8px rgba(67, 97, 238, 0.16), 0 0 0 1px var(--primary);
+  transform: translateY(-5px);
   border-color: var(--primary);
   text-decoration: none;
+}
+
+.exam-card:active {
+  transform: translateY(-2px) scale(0.99);
+}
+
+.exam-card--highlighted {
+  border: 2px solid var(--primary);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
 }
 
 .exam-card-icon {
@@ -1174,3 +1184,380 @@ a:hover { text-decoration: underline; }
   background: rgba(15,22,41,.6);
   border-color: rgba(255,255,255,.08);
 }
+
+/* ════════════════════════════════════════
+   USER ACCESS & APPROVAL MANAGEMENT
+   ════════════════════════════════════════ */
+.user-mgmt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.user-mgmt-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.user-stat-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.user-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.user-stat-icon.pending {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+.user-stat-icon.approved {
+  background: var(--success-light);
+  color: var(--success);
+}
+.user-stat-icon.rejected {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+.user-stat-icon.total {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.user-stat-info .stat-num {
+  font-size: 1.4rem;
+  font-weight: 800;
+  font-family: 'Outfit', sans-serif;
+  color: var(--text);
+  line-height: 1.2;
+}
+.user-stat-info .stat-title {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.user-search-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.user-search-input {
+  flex: 1 1 240px;
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+}
+.user-search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.user-filter-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.user-filter-pill {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  padding: 6px 13px;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.user-filter-pill:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.user-filter-pill.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.user-filter-pill .pill-count {
+  background: rgba(255,255,255,0.25);
+  padding: 1px 6px;
+  border-radius: 99px;
+  font-size: 0.7rem;
+}
+.user-filter-pill:not(.active) .pill-count {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.pending-banner {
+  background: var(--warning-light);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.pending-banner-text {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.user-cards-grid {
+  display: grid;
+  gap: 12px;
+}
+.user-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: transform .12s, box-shadow .12s;
+}
+.user-item-card:hover {
+  box-shadow: var(--shadow-sm);
+}
+.user-item-card.pending-highlight {
+  border-color: var(--warning);
+  background: var(--surface-2);
+}
+.user-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.user-avatar-lg {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 0.95rem;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.user-item-details {
+  min-width: 0;
+}
+.user-item-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.user-item-email {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin-top: 2px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.user-item-date {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+.user-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.nav-pending-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warning);
+  margin-left: 4px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.approval-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-lg);
+}
+
+/* Mode Selection & Question Badges */
+.active-mode-card {
+  box-shadow: 0 4px 18px rgba(67, 97, 238, 0.15);
+  transform: translateY(-2px);
+}
+
+.choice:hover .choice-badge-letter {
+  background: var(--primary);
+  color: white !important;
+}
+
+/* ════════════════════════════════════════
+   A4 PRINT & PDF EXPORT STYLES
+   ════════════════════════════════════════ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0mm; /* Supprime automatiquement l'heure, le titre et l'URL injectés par le navigateur */
+  }
+
+  *, *::before, *::after {
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+
+  /* 1. Hide the entire React SPA root */
+  #root {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 10pt !important;
+    line-height: 1.45 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 2. Print portal container */
+  .print-portal-root {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-portal-root .modal-backdrop {
+    display: block !important;
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    inset: auto !important;
+  }
+
+  .print-portal-root .print-modal-card {
+    display: block !important;
+    position: static !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  /* 3. Hide interactive controls */
+  .print-controls,
+  .print-actions-toolbar,
+  .navbar,
+  .btn,
+  .theme-toggle,
+  .qnav-drawer,
+  .qnav-drawer-backdrop {
+    display: none !important;
+  }
+
+  /* 4. Document container avec marges A4 internes nettes */
+  .print-document-container {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    padding: 14mm 14mm 14mm 14mm !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 5. Page breaks */
+  .print-header,
+  .print-student-box {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-question-block {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+    margin-bottom: 14px !important;
+    padding: 12px 14px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    background: #ffffff !important;
+  }
+
+  .print-choice-item {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* KaTeX crisp print rendering */
+  .katex {
+    font-size: 1.05em !important;
+  }
+  .katex-display {
+    overflow: visible !important;
+    margin: 0.5em 0 !important;
+  }
+}
+
