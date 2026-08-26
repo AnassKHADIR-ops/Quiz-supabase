@@ -411,14 +411,38 @@ export function getInitialCurriculumData() {
 /**
  * Fetches the latest live courses data from the WordPress REST API.
  */
-export async function syncCoursesFromWordPress(customUrl = null) {
+export async function syncCoursesFromWordPress(customUrl = null, force = false) {
+  // Check smart cache TTL (5 minutes) if not forced
+  if (!force) {
+    const lastSynced = getStorageItem(CACHE_TIMESTAMP_KEY);
+    if (lastSynced) {
+      const elapsed = Date.now() - new Date(lastSynced).getTime();
+      const TTL = 5 * 60 * 1000; // 5 minutes
+      if (elapsed < TTL) {
+        const cached = getStorageItem(CACHE_KEY);
+        if (cached) {
+          try {
+            return {
+              success: true,
+              curriculum: JSON.parse(cached),
+              lastSynced,
+              fromCache: true,
+            };
+          } catch {
+            // Re-fetch on parse error
+          }
+        }
+      }
+    }
+  }
+
   const baseUrl =
     customUrl ||
     (typeof import.meta !== "undefined" && import.meta.env?.VITE_WP_API_URL) ||
     (typeof window !== "undefined" && window.__WP_API_URL__) ||
     "https://anasskhadir.com/wp-json/wp/v2";
 
-  const fetchUrl = `${baseUrl}/pages?per_page=100&_t=${Date.now()}`;
+  const fetchUrl = `${baseUrl}/pages?per_page=50&_fields=id,slug,title,content.rendered&_t=${Date.now()}`;
 
   try {
     const response = await fetch(fetchUrl, {

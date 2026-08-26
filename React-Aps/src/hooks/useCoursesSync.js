@@ -10,11 +10,11 @@ export function useCoursesSync(customWpUrl = null) {
   const [syncError, setSyncError] = useState(null);
 
   const refreshSync = useCallback(
-    async (url = null) => {
+    async (url = null, force = true) => {
       setIsSyncing(true);
       setSyncError(null);
 
-      const result = await syncCoursesFromWordPress(url || customWpUrl);
+      const result = await syncCoursesFromWordPress(url || customWpUrl, force);
 
       if (result.success && result.curriculum) {
         setState({
@@ -32,9 +32,9 @@ export function useCoursesSync(customWpUrl = null) {
     [customWpUrl]
   );
 
-  // Background auto-sync on mount
+  // Background auto-sync on mount (non-forced, uses smart TTL)
   useEffect(() => {
-    refreshSync();
+    refreshSync(null, false);
   }, [refreshSync]);
 
   return {

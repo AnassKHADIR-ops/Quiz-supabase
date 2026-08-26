@@ -1,20 +1,33 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { initScrollAnimations } from "./hooks/useScrollAnimation.js";
 import { useTheme } from "./hooks/useTheme.js";
 import Navbar from "./components/Navbar.jsx";
-import Quiz from "./components/Quiz.jsx";
-import Login from "./components/Login.jsx";
-import Signup from "./components/Signup.jsx";
-import Dashboard from "./components/Dashboard.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
-import Home from "./pages/Home.jsx";
-import StudentProfile from "./pages/StudentProfile.jsx";
-import Management from "./pages/Management.jsx";
-import QcmEditor from "./pages/QcmEditor.jsx";
-import ResultDetail from "./pages/ResultDetail.jsx";
-import Courses from "./pages/Courses.jsx";
-import Passerelle from "./pages/Passerelle.jsx";
+
+const Login = lazy(() => import("./components/Login.jsx"));
+const Signup = lazy(() => import("./components/Signup.jsx"));
+const Quiz = lazy(() => import("./components/Quiz.jsx"));
+const Dashboard = lazy(() => import("./components/Dashboard.jsx"));
+const Home = lazy(() => import("./pages/Home.jsx"));
+const StudentProfile = lazy(() => import("./pages/StudentProfile.jsx"));
+const Management = lazy(() => import("./pages/Management.jsx"));
+const QcmEditor = lazy(() => import("./pages/QcmEditor.jsx"));
+const ResultDetail = lazy(() => import("./pages/ResultDetail.jsx"));
+const Courses = lazy(() => import("./pages/Courses.jsx"));
+const Passerelle = lazy(() => import("./pages/Passerelle.jsx"));
+
+function PageLoader() {
+  return (
+    <div style={{ minHeight: "70vh", display: "grid", placeItems: "center" }}>
+      <div style={{ textAlign: "center" }}>
+        <span className="spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
+        <p style={{ marginTop: 14, color: "var(--text-muted)", fontSize: "0.88rem" }}>Chargement...</p>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const location = useLocation();
@@ -29,7 +42,8 @@ function App() {
   return (
     <>
       <Navbar />
-      <Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route
@@ -99,6 +113,7 @@ function App() {
         <Route path="/management" element={<ProtectedRoute teacherOnly><Management /></ProtectedRoute>} />
         <Route path="/management/qcm/:examId" element={<ProtectedRoute teacherOnly><QcmEditor /></ProtectedRoute>} />
       </Routes>
+      </Suspense>
     </>
   );
 }
