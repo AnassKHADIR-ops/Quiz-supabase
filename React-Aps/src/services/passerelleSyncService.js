@@ -68,12 +68,35 @@ export function parsePasserellePayload(payloadText) {
   if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
     try {
       const parsed = JSON.parse(trimmed);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        // If it's a list of WP pages, look for passerelle content
+        if (parsed.length > 0 && parsed[0].content?.rendered) {
+          return parsePasserellePayload(parsed[0].content.rendered);
+        }
+        return parsed;
+      }
       if (parsed && Array.isArray(parsed.filieres)) return parsed.filieres;
       if (parsed && Array.isArray(parsed.data)) return parsed.data;
+      if (parsed && parsed.content?.rendered) {
+        return parsePasserellePayload(parsed.content.rendered);
+      }
     } catch (e) {
       // Continue to HTML parsing
     }
+  }
+
+  // Check for JavaScript variables in Elementor (var DATA = ... or var PASSERELLE_DATA = ...)
+  try {
+    const varMatch = payloadText.match(/(?:var|let|const)\s+(?:DATA|PASSERELLE_DATA)\s*=\s*([\s\S]*?);/i);
+    if (varMatch && varMatch[1]) {
+      const fn = new Function(`return (${varMatch[1].trim()});`);
+      const evaluated = fn();
+      if (Array.isArray(evaluated)) return evaluated;
+      if (evaluated && Array.isArray(evaluated.filieres)) return evaluated.filieres;
+      if (evaluated && Array.isArray(evaluated.chapitres)) return evaluated.chapitres;
+    }
+  } catch (e) {
+    // Continue to DOM parsing
   }
 
   // Parse HTML for <script id="passerelle-data" ...>

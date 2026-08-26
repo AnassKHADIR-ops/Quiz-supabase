@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { CPGE_CURRICULUM } from "../data/coursesBranchesData.js";
+import { useCoursesSync } from "../hooks/useCoursesSync.js";
 import SecureVideoModal from "../components/SecureVideoModal.jsx";
 import {
   getDriveImageUrls,
@@ -32,7 +32,8 @@ import {
   Trophy,
   Award,
   ChevronDown,
-  X
+  X,
+  RefreshCw
 } from "../components/Icon.jsx";
 
 const CATEGORIES = [
@@ -467,12 +468,15 @@ function Courses() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Dynamic live synchronization from WordPress
+  const { curriculum, isSyncing, isLive, lastSynced, refreshSync } = useCoursesSync();
+
   // Selected Year: "annee1" (Sup) or "annee2" (Spé)
   const initialYear = searchParams.get("annee") === "2" ? "annee2" : "annee1";
   const [selectedYear, setSelectedYear] = useState(initialYear);
 
   // Selected Branch (filière)
-  const yearData = CPGE_CURRICULUM[selectedYear] || CPGE_CURRICULUM.annee1;
+  const yearData = curriculum[selectedYear] || curriculum.annee1 || { branches: [] };
   const defaultBranch = yearData.branches[0]?.id || "tsi1";
   const initialBranch = searchParams.get("branche") || searchParams.get("fil") || defaultBranch;
   const [selectedBranch, setSelectedBranch] = useState(initialBranch);
@@ -492,7 +496,7 @@ function Courses() {
     const branchParam = searchParams.get("branche") || searchParams.get("fil");
     if (branchParam) {
       const yearKey = anneeParam === "2" ? "annee2" : (anneeParam === "1" ? "annee1" : selectedYear);
-      const branches = CPGE_CURRICULUM[yearKey]?.branches || [];
+      const branches = curriculum[yearKey]?.branches || [];
       const match = branches.find(
         (b) =>
           b.id.toLowerCase() === branchParam.toLowerCase() ||
@@ -518,16 +522,16 @@ function Courses() {
         url: pdfUrlParam,
       });
     }
-  }, [searchParams]);
+  }, [searchParams, curriculum]);
 
   // If year changes, ensure valid branch
   useEffect(() => {
-    const branches = CPGE_CURRICULUM[selectedYear]?.branches || [];
+    const branches = curriculum[selectedYear]?.branches || [];
     const valid = branches.some((b) => b.id === selectedBranch);
     if (!valid && branches.length > 0) {
       setSelectedBranch(branches[0].id);
     }
-  }, [selectedYear, selectedBranch]);
+  }, [selectedYear, selectedBranch, curriculum]);
 
   // Sync URL query params
   useEffect(() => {
@@ -541,9 +545,9 @@ function Courses() {
 
   // Current branch object
   const currentBranch = useMemo(() => {
-    const branches = CPGE_CURRICULUM[selectedYear]?.branches || [];
+    const branches = curriculum[selectedYear]?.branches || [];
     return branches.find((b) => b.id === selectedBranch) || branches[0] || { chapitres: [] };
-  }, [selectedYear, selectedBranch]);
+  }, [selectedYear, selectedBranch, curriculum]);
 
   // Filtered chapters
   const filteredChapters = useMemo(() => {
@@ -640,22 +644,66 @@ function Courses() {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 18 }}>
           <div>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                background: "var(--surface)",
-                padding: "4px 14px",
-                borderRadius: 99,
-                fontSize: "0.78rem",
-                fontWeight: 700,
-                color: "var(--primary)",
-                marginBottom: 12,
-                border: "1px solid var(--border)",
-              }}
-            >
-              <Sparkles size={14} /> PROGRAMME MATHÉMATIQUES CPGE • ESPACE MEMBRE ACTIF
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: "var(--surface)",
+                  padding: "4px 14px",
+                  borderRadius: 99,
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  color: "var(--primary)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <Sparkles size={14} /> PROGRAMME MATHÉMATIQUES CPGE • ESPACE MEMBRE ACTIF
+              </div>
+
+              {isLive && (
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: "rgba(16, 185, 129, 0.1)",
+                    color: "#059669",
+                    padding: "4px 12px",
+                    borderRadius: 99,
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    border: "1px solid rgba(16, 185, 129, 0.25)",
+                  }}
+                  title={lastSynced ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}` : "Données synchronisées"}
+                >
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981" }} />
+                  Synchronisé avec WordPress
+                </div>
+              )}
+
+              <button
+                onClick={() => refreshSync()}
+                disabled={isSyncing}
+                title="Recharger les données depuis WordPress"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 99,
+                  padding: "4px 10px",
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  color: "var(--text-muted)",
+                  cursor: isSyncing ? "wait" : "pointer",
+                }}
+              >
+                <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
+                {isSyncing ? "Synchronisation..." : "Actualiser"}
+              </button>
             </div>
             <h1 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.4rem)", fontWeight: 800, margin: "0 0 8px" }}>
               {yearData.titre}

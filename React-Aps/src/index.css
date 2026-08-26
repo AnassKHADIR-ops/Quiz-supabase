@@ -2199,3 +2199,13 @@ a:hover { text-decoration: underline; }
   transform: translateY(0) scale(0.97);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-animate {
+  animation: spin 1s linear infinite;
+}
+
