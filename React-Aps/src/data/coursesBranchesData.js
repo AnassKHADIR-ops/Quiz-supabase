@@ -610,7 +610,7 @@ export const CPGE_CURRICULUM = {
                 u: "https://drive.google.com/file/d/1B3zEjKJe1GjlZ0hZKjR4ASSZ0TD1yuLg/view?usp=sharing"
               }
             ],
-            tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }],
+            tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "https://drive.google.com/file/d/1GDUUPRqrHzVYnYSs9k5A9yLQW11uXGqE/view?usp=sharing", corr: "" }],
             fiche_url: "https://drive.google.com/file/d/1B3zEjKJe1GjlZ0hZKjR4ASSZ0TD1yuLg/view?usp=sharing",
             video_url: "https://youtu.be/1FsyIs3b584"
           },
