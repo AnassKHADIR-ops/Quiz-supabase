@@ -483,8 +483,26 @@ function Courses() {
   const [selectedVideoModal, setSelectedVideoModal] = useState(null);
   const [pdfModalData, setPdfModalData] = useState(null);
 
-  // Deep linking from WordPress / Login: ?video=...&title=... or ?pdf=...
+  // Deep linking from WordPress / Login: ?annee=2&branche=mp&video=...&title=... or ?pdf=...
   useEffect(() => {
+    const anneeParam = searchParams.get("annee");
+    if (anneeParam === "2") setSelectedYear("annee2");
+    else if (anneeParam === "1") setSelectedYear("annee1");
+
+    const branchParam = searchParams.get("branche") || searchParams.get("fil");
+    if (branchParam) {
+      const yearKey = anneeParam === "2" ? "annee2" : (anneeParam === "1" ? "annee1" : selectedYear);
+      const branches = CPGE_CURRICULUM[yearKey]?.branches || [];
+      const match = branches.find(
+        (b) =>
+          b.id.toLowerCase() === branchParam.toLowerCase() ||
+          b.nom.toLowerCase() === branchParam.toLowerCase()
+      );
+      if (match) {
+        setSelectedBranch(match.id);
+      }
+    }
+
     const videoUrlParam = searchParams.get("video");
     const pdfUrlParam = searchParams.get("pdf") || searchParams.get("corr");
     const titleParam = searchParams.get("title");
@@ -500,7 +518,7 @@ function Courses() {
         url: pdfUrlParam,
       });
     }
-  }, []);
+  }, [searchParams]);
 
   // If year changes, ensure valid branch
   useEffect(() => {

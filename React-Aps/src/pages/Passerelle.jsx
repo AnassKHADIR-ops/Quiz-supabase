@@ -573,31 +573,36 @@ function Passerelle() {
     );
   }, [passerelleData, activeFiliereId]);
 
-  // Deep linking from WordPress Elementor: ?fil=mp&chap=...&view=video
+  // Deep linking from WordPress Elementor: ?fil=mp&chap=...&video=...&title=...
   useEffect(() => {
     const filParam = searchParams.get("fil") || searchParams.get("filiere");
-    if (filParam && passerelleData.filieres) {
+    if (filParam && passerelleData?.filieres) {
       const matchFil = passerelleData.filieres.find(
-        (f) => f.id.toLowerCase() === filParam.toLowerCase() || f.nom.toLowerCase() === filParam.toLowerCase()
+        (f) =>
+          f.id.toLowerCase() === filParam.toLowerCase() ||
+          f.nom.toLowerCase() === filParam.toLowerCase() ||
+          f.de?.toLowerCase() === filParam.toLowerCase() ||
+          f.vers?.toLowerCase() === filParam.toLowerCase()
       );
       if (matchFil) {
         setActiveFiliereId(matchFil.id);
       }
     }
 
-    const chapParam = searchParams.get("chap") || searchParams.get("chapitre");
     const videoUrlParam = searchParams.get("video");
     const pdfUrlParam = searchParams.get("pdf") || searchParams.get("corr");
+    const titleParam = searchParams.get("title");
+    const chapParam = searchParams.get("chap") || searchParams.get("chapitre");
     const viewParam = searchParams.get("view");
 
     if (videoUrlParam) {
       setVideoModalData({
-        titre: searchParams.get("title") || "Vidéo d'explication",
+        titre: titleParam || "Vidéo d'explication",
         video_url: videoUrlParam,
       });
     } else if (pdfUrlParam) {
       setPdfModalData({
-        title: searchParams.get("title") || "Correction détaillée",
+        title: titleParam || "Correction détaillée",
         url: pdfUrlParam,
       });
     } else if (chapParam && filiere) {
@@ -637,7 +642,7 @@ function Passerelle() {
         }
       }
     }
-  }, [searchParams, filiere, passerelleData]);
+  }, [searchParams, passerelleData]);
 
   const toggleChapter = (chapId) => {
     setOpenChapterIds((prev) => {
@@ -1328,9 +1333,11 @@ function Passerelle() {
       {/* ── Secure Video Player Modal ── */}
       {videoModalData && (
         <SecureVideoModal
+          videoUrl={videoModalData.video_url || videoModalData.url}
+          title={videoModalData.titre || videoModalData.title}
           chapter={{
-            titre: videoModalData.titre,
-            video_url: videoModalData.video_url,
+            titre: videoModalData.titre || videoModalData.title,
+            video_url: videoModalData.video_url || videoModalData.url,
           }}
           onClose={() => setVideoModalData(null)}
         />
