@@ -26,25 +26,73 @@ function safeEvalLiteral(codeStr) {
 
 /**
  * Extracts a JavaScript variable (e.g. var CH = [...]; or var DATA = {...}; or var LIVRES = [...];)
- * from an HTML string or script content.
+ * from an HTML string or script content using bracket matching.
  */
 export function extractJsVariable(htmlContent, varName) {
   if (!htmlContent || typeof htmlContent !== "string") return null;
 
-  // Regex pattern matching var/let/const varName = ... ;
-  // Handles multi-line objects/arrays
-  const regex = new RegExp(`(?:var|let|const)\\s+${varName}\\s*=\\s*([\\s\\S]*?);\\s*(?:var|let|const|function|\\/\\*|<\\/script>)`, "i");
-  const match = htmlContent.match(regex);
+  const regex = new RegExp(`(?:var|let|const|window\\.)\\s*\\b${varName}\\b\\s*=\\s*`, "i");
+  const match = regex.exec(htmlContent);
+  if (!match) return null;
 
-  if (match && match[1]) {
-    return safeEvalLiteral(match[1]);
-  }
+  const openPos = match.index + match[0].length;
+  const startChar = htmlContent.slice(openPos).search(/[\[{]/);
+  if (startChar === -1) return null;
 
-  // Fallback: match from varName = up to end of script if at the end
-  const fallbackRegex = new RegExp(`(?:var|let|const)\\s+${varName}\\s*=\\s*([\\s\\S]*?)(?:<\\/script>|$)`, "i");
-  const fallbackMatch = htmlContent.match(fallbackRegex);
-  if (fallbackMatch && fallbackMatch[1]) {
-    return safeEvalLiteral(fallbackMatch[1]);
+  const actualOpenPos = openPos + startChar;
+  const openChar = htmlContent[actualOpenPos];
+  const closeChar = openChar === "[" ? "]" : "}";
+
+  let depth = 0;
+  let inString = null;
+  let inComment = false;
+  let inSingleLineComment = false;
+
+  for (let i = actualOpenPos; i < htmlContent.length; i++) {
+    const ch = htmlContent[i];
+    const prev = htmlContent[i - 1];
+
+    if (inSingleLineComment) {
+      if (ch === "\n" || ch === "\r") inSingleLineComment = false;
+      continue;
+    }
+
+    if (inComment) {
+      if (prev === "*" && ch === "/") inComment = false;
+      continue;
+    }
+
+    if (inString) {
+      if (ch === inString && prev !== "\\") inString = null;
+      continue;
+    }
+
+    if (ch === '"' || ch === "'" || ch === "`") {
+      inString = ch;
+      continue;
+    }
+
+    if (ch === "/" && htmlContent[i + 1] === "*") {
+      inComment = true;
+      i++;
+      continue;
+    }
+
+    if (ch === "/" && htmlContent[i + 1] === "/") {
+      inSingleLineComment = true;
+      i++;
+      continue;
+    }
+
+    if (ch === openChar) {
+      depth++;
+    } else if (ch === closeChar) {
+      depth--;
+      if (depth === 0) {
+        const rawBlock = htmlContent.slice(actualOpenPos, i + 1);
+        return safeEvalLiteral(rawBlock);
+      }
+    }
   }
 
   return null;
@@ -181,6 +229,20 @@ export function normalizeLivresArray(livresList) {
 export function mapPageToBranch(slug = "", title = "") {
   const s = `${slug} ${title}`.toLowerCase();
 
+  // Exclude non-course pages
+  if (
+    slug.startsWith("concours-") ||
+    slug.startsWith("programmes-") ||
+    slug === "home" ||
+    slug === "about" ||
+    slug === "contact" ||
+    slug === "merci" ||
+    slug === "contribution" ||
+    slug === "transition-sup-spe"
+  ) {
+    return null;
+  }
+
   if (s.includes("ect2") || s.includes("ect-2") || s.includes("cours-exo-ect2")) {
     return { year: "annee2", branchId: "ect2", branchNom: "ECT 2" };
   }
@@ -293,19 +355,40 @@ export function parseWordPressCurriculum(pages) {
   return updatedAny ? curriculum : null;
 }
 
+function getStorageItem(key) {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      return window.localStorage.getItem(key);
+    }
+  } catch (e) {
+    // Ignore
+  }
+  return null;
+}
+
+function setStorageItem(key, val) {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.setItem(key, val);
+    }
+  } catch (e) {
+    // Ignore
+  }
+}
+
 /**
  * Returns initial cached curriculum or bundled fallback.
  */
 export function getInitialCurriculumData() {
   try {
-    const cached = localStorage.getItem(CACHE_KEY);
+    const cached = getStorageItem(CACHE_KEY);
     if (cached) {
       const parsed = JSON.parse(cached);
       if (parsed && (parsed.annee1 || parsed.annee2)) {
         return {
           curriculum: parsed,
           _isLive: true,
-          _lastSynced: localStorage.getItem(CACHE_TIMESTAMP_KEY) || null,
+          _lastSynced: getStorageItem(CACHE_TIMESTAMP_KEY) || null,
         };
       }
     }
@@ -326,7 +409,8 @@ export function getInitialCurriculumData() {
 export async function syncCoursesFromWordPress(customUrl = null) {
   const baseUrl =
     customUrl ||
-    import.meta.env.VITE_WP_API_URL ||
+    (typeof import.meta !== "undefined" && import.meta.env?.VITE_WP_API_URL) ||
+    (typeof window !== "undefined" && window.__WP_API_URL__) ||
     "https://anasskhadir.com/wp-json/wp/v2";
 
   const fetchUrl = `${baseUrl}/pages?per_page=100&_t=${Date.now()}`;
@@ -351,8 +435,8 @@ export async function syncCoursesFromWordPress(customUrl = null) {
 
     if (liveCurriculum) {
       const now = new Date().toISOString();
-      localStorage.setItem(CACHE_KEY, JSON.stringify(liveCurriculum));
-      localStorage.setItem(CACHE_TIMESTAMP_KEY, now);
+      setStorageItem(CACHE_KEY, JSON.stringify(liveCurriculum));
+      setStorageItem(CACHE_TIMESTAMP_KEY, now);
 
       return {
         success: true,

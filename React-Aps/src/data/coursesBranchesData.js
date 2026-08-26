@@ -544,14 +544,33 @@ export const CPGE_CURRICULUM = {
             cours: [
               {
                 t: "Séance 1 (Produit scalaire)",
-                sous: "Théorie & démonstrations",
+                sous: "Théorie, démonstrations et applications",
                 u: "https://drive.google.com/file/d/1Kt6mwfiKp_fMYaOvXT36Nzar7gI9AdZP/view?usp=sharing",
                 v: "https://youtu.be/1FsyIs3b584"
               },
               {
                 t: "Séance 2 (Orthogonalité)",
-                sous: "Théorie & démonstrations",
-                u: "https://drive.google.com/file/d/1Wxy3FiqERxLg3y4KRDnC9Odr1ZZPy_A4/view?usp=sharing"
+                sous: "Théorie, démonstrations et applications",
+                u: "https://drive.google.com/file/d/1Wxy3FiqERxLg3y4KRDnC9Odr1ZZPy_A4/view?usp=sharing",
+                v: "https://youtu.be/8dH0NMKnQ_4"
+              },
+              {
+                t: "Séance 3 de cours",
+                sous: "Théorie, démonstrations et applications",
+                u: "https://drive.google.com/file/d/1CJ8EwgteCVqN8NczvRiah-WMecsIAL1T/view?usp=sharing",
+                v: "https://youtu.be/yWdVgNslkug"
+              },
+              {
+                t: "Séance 4 de cours",
+                sous: "Théorie, démonstrations et applications",
+                u: "https://drive.google.com/file/d/1qYrC-fr2KjtuXp1AabjIaGTXED3PN9p9/view?usp=sharing",
+                v: "https://youtu.be/9fDOolSob9A"
+              },
+              {
+                t: "Séance 5: distance à un sous espace vectoriels de dimension finie. Applications",
+                sous: "Théorie, démonstrations et applications",
+                u: "https://drive.google.com/file/d/1-EY9Lu0vtIMqNjgcT3bthSrtnB01iiKU/view?usp=sharing",
+                v: "https://youtu.be/fkjk2xaxVQI?si=mPs-mYa0PLvJ6L_O"
               }
             ],
             fiches: [
