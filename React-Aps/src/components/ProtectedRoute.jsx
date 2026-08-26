@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { Clock, RefreshCw, AlertTriangle, Lock, ShieldAlert, CheckCircle } from "./Icon.jsx";
 
@@ -7,6 +7,7 @@ function ProtectedRoute({ children, teacherOnly = false, adminOnly = false }) {
   const { user, loading, isStaff, isPending, isRejected, isRevoked, logout, refreshUser } = useAuth();
   const [checking, setChecking] = useState(false);
   const [notice, setNotice] = useState("");
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -20,7 +21,8 @@ function ProtectedRoute({ children, teacherOnly = false, adminOnly = false }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    const redirectUrl = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?redirect=${redirectUrl}`} replace />;
   }
 
   // Admin / Teacher route guard

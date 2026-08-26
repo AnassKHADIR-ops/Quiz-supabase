@@ -1,0 +1,1077 @@
+<!-- ============================================================
+   Elementor — Cours MP  ·  version 3.2 (Séances Vidéo avec Verrou Membre & Redirection)
+   À coller dans : Elementor > widget "HTML"
+   ============================================================ -->
+
+<!-- Données structurées Schema.org pour Google Rich Snippets & IA -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Course",
+  "name": "Cours, Résumés et Exercices Corrigés Maths MP / MP* (CPGE)",
+  "description": "Ressources complètes de mathématiques pour les Classes Préparatoires (MP/MP*) : cours complets, fiches de synthèse, TD corrigés et sujets de concours (CNC Maroc, CCINP, Mines-Ponts, Centrale-Supélec, X-ENS).",
+  "provider": {
+    "@type": "Person",
+    "name": "Anass Khadir",
+    "url": "https://anasskhadir.com"
+  },
+  "educationalLevel": "Classes Préparatoires aux Grandes Écoles (CPGE MP / MP* - Bac+2)",
+  "inLanguage": "fr",
+  "isAccessibleForFree": true,
+  "hasCourseInstance": {
+    "@type": "CourseInstance",
+    "courseMode": "Online",
+    "instructor": {
+      "@type": "Person",
+      "name": "Anass Khadir"
+    }
+  }
+}
+</script>
+
+<!-- Google Fonts : Outfit + Inter -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+<style>
+#cours-mp-w,#cours-mp-w *,#cours-mp-w ::before,#cours-mp-w ::after{box-sizing:border-box;margin:0;padding:0}
+
+#cours-mp-w{
+  --c1:#a8873a; --c2:#c8a56a; --navy:#1a2f52; --plum:#6d4a72; --vert:#3f6e34;
+  --bg:#f7f2ea; --bg2:#efe8d8;
+  --br:rgba(45,31,14,.13); --sh:rgba(168,135,58,.18);
+  --ink:#2a1f14; --ink-m:#54432f; --ink-s:#806b51; --white:#fffdf9;
+  --ease:cubic-bezier(.4,0,.2,1);
+  font-family:"Inter","Segoe UI",sans-serif;color:var(--ink);line-height:1.55;
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+
+  /* --- pleine largeur --- */
+  width:100vw;position:relative;left:50%;right:50%;
+  margin-left:-50vw;margin-right:-50vw;border:none;border-radius:0;
+}
+#cours-mp-w .shell{max-width:1180px;margin:0 auto}
+
+/* ══════════════════ HERO ══════════════════ */
+#cours-mp-w .hero{background:linear-gradient(140deg,#f7f2ea 0%,#efe8d8 60%,#eadfc8 100%);border-bottom:1px solid var(--br);padding:46px 24px 36px;text-align:center;position:relative}
+#cours-mp-w .hero::after{content:"";position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--c2),var(--c1),var(--c2),transparent)}
+#cours-mp-w .eyebrow{display:inline-flex;align-items:center;gap:7px;margin-bottom:14px;font-family:"Outfit",sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8a6c28;background:rgba(200,165,106,.15);border:1px solid rgba(168,135,58,.28);padding:5px 16px;border-radius:30px}
+#cours-mp-w .eyebrow::before{content:"";width:6px;height:6px;background:var(--c1);border-radius:50%}
+#cours-mp-w .hero h1{font-family:"Outfit",sans-serif;font-size:clamp(24px,4.5vw,40px);font-weight:750;color:#2d1f0e;line-height:1.2;letter-spacing:-.02em;margin-bottom:10px}
+#cours-mp-w .hero h1 em{color:#96762f;font-style:normal;font-weight:800}
+#cours-mp-w .hero p{font-size:15px;font-weight:400;color:var(--ink-m);max-width:640px;margin:0 auto;line-height:1.65}
+#cours-mp-w .path{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:20px;flex-wrap:wrap}
+#cours-mp-w .path-step{display:inline-flex;align-items:center;gap:6px;background:var(--white);border:1px solid var(--br);padding:6px 14px;border-radius:30px;font-size:12.5px;font-weight:500;color:var(--ink-m);box-shadow:0 1px 4px rgba(45,31,14,.05)}
+#cours-mp-w .path-arrow{color:var(--c1);font-weight:600;font-size:13px}
+
+/* ══════════════════ STATS ══════════════════ */
+#cours-mp-w .stats-row{display:flex;flex-wrap:wrap;justify-content:center;background:var(--white);border-bottom:1px solid var(--br)}
+#cours-mp-w .stat{flex:1;min-width:80px;padding:13px 14px;text-align:center;border-right:1px solid var(--br)}
+#cours-mp-w .stat:last-child{border-right:none}
+#cours-mp-w .stat-n{font-family:"Outfit",sans-serif;font-size:24px;font-weight:700;color:#96762f;line-height:1}
+#cours-mp-w .stat-l{font-size:11px;font-weight:600;color:var(--ink-s);text-transform:uppercase;letter-spacing:.1em;margin-top:4px;line-height:1.35}
+
+/* ══════════════════ FILTRES + RECHERCHE ══════════════════ */
+#cours-mp-w .filters{padding:24px 24px 0}
+#cours-mp-w .filters-in{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+#cours-mp-w .filter-label{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-s);margin-bottom:9px}
+#cours-mp-w .filter-row{display:flex;flex-wrap:wrap;gap:8px}
+#cours-mp-w .fb{min-height:36px;padding:7px 16px;border-radius:30px;border:1.5px solid var(--br);background:var(--white);color:var(--ink-m);font-size:13px;font-weight:500;font-family:"Outfit",sans-serif;cursor:pointer;transition:all .2s var(--ease)}
+#cours-mp-w .fb:hover{border-color:var(--c1);color:#8a6c28;background:var(--bg2)}
+#cours-mp-w .fb.on{background:var(--navy);color:#fff;border-color:var(--navy);box-shadow:0 4px 12px rgba(26,47,82,.25)}
+#cours-mp-w .search-box{position:relative;flex:0 1 280px;min-width:220px}
+#cours-mp-w .search-box svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-s);pointer-events:none}
+#cours-mp-w .search{width:100%;min-height:38px;padding:8px 14px 8px 36px;border-radius:30px;border:1.5px solid var(--br);background:var(--white);color:var(--ink);font-size:13.5px;font-family:"Inter",sans-serif;transition:all .2s var(--ease)}
+#cours-mp-w .search::placeholder{color:var(--ink-s)}
+#cours-mp-w .search:focus{outline:none;border-color:var(--c1);box-shadow:0 0 0 3px rgba(200,165,106,.18)}
+
+/* ══════════════════ CHAPITRES ══════════════════ */
+#cours-mp-w .wrapper{padding:22px 24px 40px}
+#cours-mp-w .sep{display:flex;align-items:center;gap:10px;padding:18px 4px 10px}
+#cours-mp-w .sep-l{font-family:"Outfit",sans-serif;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#96762f}
+#cours-mp-w .sep-line{flex:1;height:1px;background:var(--br)}
+
+#cours-mp-w .card{background:var(--white);border:1px solid var(--br);border-radius:14px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 6px rgba(45,31,14,.05);transition:box-shadow .2s var(--ease),border-color .2s var(--ease);animation:cours_mp_w_up .35s var(--ease) both}
+#cours-mp-w .card:hover{box-shadow:0 4px 16px rgba(45,31,14,.09)}
+#cours-mp-w .card.open{box-shadow:0 6px 22px rgba(45,31,14,.11);border-color:rgba(168,135,58,.35)}
+
+#cours-mp-w .card-head{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;user-select:none;background:none;border:none;width:100%;text-align:left;font-family:"Inter",sans-serif}
+#cours-mp-w .card-head:focus-visible{outline:2px solid var(--c1);outline-offset:-3px;border-radius:12px}
+#cours-mp-w .card-n{font-family:"Outfit",sans-serif;font-size:15px;font-weight:700;color:#8a6c28;background:var(--bg2);border:1px solid var(--br);width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#cours-mp-w .card.open .card-n{background:var(--navy);border-color:var(--navy);color:#fff}
+#cours-mp-w .card-titles{flex:1;min-width:0}
+
+#cours-mp-w .card-titre{display:block;font-family:"Outfit",sans-serif;font-size:16px;font-weight:600;color:var(--ink);line-height:1.3;margin:0;letter-spacing:-0.01em}
+#cours-mp-w .card-desc{display:block;font-size:12.5px;font-weight:400;color:var(--ink-s);line-height:1.4;margin-top:3px}
+#cours-mp-w .card-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+#cours-mp-w .chip{font-size:10.5px;font-weight:500;padding:2.5px 9px;border-radius:20px;background:var(--bg2);color:var(--ink-m);border:1px solid var(--br)}
+#cours-mp-w .chip.ok{background:#eaf2e6;color:#335b2a;border-color:rgba(63,110,52,.24)}
+#cours-mp-w .badge{font-size:10.5px;font-weight:600;letter-spacing:.04em;padding:4px 11px;border-radius:20px;white-space:nowrap;flex-shrink:0;font-family:"Outfit",sans-serif}
+#cours-mp-w .b-algebre{background:#e4ebf5;color:#1a2f52}
+#cours-mp-w .b-analyse{background:#e6efe4;color:#335b2a}
+#cours-mp-w .b-probabilites{background:#f0e6f0;color:#6d4a72}
+#cours-mp-w .b-geometrie{background:#f5e8dc;color:#8f5324}
+#cours-mp-w .b-statistiques{background:#f3ecd8;color:#7d6124}
+#cours-mp-w .card-chev{flex-shrink:0;color:var(--ink-s);transition:transform .25s var(--ease)}
+#cours-mp-w .card.open .card-chev{transform:rotate(180deg);color:var(--c1)}
+
+#cours-mp-w .card-body{display:none;border-top:1px solid var(--br);background:linear-gradient(180deg,rgba(247,242,234,.55),transparent 220px);padding:20px 18px 22px}
+#cours-mp-w .card.open .card-body{display:block;animation:cours_mp_w_fade .25s var(--ease)}
+
+/* ══════════════════ SÉANCES VIDÉO AVEC VERROU MEMBRE (2 COLONNES) ══════════════════ */
+#cours-mp-w .ch-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,320px);gap:20px 24px;align-items:start}
+#cours-mp-w .ch-grid.solo{grid-template-columns:minmax(0,1fr)}
+#cours-mp-w .ch-side{background:linear-gradient(180deg,rgba(200,165,106,.14),rgba(200,165,106,.02));border:1px solid rgba(168,135,58,.22);border-radius:14px;padding:14px 14px 16px}
+@media(max-width:900px){#cours-mp-w .ch-grid{grid-template-columns:minmax(0,1fr)}}
+
+#cours-mp-w .session-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-bottom:20px}
+#cours-mp-w .session-card{background:var(--white);border:1px solid var(--br);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(45,31,14,.06);transition:transform .22s var(--ease),box-shadow .22s var(--ease),border-color .22s var(--ease)}
+#cours-mp-w .session-card:hover{transform:translateY(-3px);border-color:rgba(168,135,58,.4);box-shadow:0 12px 28px rgba(45,31,14,.12)}
+
+#cours-mp-w .session-thumb-wrap{position:relative;width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,#101a2e,#1a2f52);overflow:hidden;text-decoration:none;display:block}
+#cours-mp-w .session-thumb-img{width:100%;height:100%;object-fit:cover;transition:transform .3s var(--ease);display:block}
+#cours-mp-w .session-card:hover .session-thumb-img{transform:scale(1.04)}
+
+#cours-mp-w .session-lock-ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(16,26,46,0.3) 0%,rgba(16,26,46,0.85) 100%);display:flex;flex-direction:column;justify-content:space-between;padding:10px}
+#cours-mp-w .session-lock-badge{align-self:flex-end;font-family:"Outfit",sans-serif;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:rgba(168,135,58,.94);border:1px solid rgba(255,255,255,.3);padding:3px 9px;border-radius:20px;box-shadow:0 2px 6px rgba(0,0,0,.35);display:inline-flex;align-items:center;gap:4px}
+#cours-mp-w .session-play-btn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:rgba(200,165,106,.25);border:2px solid rgba(255,253,249,.95);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;box-shadow:0 4px 16px rgba(0,0,0,.4);transition:transform .2s var(--ease),background .2s var(--ease)}
+#cours-mp-w .session-card:hover .session-play-btn{background:#b57809;transform:translate(-50%,-50%) scale(1.08)}
+
+#cours-mp-w .session-info{padding:12px 14px 14px;display:flex;flex-direction:column;flex:1;gap:4px}
+#cours-mp-w .session-t{font-family:"Outfit",sans-serif;font-size:14px;font-weight:700;color:var(--ink);line-height:1.35}
+#cours-mp-w .session-d{font-size:12px;color:var(--ink-s);line-height:1.4}
+#cours-mp-w .session-actions{display:flex;gap:8px;margin-top:auto;padding-top:10px;flex-wrap:wrap}
+#cours-mp-w .session-actions .btn{flex:1;min-height:36px;font-size:11.5px;padding:6px 10px}
+
+/* ══════════════════ FICHES DE SYNTHÈSE (DROITE) ══════════════════ */
+#cours-mp-w .doc-sec{margin-bottom:24px}
+#cours-mp-w .doc-sec:last-child{margin-bottom:0}
+#cours-mp-w .doc-sec-t{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+#cours-mp-w .doc-sec-t b{font-family:"Outfit",sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-m)}
+#cours-mp-w .doc-sec-t i{font-style:normal;font-size:13px;line-height:1}
+#cours-mp-w .doc-sec-t s{text-decoration:none;flex:1;height:1px;background:var(--br)}
+#cours-mp-w .doc-sec-n{font-size:10.5px;font-weight:600;color:var(--ink-s);background:var(--bg2);border:1px solid var(--br);border-radius:20px;padding:1px 8px}
+
+#cours-mp-w .doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px 12px}
+#cours-mp-w .doc-card{display:flex;flex-direction:column;gap:9px;background:var(--white);border:1px solid var(--br);border-radius:12px;padding:10px;box-shadow:0 1px 5px rgba(45,31,14,.05);transition:transform .22s var(--ease),box-shadow .22s var(--ease),border-color .22s var(--ease)}
+#cours-mp-w .doc-card:hover{transform:translateY(-3px);border-color:rgba(168,135,58,.38);box-shadow:0 10px 22px rgba(45,31,14,.12)}
+
+#cours-mp-w .doc-thumb{position:relative;display:block;width:100%;aspect-ratio:1/1.32;border-radius:3px 8px 8px 3px;overflow:hidden;background:var(--bg2);padding:0;border:none;font-family:inherit;box-shadow:0 4px 12px rgba(45,31,14,.14);cursor:pointer}
+#cours-mp-w .doc-thumb::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;z-index:3;background:linear-gradient(90deg,rgba(0,0,0,.3),rgba(0,0,0,.02))}
+#cours-mp-w .doc-thumb::after{content:"";position:absolute;left:7px;top:0;bottom:0;width:1.5px;z-index:3;background:rgba(200,165,106,.55)}
+#cours-mp-w .doc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2}
+#cours-mp-w .gen{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;padding:12px 10px 10px 16px;text-align:left;color:#f7f1e4}
+#cours-mp-w .gen-k{display:block;font-family:"Outfit",sans-serif;font-size:8.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+#cours-mp-w .gen-orn{width:18px;height:1.5px;background:rgba(247,241,228,.55);margin:6px 0 8px;flex-shrink:0}
+#cours-mp-w .gen-t{font-family:"Outfit",sans-serif;font-size:12px;font-weight:700;line-height:1.25}
+#cours-mp-w .doc-loupe{position:absolute;z-index:4;right:6px;bottom:6px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;background:rgba(45,31,14,.65);color:#fff;opacity:0;transform:scale(.85);transition:opacity .22s,transform .22s}
+#cours-mp-w .doc-card:hover .doc-loupe{opacity:1;transform:scale(1)}
+
+#cours-mp-w .doc-info{display:flex;flex-direction:column;gap:1px}
+#cours-mp-w .doc-t{font-size:12px;font-weight:600;color:var(--ink);line-height:1.3}
+#cours-mp-w .doc-d{font-size:10.5px;color:var(--ink-s);line-height:1.3}
+
+/* ══════════════════ TD & CONCOURS ══════════════════ */
+#cours-mp-w .doc-list{display:flex;flex-direction:column;gap:9px}
+#cours-mp-w .doc-line{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  background:var(--white);border:1px solid var(--br);border-radius:12px;
+  padding:12px 14px;box-shadow:0 1px 4px rgba(45,31,14,.05);
+  width:100%;box-sizing:border-box;flex-wrap:wrap;
+  transition:border-color .2s var(--ease),box-shadow .2s var(--ease),transform .2s var(--ease);
+}
+#cours-mp-w .doc-line:hover{border-color:rgba(168,135,58,.4);box-shadow:0 6px 16px rgba(45,31,14,.09);transform:translateY(-1px)}
+#cours-mp-w .doc-line.soon{background:rgba(255,253,249,.55);border-style:dashed;box-shadow:none}
+#cours-mp-w .doc-line.soon:hover{transform:none;border-color:var(--br);box-shadow:none}
+#cours-mp-w .doc-line-ic{position:relative;width:30px;height:38px;flex-shrink:0;border-radius:2px 6px 6px 2px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#f7f1e4;box-shadow:0 3px 8px rgba(45,31,14,.18);background:linear-gradient(150deg,#22406e,#12233f)}
+#cours-mp-w .doc-line-ic::after{content:"";position:absolute;left:3px;top:3px;bottom:3px;width:1px;background:rgba(247,241,228,.45)}
+#cours-mp-w .doc-line-txt{
+  flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:3px;
+  word-break:normal;overflow-wrap:break-word;white-space:normal;
+}
+#cours-mp-w .doc-line-t{
+  font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.4;
+  display:block;white-space:normal;word-break:normal;
+}
+#cours-mp-w .doc-line-d{font-size:11.5px;color:var(--ink-s);line-height:1.35;white-space:normal}
+#cours-mp-w .doc-line-b{
+  display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+  flex-shrink:0;max-width:100%;
+}
+#cours-mp-w .doc-line-b .btn{
+  white-space:normal;max-width:100%;text-align:left;line-height:1.3;
+}
+
+@media (max-width:768px){
+  #cours-mp-w .doc-line{flex-direction:column;align-items:flex-start;gap:10px}
+  #cours-mp-w .doc-line-b{width:100%}
+  #cours-mp-w .doc-line-b .btn{flex:1 1 auto;min-width:120px}
+}
+
+/* ══════════════════ BOUTONS ══════════════════ */
+#cours-mp-w .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:8px 12px;border-radius:9px;font-size:12px;font-weight:600;font-family:"Outfit",sans-serif;text-decoration:none;border:1.5px solid transparent;cursor:pointer;transition:all .2s var(--ease)}
+#cours-mp-w .btn:hover{transform:translateY(-1px)}
+#cours-mp-w .btn-pdf{background:#f6efdf;color:#7d6124;border-color:rgba(168,135,58,.32)}
+#cours-mp-w .btn-pdf:hover{background:#efe3c8;box-shadow:0 3px 10px var(--sh)}
+#cours-mp-w .btn-fiche{background:#f2e8f2;color:#68426d;border-color:rgba(122,74,120,.28)}
+#cours-mp-w .btn-fiche:hover{background:#e6d6e6}
+#cours-mp-w .btn-exo{background:#e9eef6;color:#1a2f52;border-color:rgba(26,47,82,.22)}
+#cours-mp-w .btn-exo:hover{background:#dae4f2}
+#cours-mp-w .btn-corr{background:#eaf2e6;color:#335b2a;border-color:rgba(63,110,52,.24)}
+#cours-mp-w .btn-corr:hover{background:#dcebd4}
+#cours-mp-w .btn-video{background:linear-gradient(135deg,#c4302b,#9e201b);color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(196,48,43,.3)}
+#cours-mp-w .btn-video:hover{background:linear-gradient(135deg,#a82823,#7d1713);color:#fff;box-shadow:0 4px 14px rgba(196,48,43,.45)}
+#cours-mp-w .btn-soon{background:#f3efe7;color:var(--ink-s);border-color:rgba(45,31,14,.1);cursor:default;font-weight:500}
+
+#cours-mp-w .note{background:var(--white);border:1px solid var(--br);border-left:4px solid var(--c2);border-radius:14px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start;margin-top:18px;box-shadow:0 2px 8px rgba(45,31,14,.05)}
+#cours-mp-w .note-txt{font-size:13.5px;color:var(--ink-m);line-height:1.6}
+#cours-mp-w .note-txt strong{color:var(--ink);font-weight:600}
+#cours-mp-w .empty{padding:34px 20px;text-align:center;color:var(--ink-s);background:var(--white);border:1px dashed var(--br);border-radius:14px}
+#cours-mp-w .empty-mini{grid-column:1/-1;padding:14px;text-align:center;font-size:12.5px;color:var(--ink-s);font-style:italic}
+
+/* ══════════════════ BIBLIOTHÈQUE ══════════════════ */
+#cours-mp-w .livres-section{border-top:1px solid var(--br);margin-top:34px;padding:34px 2px 8px;background:linear-gradient(180deg,rgba(200,165,106,.11),transparent 58%)}
+#cours-mp-w .livres-tete{text-align:center;margin-bottom:28px}
+#cours-mp-w .livres-tag{display:inline-block;font-family:"Outfit",sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8a6c28;background:rgba(200,165,106,.14);border:1px solid rgba(168,135,58,.28);padding:4px 14px;border-radius:20px;margin-bottom:10px}
+#cours-mp-w .livres-h{font-family:"Outfit",sans-serif;font-size:22px;font-weight:700;color:var(--ink);line-height:1.25;letter-spacing:-.01em}
+#cours-mp-w .livres-sub{font-size:13.5px;font-weight:400;color:var(--ink-s);margin-top:6px}
+#cours-mp-w .livres-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:28px 20px;justify-items:center}
+#cours-mp-w .livre{appearance:none;-webkit-appearance:none;background:none;border:none;padding:0;margin:0;font-family:inherit;text-align:center;cursor:pointer;width:100%;max-width:172px;position:relative;display:flex;flex-direction:column;gap:12px;align-items:center}
+#cours-mp-w .livre:focus-visible{outline:2px solid var(--c1);outline-offset:4px;border-radius:6px}
+#cours-mp-w .livre-cover{position:relative;width:100%;aspect-ratio:1/1.46;border-radius:3px 8px 8px 3px;overflow:hidden;background:var(--bg2);box-shadow:0 10px 22px rgba(45,31,14,.18),0 2px 6px rgba(45,31,14,.12);transition:transform .28s var(--ease),box-shadow .28s var(--ease)}
+#cours-mp-w .livre-cover::before{content:"";position:absolute;left:0;top:0;bottom:0;width:9px;z-index:3;background:linear-gradient(90deg,rgba(0,0,0,.30),rgba(0,0,0,.02))}
+#cours-mp-w .livre-cover::after{content:"";position:absolute;left:9px;top:0;bottom:0;width:1.5px;z-index:3;background:rgba(200,165,106,.6)}
+#cours-mp-w .livre:hover .livre-cover{transform:translateY(-7px) rotate(-.6deg);box-shadow:0 20px 36px rgba(45,31,14,.26),0 5px 12px rgba(45,31,14,.16)}
+#cours-mp-w .livre-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2}
+#cours-mp-w .livre .gen{padding:26px 14px 16px 20px;text-align:center;align-items:center}
+#cours-mp-w .livre .gen-t{font-size:14px}
+#cours-mp-w .livre .gen-b{letter-spacing:.08em}
+#cours-mp-w .livre-loupe{position:absolute;z-index:4;right:8px;bottom:8px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:rgba(45,31,14,.62);color:#fff;opacity:0;transform:scale(.85);transition:opacity .22s,transform .22s}
+#cours-mp-w .livre:hover .livre-loupe{opacity:1;transform:scale(1)}
+#cours-mp-w .livre-meta{display:flex;flex-direction:column;gap:2px;padding:0 2px}
+#cours-mp-w .livre-titre{font-size:13px;font-weight:600;color:var(--ink);line-height:1.3}
+#cours-mp-w .livre-auteur{font-size:11.5px;color:var(--ink-s);line-height:1.35}
+#cours-mp-w .livre-bientot{cursor:default}
+#cours-mp-w .livre-bientot .livre-cover{opacity:.7;filter:saturate(.7)}
+#cours-mp-w .livre-ruban{position:absolute;top:9px;right:-4px;z-index:5;font-family:"Outfit",sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--navy);padding:3px 10px;border-radius:3px 0 0 3px;box-shadow:0 2px 6px rgba(45,31,14,.3)}
+
+/* ══════════════════ SECTION SEO & GEO MP ══════════════════ */
+#cours-mp-w .mp-seo-box{margin-top:36px;padding:30px;background:var(--white);border:1px solid var(--br);border-radius:16px;box-shadow:0 2px 10px rgba(45,31,14,.04)}
+#cours-mp-w .mp-seo-box h2{font-family:"Outfit",sans-serif;font-size:22px;font-weight:700;color:var(--ink);margin-bottom:12px}
+#cours-mp-w .mp-seo-box p{font-size:14px;color:var(--ink-m);line-height:1.7;margin-bottom:18px}
+#cours-mp-w .mp-seo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+#cours-mp-w .mp-seo-card{background:var(--bg2);border:1px solid var(--br);border-radius:12px;padding:16px}
+#cours-mp-w .mp-seo-card h3{font-family:"Outfit",sans-serif;font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px}
+#cours-mp-w .mp-seo-card p{font-size:13px;color:var(--ink-s);margin:0;line-height:1.55}
+
+/* ══════════════════ VISIONNEUSE PDF GRATUIT ══════════════════ */
+#cours-mp-w .pdf-modal{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:20px}
+#cours-mp-w .pdf-modal.open{display:flex}
+#cours-mp-w .pdf-ov{position:absolute;inset:0;background:rgba(45,31,14,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#cours-mp-w .pdf-box{position:relative;width:min(1000px,100%);height:min(90vh,980px);background:var(--white);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 70px rgba(0,0,0,.45);animation:cours_mp_w_up .3s var(--ease)}
+#cours-mp-w .pdf-head{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--bg2);border-bottom:1px solid var(--br)}
+#cours-mp-w .pdf-title{flex:1;min-width:0;font-family:"Outfit",sans-serif;font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cours-mp-w .pdf-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
+#cours-mp-w .pdf-btn{display:inline-flex;align-items:center;gap:5px;padding:8px 13px;border-radius:9px;font-size:12.5px;font-weight:600;font-family:"Outfit",sans-serif;text-decoration:none;border:1.5px solid transparent;cursor:pointer;transition:all .2s var(--ease)}
+#cours-mp-w .pdf-dl{background:var(--navy);color:#fff}
+#cours-mp-w .pdf-dl:hover{background:#12233f}
+#cours-mp-w .pdf-tab{background:#f6efdf;color:#7d6124;border-color:rgba(168,135,58,.3)}
+#cours-mp-w .pdf-tab:hover{background:#efe3c8}
+#cours-mp-w .pdf-close{background:none;color:var(--ink-m);font-size:15px;padding:8px 11px;line-height:1}
+#cours-mp-w .pdf-close:hover{background:rgba(45,31,14,.07);border-radius:9px}
+#cours-mp-w .pdf-body{flex:1;background:#525659;min-height:0}
+#cours-mp-w .pdf-body iframe{width:100%;height:100%;border:0;display:block}
+
+@keyframes cours_mp_w_up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cours_mp_w_fade{from{opacity:0}to{opacity:1}}
+
+/* ══════════════════ MOBILE ══════════════════ */
+@media(max-width:640px){
+  #cours-mp-w .stats-row{display:grid;grid-template-columns:repeat(3,1fr)}
+  #cours-mp-w .stat{padding:11px 8px;border-right:1px solid var(--br);border-bottom:1px solid var(--br)}
+  #cours-mp-w .stat:nth-child(3n){border-right:none}
+  #cours-mp-w .stat:nth-last-child(-n+3){border-bottom:none}
+  #cours-mp-w .hero{padding:30px 16px 26px}
+  #cours-mp-w .filters{padding:18px 14px 0}
+  #cours-mp-w .filters-in{flex-direction:column;align-items:stretch}
+  #cours-mp-w .wrapper{padding:18px 14px 30px}
+  #cours-mp-w .session-grid{grid-template-columns:1fr}
+  #cours-mp-w .card-head{padding:13px 12px;gap:10px}
+  #cours-mp-w .card-n{width:34px;height:34px;font-size:14px}
+  #cours-mp-w .badge{display:none}
+  #cours-mp-w .card-desc{display:none}
+  #cours-mp-w .card-body{padding:16px 12px 18px}
+  #cours-mp-w .doc-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px 10px}
+  #cours-mp-w .doc-line{flex-wrap:wrap;gap:9px}
+  #cours-mp-w .doc-line-b{width:100%}
+  #cours-mp-w .doc-line-b .btn{flex:1;min-height:40px}
+  #cours-mp-w .livres-grid{grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:22px 14px}
+  #cours-mp-w .pdf-modal{padding:0}
+  #cours-mp-w .pdf-box{width:100%;height:100%;border-radius:0}
+}
+</style>
+
+<div id="cours-mp-w">
+  <div class="hero">
+    <div class="eyebrow">🧮 CPGE MP & MP* · Programme Officiel</div>
+    <h1>Cours, Résumés & Exercices <em>Corrigés MP</em></h1>
+    <p>Programme complet de mathématiques pour les <strong>Classes Préparatoires (MP/MP*)</strong> : cours théoriques, fiches de synthèse et TD d'entraînement aux concours (<strong>CNC Maroc, CCINP, Mines-Ponts, Centrale, X-ENS</strong>).</p>
+    <div class="path">
+      <span class="path-step">📘 Cours & Séances</span><span class="path-arrow">→</span>
+      <span class="path-step">📑 Fiches Synthèse</span><span class="path-arrow">→</span>
+      <span class="path-step">📝 TD & Concours</span><span class="path-arrow">→</span>
+      <span class="path-step">🔒 Corrigés Vidéo (Membres)</span>
+    </div>
+  </div>
+
+  <div class="stats-row" aria-label="Statistiques de la plateforme">
+    <div class="stat"><div class="stat-n" id="cmp-nb-ch">—</div><div class="stat-l">Chapitres</div></div>
+    <div class="stat"><div class="stat-n" id="cmp-nb-crs">—</div><div class="stat-l">Séances Cours</div></div>
+    <div class="stat"><div class="stat-n" id="cmp-nb-fch">—</div><div class="stat-l">Fiches Résumé</div></div>
+    <div class="stat"><div class="stat-n" id="cmp-nb-td">—</div><div class="stat-l">TD Concours</div></div>
+    <div class="stat"><div class="stat-n" id="cmp-nb-vid">—</div><div class="stat-l">Replays Vidéo</div></div>
+    <div class="stat"><div class="stat-n" id="cmp-nb-liv">—</div><div class="stat-l">Livres Conseillés</div></div>
+  </div>
+
+  <div class="filters">
+    <div class="shell filters-in">
+      <div>
+        <div class="filter-label">Filtrer par domaine mathématique</div>
+        <div class="filter-row" id="cmp-filters"></div>
+      </div>
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+        <input id="cmp-q" class="search" type="search" autocomplete="off" placeholder="Rechercher un chapitre, mot-clé…" aria-label="Rechercher un chapitre"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrapper shell">
+    <div id="cmp-body"></div>
+    <div class="note"><span style="font-size:18px;flex-shrink:0">💡</span><div class="note-txt"><strong>Cliquez sur un chapitre</strong> pour déployer son contenu pédagogique. Les fiches et énoncés sont librement consultables en ligne. Les replays vidéo complets et corrections détaillées sont sécurisés dans votre <strong>Espace Membre</strong>.</div></div>
+
+    <!-- ═══ BIBLIOTHÈQUE CONSEILLÉE ═══ -->
+    <div id="cmp-livres"></div>
+
+    <!-- ═══ SECTION SEO & GEO (Boost de positionnement Google) ═══ -->
+    <section class="mp-seo-box" aria-label="Informations sur la filière MP">
+      <h2>Excellence en Mathématiques : Réussir en CPGE MP & MP*</h2>
+      <p>
+        La filière <strong>Mathématiques-Physique (MP/MP*)</strong> constitue la voie d'excellence pour intégrer les plus grandes écoles d'ingénieurs au <strong>Maroc (via le Concours National Commun - CNC)</strong> et en <strong>France (Mines-Ponts, Centrale-Supélec, CCINP, Polytechnique X, ENS)</strong>.
+      </p>
+      <div class="mp-seo-grid">
+        <article class="mp-seo-card">
+          <h3>📈 Topologie & Analyse Avancée</h3>
+          <p>Maîtrisez les espaces vectoriels normés, la compacité, les séries de fonctions, les intégrales à paramètre et le calcul différentiel.</p>
+        </article>
+        <article class="mp-seo-card">
+          <h3>🔢 Algèbre & Géométrie Euclidienne</h3>
+          <p>Approfondissez la réduction des endomorphismes, les espaces préhilbertiens et euclidiens, les projections orthogonales et l'inégalité de Jensen.</p>
+        </article>
+        <article class="mp-seo-card">
+          <h3>🎯 Préparation aux Concours CNC & Français</h3>
+          <p>Des annales ciblées (CNC 2019 à 2026, CCINP, X-ENS) accompagnées de résumés de cours et de corrections vidéo pas à pas sur l'Espace Membre.</p>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <!-- Visionneuse PDF Gratuit (Modale intégrée) -->
+  <div class="pdf-modal" id="cmp-modal" aria-hidden="true">
+    <div class="pdf-ov" data-close="1"></div>
+    <div class="pdf-box" role="dialog" aria-modal="true" aria-labelledby="cmp-modal-title">
+      <div class="pdf-head">
+        <span class="pdf-title" id="cmp-modal-title">Document</span>
+        <div class="pdf-actions">
+          <a class="pdf-btn pdf-dl" id="cmp-modal-dl" href="#" target="_blank" rel="noopener">⬇ <span class="lbl">Télécharger</span></a>
+          <a class="pdf-btn pdf-tab" id="cmp-modal-tab" href="#" target="_blank" rel="noopener">↗ <span class="lbl">Plein écran</span></a>
+          <button class="pdf-btn pdf-close" id="cmp-modal-close" data-close="1" aria-label="Fermer">✕</button>
+        </div>
+      </div>
+      <div class="pdf-body"><iframe id="cmp-modal-frame" title="Aperçu du document" allow="autoplay; fullscreen" allowfullscreen></iframe></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+
+  /* ══════════════════════════════════════════════════════════════
+     ADRESSE DE VOTRE PLATEFORME MEMBRE REACT (quiz.anasskhadir.com)
+     ══════════════════════════════════════════════════════════════ */
+  var REACT_APP_URL = "https://quiz.anasskhadir.com"; // ou "http://localhost:5173" en test local
+
+  var CH = [
+    {
+      titre: "Structures algébriques",
+      cat: "algebre",
+      desc: "Groupes, idéaux, anneaux, corps, morphismes, algèbres.",
+      cours: [{ t: "Cours complet", sous: "Théorie & démonstrations", u: "" }],
+      fiches: [{ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: "https://drive.google.com/file/d/1ag-3r3rBJ-RQsaQG2ARxz_-LbYMgkE2P/view?usp=sharing" }],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }]
+    },
+    {
+      titre: "Compléments d'algèbre linéaire",
+      cat: "algebre",
+      desc: "Sommes directes, matrices par blocs, trace, hyperplans.",
+      cours: [{ t: "Cours complet", sous: "Théorie & démonstrations", u: "" }],
+      fiches: [{ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: "" }],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }]
+    },
+    {
+      titre: "Réduction des endomorphismes",
+      cat: "algebre",
+      desc: "Valeurs propres, polynômes annulateurs, diagonalisation, trigonalisation.",
+      cours: [{ t: "Cours complet", sous: "Théorie & démonstrations", u: "" }],
+      fiches: [{ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: "" }],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }]
+    },
+    {
+      titre: "Topologie des espaces normés",
+      cat: "analyse",
+      desc: "Ouverts, fermés, compacité, connexité par arcs, normes équivalentes.",
+      cours: [
+        {
+          t: "Séance 1 (Normes & EVN)",
+          sous: "Théorie & démonstrations",
+          u: "https://drive.google.com/file/d/1D8aUxMGf--TRuYYQJHgmVxCAb4aoO4K0/view?usp=sharing",
+          v: "https://youtu.be/gt-dz_nBt68"
+        },
+        {
+          t: "Séance 2 (Normes équivalentes & distance)",
+          sous: "Théorie & démonstrations",
+          u: "https://drive.google.com/file/d/1NLmS20uOR1O2GQ-vf1nwSBQMtXVWw3TB/view?usp=sharing",
+          v: "https://youtu.be/-iyPBLNn648"
+        },
+        {
+          t: "Séance 3 (Parties bornées, boules & suites)",
+          sous: "Théorie & applications interactives",
+          u: "https://drive.google.com/file/d/15rr5lsKXhRcSi6kIEgeYFw3e2jJpViFF/view?usp=sharing",
+          v: "https://youtu.be/yhKyDz4ofJY"
+        }
+      ],
+      fiches: [
+        {
+          t: "Fiche de résumé",
+          sous: "L'essentiel du cours",
+          u: "https://drive.google.com/file/d/1j9CaHOXMAhP4SyiaYWekTL1EMr_H7wsg/view?usp=sharing"
+        },
+        {
+          t: "Fiche de cours synthétique",
+          sous: "Formules & propriétés clés",
+          u: "https://drive.google.com/file/d/1RyF9URY3FICkHlLaQxATOkC3KRhi8Mtw/view?usp=sharing"
+        },
+        {
+          t: "Fiche de cours complet",
+          sous: "Cours complet détaillé",
+          u: "https://drive.google.com/file/d/1wrkLjq1-B7d4eMWNQuiENE1virfy1XQN/view?usp=sharing"
+        }
+      ],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }],
+      videos: [{ t: "Séance interactive — Les normes", sous: "Replay · Séance live", y: "https://youtu.be/gt-dz_nBt68" }]
+    },
+    {
+      titre: "Séries numériques",
+      cat: "analyse",
+      desc: "Convergence, règles de comparaison, séries alternées, sommation.",
+      cours: [{ t: "Cours complet", sous: "Théorie & démonstrations", u: "" }],
+      fiches: [{ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: "" }],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }]
+    },
+    {
+      titre: "Familles sommables",
+      cat: "analyse",
+      desc: "Sommabilité, Fubini discret, produit de Cauchy.",
+      cours: [{ t: "Cours complet", sous: "Théorie & démonstrations", u: "" }],
+      fiches: [{ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: "" }],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }]
+    },
+    {
+      titre: "Suites et séries de fonctions",
+      cat: "analyse",
+      desc: "Convergence simple, uniforme, normale et théorèmes d'interversion.",
+      cours: [{ t: "Cours complet", sous: "Théorie & démonstrations", u: "" }],
+      fiches: [{ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: "" }],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }]
+    },
+    {
+      titre: "Séries entières",
+      cat: "analyse",
+      desc: "Rayon de convergence, développement en série entière, fonctions usuelles.",
+      cours: [{ t: "Cours complet", sous: "Théorie & démonstrations", u: "" }],
+      fiches: [{ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: "" }],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }]
+    },
+    {
+      titre: "Intégration sur un intervalle quelconque",
+      cat: "analyse",
+      desc: "Intégrales généralisées, convergence dominée, théorème de Fubini.",
+      cours: [{ t: "Cours complet", sous: "Théorie & démonstrations", u: "" }],
+      fiches: [{ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: "" }],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }]
+    },
+    {
+      titre: "Intégrales à paramètre",
+      cat: "analyse",
+      desc: "Continuité, dérivabilité sous le signe intégral, applications.",
+      cours: [{ t: "Cours complet", sous: "Théorie & démonstrations", u: "" }],
+      fiches: [{ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: "" }],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }]
+    },
+    {
+      titre: "Équations différentielles linéaires",
+      cat: "analyse",
+      desc: "Systèmes différentiels, wronskien, méthode de variation des constantes.",
+      cours: [{ t: "Cours complet", sous: "Théorie & démonstrations", u: "" }],
+      fiches: [{ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: "" }],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }]
+    },
+    {
+      titre: "Calcul différentiel",
+      cat: "analyse",
+      desc: "Dérivées partielles, différentielle, gradient, extremums locaux et globaux.",
+      cours: [{ t: "Cours complet", sous: "Théorie & démonstrations", u: "" }],
+      fiches: [{ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: "" }],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }]
+    },
+    {
+      titre: "Espaces préhilbertiens et euclidiens",
+      cat: "geometrie",
+      desc: "Produit scalaire, orthogonalité, projection, distance, inégalité de Jensen.",
+      cours: [
+        {
+          t: "Séance 1 (Produit scalaire)",
+          sous: "Théorie & démonstrations",
+          u: "https://drive.google.com/file/d/1Kt6mwfiKp_fMYaOvXT36Nzar7gI9AdZP/view?usp=sharing",
+          v: "https://youtu.be/1FsyIs3b584"
+        },
+        {
+          t: "Séance 2 (Orthogonalité)",
+          sous: "Théorie & démonstrations",
+          u: "https://drive.google.com/file/d/1Wxy3FiqERxLg3y4KRDnC9Odr1ZZPy_A4/view?usp=sharing"
+        }
+      ],
+      fiches: [
+        {
+          t: "Fiche de résumé",
+          sous: "L'essentiel du chapitre",
+          u: "https://drive.google.com/file/d/1B3zEjKJe1GjlZ0hZKjR4ASSZ0TD1yuLg/view?usp=sharing"
+        }
+      ],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }]
+    },
+    {
+      titre: "Probabilités discrètes",
+      cat: "probabilites",
+      desc: "Espaces probabilisés, variables aléatoires discrètes, lois usuelles, espérance, variance.",
+      cours: [{ t: "Cours complet", sous: "Théorie & démonstrations", u: "" }],
+      fiches: [{ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: "" }],
+      tds: [{ t: "TD 1", sous: "Exercices d'application", exo: "", corr: "" }]
+    }
+  ];
+
+  var LIVRES = [
+    {
+      titre: "Probabilités discrètes MP/MP*",
+      auteur: "Jamel Jaber",
+      lien: "https://drive.google.com/file/d/1gUSRREt2CF2aaCQz-PgURIWOV9UjOwN9/view?usp=sharing",
+      cover: "https://drive.google.com/file/d/1q3EBxihbo2LmnVOJVZPi13PMhH2ywN6W/view?usp=sharing"
+    },
+    {
+      titre: "Annales de concours MP",
+      auteur: "Jean-François Dantzer",
+      lien: "https://drive.google.com/file/d/1W7y6uo8xLnGr0sdLMYkl3i16VJ-XJHVy/view?usp=sharing",
+      cover: null
+    },
+    {
+      titre: "Exercices incontournables",
+      auteur: null,
+      lien: "https://drive.google.com/file/d/1V2at6I19YJSQoHoPZXFdRTkjKg7onidb/view?usp=sharing",
+      cover: null
+    },
+    {
+      titre: "Maths 2e année H-Prépa",
+      auteur: null,
+      lien: "https://drive.google.com/file/d/1gOseXaiWakHATfU0_OOypzYR7OSpMAGg/view?usp=sharing",
+      cover: null
+    },
+    {
+      titre: "Mathématiques en MP (Cours MP4 Louis-le-Grand)",
+      auteur: "Omar Bennouna, Issam Tauil & M.C.",
+      lien: "https://drive.google.com/file/d/1d7a2fjtJIyBZTXLteuprK-MmhwqZ3z-Q/view?usp=sharing",
+      cover: null
+    },
+    {
+      titre: "Maths Tout-en-un MPI/MPI*",
+      auteur: null,
+      lien: "https://drive.google.com/file/d/1NkMjZjypjjprW2VALv5Mk7S5QKvtenlL/view?usp=sharing",
+      cover: null
+    }
+  ];
+
+  var CAT_FR = {
+    algebre: "Algèbre",
+    analyse: "Analyse",
+    probabilites: "Probabilités",
+    geometrie: "Géométrie",
+    statistiques: "Statistiques"
+  };
+
+  var wid = "cours-mp-w", pfx = "cmp";
+  var etat = { cat: "", q: "" };
+  var ouverts = {};
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;")
+      .replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function actif(u) { return typeof u === "string" && u.trim() !== ""; }
+  function visible(u) { return u !== null && u !== undefined; }
+  function sansAccents(s) {
+    s = String(s || "").toLowerCase();
+    return s.normalize ? s.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : s;
+  }
+
+  function estDrive(u) { return String(u).indexOf("drive.google.com") !== -1; }
+  function idDrive(v) {
+    if (!actif(v)) return null;
+    var m = String(v).match(/\/d\/([^/?#]+)/); if (m) return m[1];
+    m = String(v).match(/[?&]id=([^&]+)/); if (m) return m[1];
+    if (/^[a-zA-Z0-9_-]{20,}$/.test(String(v).trim())) return String(v).trim();
+    return null;
+  }
+  function urlApercu(url) {
+    if (!url) return "about:blank";
+    var str = String(url).trim();
+    var ytMatch = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    if (ytMatch) {
+      return "https://www.youtube-nocookie.com/embed/" + ytMatch[1] + "?autoplay=1&rel=0";
+    }
+    var id = idDrive(str);
+    if (id) return "https://drive.google.com/file/d/" + id + "/preview";
+    return str;
+  }
+  function urlTelechargement(url) {
+    var id = idDrive(url);
+    if (id) return "https://drive.google.com/uc?export=download&id=" + id;
+    return url || "";
+  }
+  function urlsImageDrive(id) {
+    return [
+      "https://lh3.googleusercontent.com/d/" + id + "=w600",
+      "https://drive.google.com/thumbnail?id=" + id + "&sz=w600",
+      "https://drive.google.com/thumbnail?id=" + id + "&sz=w1000",
+      "https://drive.google.com/uc?export=view&id=" + id
+    ];
+  }
+
+  function getYoutubeThumbnail(url) {
+    if (!url) return null;
+    var m = String(url).match(/(?:youtu\.be\/|v\/|embed\/|watch\?v=|&v=)([^#&?]{11})/);
+    if (m) return "https://img.youtube.com/vi/" + m[1] + "/hqdefault.jpg";
+    var id = idDrive(url);
+    if (id) return "https://lh3.googleusercontent.com/d/" + id + "=w600";
+    return null;
+  }
+
+  function sourcesImage(cover, lien) {
+    var target = cover || lien || "";
+    if (actif(target)) {
+      var id = idDrive(target);
+      return id ? urlsImageDrive(id) : [target];
+    }
+    return [];
+  }
+  function balImg(srcs, titreAlt) {
+    if (!srcs.length) return "";
+    var altText = titreAlt ? "Couverture de " + esc(titreAlt) : "Aperçu du document";
+    return '<img class="doc-img" data-srcs="' + esc(JSON.stringify(srcs)) + '" data-i="0" src="' + esc(srcs[0]) + '" alt="' + altText + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" crossorigin="anonymous" itemprop="image">';
+  }
+
+  var COUV = [["#22324f", "#16233c"], ["#5b4526", "#3f2f18"], ["#3c4d38", "#293524"],
+  ["#5f2e2e", "#43201f"], ["#43384f", "#2d2536"], ["#2b4c4f", "#1c3335"]];
+  function hashTitre(s) { var h = 0; s = String(s || ""); for (var i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) >>> 0; } return h; }
+  function couvLivre(titre, auteur) {
+    var c = COUV[hashTitre(titre) % COUV.length];
+    return '<span class="gen" style="background:linear-gradient(150deg,' + c[0] + ',' + c[1] + ')">'
+      + '<span class="gen-orn"></span>'
+      + '<span class="gen-t">' + esc(titre) + '</span>'
+      + (auteur ? '<span class="gen-b">' + esc(auteur) + '</span>' : '')
+      + '</span>';
+  }
+
+  function normalise(ch, i) {
+    var n_auto = String(i + 1);
+    var o = {
+      k: "k" + i, n: n_auto, titre: ch.titre || "", cat: ch.cat || "analyse", desc: ch.desc || "",
+      cours: [], fiches: [], tds: [], videos: []
+    };
+    (ch.cours || []).forEach(function (c) { if (visible(c.u) || visible(c.v)) o.cours.push(c); });
+    if (ch.fiches) {
+      ch.fiches.forEach(function (f) { if (visible(f.u) || visible(f.v)) o.fiches.push(f); });
+    } else if (visible(ch.fiche)) {
+      o.fiches.push({ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: ch.fiche });
+    }
+    (ch.tds || []).forEach(function (t) { if (visible(t.exo) || visible(t.corr) || visible(t.v)) o.tds.push(t); });
+    (ch.videos || []).forEach(function (v) {
+      if (actif(v.y || v.u)) o.videos.push({ t: v.t, sous: v.sous, y: (v.y || v.u), cover: v.cover });
+    });
+    return o;
+  }
+  var DATA = CH.map(normalise);
+
+  function carteFiche(f, ch) {
+    var dispo = actif(f.u);
+    var srcs = sourcesImage(f.cover, f.u);
+    var inner = '<span class="gen" style="background:linear-gradient(150deg,#6d4a72,#3a2440)">'
+      + '<span class="gen-k">Résumé</span>'
+      + '<span class="gen-orn"></span>'
+      + '<span class="gen-t">' + esc(f.t || "Fiche") + '</span>'
+      + '</span>'
+      + balImg(srcs, f.t)
+      + (dispo ? '<span class="doc-loupe" aria-hidden="true">👁</span>' : '');
+
+    var thumb = dispo
+      ? '<button type="button" class="doc-thumb js-view" data-url="' + esc(f.u) + '" data-title="' + esc((f.t || "Fiche") + " — " + ch.titre) + '" aria-label="Ouvrir : ' + esc(f.t) + '">' + inner + '</button>'
+      : '<div class="doc-thumb">' + inner + '</div>';
+
+    return '<article class="doc-card' + (dispo ? "" : " soon") + '">'
+      + thumb
+      + '<div class="doc-info">'
+      + '<span class="doc-t">' + esc(f.t || "Fiche de synthèse") + '</span>'
+      + (f.sous ? '<span class="doc-d">' + esc(f.sous) + '</span>' : '')
+      + '</div>'
+      + '</article>';
+  }
+
+  function carteSessionVideo(c, ch) {
+    var titre = c.t || "Séance de cours";
+    var sous = c.sous || "Théorie & démonstrations · Replay";
+    var videoUrl = c.v || c.y || "";
+    var pdfUrl = c.u || "";
+
+    var thumbUrl = getYoutubeThumbnail(videoUrl) || "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop&q=80";
+
+    // Lien de redirection vers l'Espace Membre React sécurisé avec callback redirect
+    var targetPath = "/cours?annee=2&branche=mp"
+      + "&video=" + encodeURIComponent(videoUrl)
+      + "&title=" + encodeURIComponent(titre + " — " + ch.titre)
+      + "&view=video";
+    var loginUrl = REACT_APP_URL + "/login?redirect=" + encodeURIComponent(targetPath);
+
+    return '<article class="session-card">'
+      + '<a class="session-thumb-wrap" href="' + esc(loginUrl) + '" target="_blank" rel="noopener" aria-label="Accéder au replay : ' + esc(titre) + '">'
+      + '<img class="session-thumb-img" src="' + esc(thumbUrl) + '" alt="Miniature : ' + esc(titre) + '" loading="lazy" />'
+      + '<div class="session-lock-ov">'
+      + '<span class="session-lock-badge">🔒 Espace Membre</span>'
+      + '<div class="session-play-btn" title="Déverrouiller le cours vidéo">🔒</div>'
+      + '</div>'
+      + '</a>'
+      + '<div class="session-info">'
+      + '<span class="session-t">' + esc(titre) + '</span>'
+      + '<span class="session-d">' + esc(sous) + '</span>'
+      + '<div class="session-actions">'
+      + (actif(pdfUrl)
+        ? '<button type="button" class="btn btn-pdf js-view" data-url="' + esc(pdfUrl) + '" data-title="' + esc(titre + " (Notes de cours) — " + ch.titre) + '">📄 Support PDF</button>'
+        : '')
+      + '<a class="btn btn-video" href="' + esc(loginUrl) + '" target="_blank" rel="noopener">▶️ Regarder 🔒</a>'
+      + '</div>'
+      + '</div>'
+      + '</article>';
+  }
+
+  function ligneTD(t, ch) {
+    var dispo = actif(t.exo) || actif(t.corr);
+    var actions = "";
+    if (actif(t.exo)) {
+      actions += '<button type="button" class="btn btn-exo js-view" data-url="' + esc(t.exo) + '" data-title="' + esc((t.t || "TD") + " — Énoncé — " + ch.titre) + '">📝 Énoncé</button>';
+    }
+    if (actif(t.corr)) {
+      var targetCorrPath = "/cours?annee=2&branche=mp"
+        + "&pdf=" + encodeURIComponent(t.corr)
+        + "&title=" + encodeURIComponent((t.t || "TD") + " — Correction — " + ch.titre)
+        + "&view=corr";
+      var loginCorrUrl = REACT_APP_URL + "/login?redirect=" + encodeURIComponent(targetCorrPath);
+      actions += '<a class="btn btn-corr" href="' + esc(loginCorrUrl) + '" target="_blank" rel="noopener">✅ Correction <small style="font-size:10px;opacity:.85">🔒</small></a>';
+    }
+
+    return '<div class="doc-line' + (dispo ? "" : " soon") + '">'
+      + '<span class="doc-line-ic" aria-hidden="true">📝</span>'
+      + '<span class="doc-line-txt">'
+      + '<span class="doc-line-t">' + esc(t.t || "Fiche de TD") + '</span>'
+      + (t.sous ? '<span class="doc-line-d">' + esc(t.sous) + '</span>' : '')
+      + '</span>'
+      + '<span class="doc-line-b">' + (actions || '<span class="btn btn-soon">Bientôt disponible</span>') + '</span>'
+      + '</div>';
+  }
+
+  function corpsChapitre(ch) {
+    var sessionsVideo = [];
+    (ch.cours || []).forEach(function (c) {
+      if (actif(c.v) || actif(c.u)) sessionsVideo.push(c);
+    });
+    (ch.videos || []).forEach(function (v) {
+      sessionsVideo.push({ t: v.t, sous: v.sous, v: v.y, u: "" });
+    });
+
+    var gauche = "";
+    if (sessionsVideo.length) {
+      gauche += '<section class="doc-sec">'
+        + '<div class="doc-sec-t"><i>🎬</i><b>Séances de Cours & Replays Vidéo</b><span class="doc-sec-n">' + sessionsVideo.length + '</span><s></s></div>'
+        + '<div class="session-grid">' + sessionsVideo.map(function (s) { return carteSessionVideo(s, ch); }).join("") + '</div>'
+        + '</section>';
+    }
+
+    if (ch.tds.length) {
+      gauche += '<section class="doc-sec">'
+        + '<div class="doc-sec-t"><i>📝</i><b>TD & Entraînement Concours</b><span class="doc-sec-n">' + ch.tds.length + '</span><s></s></div>'
+        + '<div class="doc-list">' + ch.tds.map(function (t) { return ligneTD(t, ch); }).join("") + '</div>'
+        + '</section>';
+    }
+
+    var cote = "";
+    if (ch.fiches.length) {
+      cote += '<section class="doc-sec">'
+        + '<div class="doc-sec-t"><i>📑</i><b>Fiches de synthèse</b><span class="doc-sec-n">' + ch.fiches.length + '</span><s></s></div>'
+        + '<div class="doc-grid">' + ch.fiches.map(function (f) { return carteFiche(f, ch); }).join("") + '</div>'
+        + '</section>';
+    }
+
+    if (!gauche && !cote) return '<div class="empty-mini">Documents à venir pour ce chapitre.</div>';
+    if (!cote) return '<div class="ch-grid solo"><div class="ch-main">' + gauche + '</div></div>';
+    if (!gauche) return '<div class="ch-grid solo"><div class="ch-main">' + cote + '</div></div>';
+    return '<div class="ch-grid">'
+      + '<div class="ch-main">' + gauche + '</div>'
+      + '<aside class="ch-side">' + cote + '</aside>'
+      + '</div>';
+  }
+
+  function pastilles(ch) {
+    var h = "", crsOk = 0, fchOk = 0, tdOk = 0, vidOk = 0;
+    ch.cours.forEach(function (c) { if (actif(c.u)) crsOk++; if (actif(c.v)) vidOk++; });
+    ch.fiches.forEach(function (f) { if (actif(f.u)) fchOk++; });
+    ch.tds.forEach(function (t) { if (actif(t.exo) || actif(t.corr)) tdOk++; });
+    vidOk += ch.videos.length;
+
+    function p(txt, ok) { return '<span class="chip' + (ok ? " ok" : "") + '">' + txt + '</span>'; }
+    if (ch.cours.length) h += p("📘 " + ch.cours.length + " séance" + (ch.cours.length > 1 ? "s" : ""), crsOk > 0);
+    if (ch.fiches.length) h += p("📑 " + ch.fiches.length + " fiche" + (ch.fiches.length > 1 ? "s" : ""), fchOk > 0);
+    if (ch.tds.length) h += p("📝 " + ch.tds.length + " TD", tdOk > 0);
+    if (vidOk) h += p("🎬 " + vidOk + " vidéo" + (vidOk > 1 ? "s" : "") + " 🔒", true);
+    return h;
+  }
+
+  function lignes(items) {
+    var lastCat = null, h = "";
+    items.forEach(function (ch, i) {
+      if (ch.cat !== lastCat) {
+        h += '<div class="sep"><div class="sep-l">' + (CAT_FR[ch.cat] || ch.cat) + '</div><div class="sep-line"></div></div>';
+        lastCat = ch.cat;
+      }
+      var ouvert = !!ouverts[ch.k];
+
+      h += '<article class="card' + (ouvert ? " open" : "") + '" id="cmp-ch-' + esc(ch.n) + '" data-k="' + ch.k + '" style="animation-delay:' + (i * 0.03).toFixed(2) + 's" itemscope itemtype="https://schema.org/Course">'
+        + '<button type="button" class="card-head js-toggle" aria-expanded="' + (ouvert ? "true" : "false") + '">'
+        + '<span class="card-n">' + esc(ch.n) + '</span>'
+        + '<span class="card-titles">'
+        + '<h3 class="card-titre" itemprop="name">' + esc(ch.titre) + '</h3>'
+        + (ch.desc ? '<span class="card-desc" itemprop="description">' + esc(ch.desc) + '</span>' : '')
+        + '<span class="card-chips">' + pastilles(ch) + '</span>'
+        + '</span>'
+        + '<span class="badge b-' + esc(ch.cat) + '">' + (CAT_FR[ch.cat] || ch.cat) + '</span>'
+        + '<svg class="card-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>'
+        + '</button>'
+        + '<div class="card-body">' + corpsChapitre(ch) + '</div>'
+        + '</article>';
+    });
+    return h || '<div class="empty">Aucun chapitre ne correspond à votre recherche.</div>';
+  }
+
+  function compteurs(items) {
+    var crs = 0, fch = 0, td = 0, vid = 0;
+    items.forEach(function (ch) {
+      ch.cours.forEach(function (c) { if (actif(c.u)) crs++; if (actif(c.v)) vid++; });
+      ch.fiches.forEach(function (f) { if (actif(f.u)) fch++; });
+      ch.tds.forEach(function (t) { if (actif(t.exo) || actif(t.corr)) td++; if (actif(t.v)) vid++; });
+      vid += ch.videos.length;
+    });
+    function s(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
+    s(pfx + "-nb-ch", items.length);
+    s(pfx + "-nb-crs", crs || items.length);
+    s(pfx + "-nb-fch", fch || items.length);
+    s(pfx + "-nb-td", td || items.length);
+    s(pfx + "-nb-vid", vid || 3);
+  }
+
+  function filtres() {
+    var el = document.getElementById(pfx + "-filters"); if (!el) return;
+    var cats = []; DATA.forEach(function (c) { if (cats.indexOf(c.cat) < 0) cats.push(c.cat); });
+    var h = '<button type="button" class="fb on" data-cat="">Tout afficher</button>';
+    cats.forEach(function (c) { h += '<button type="button" class="fb" data-cat="' + esc(c) + '">' + (CAT_FR[c] || c) + '</button>'; });
+    el.innerHTML = h;
+  }
+
+  function appliquer() {
+    var q = sansAccents(etat.q).trim();
+    var items = DATA.filter(function (ch) {
+      if (etat.cat && ch.cat !== etat.cat) return false;
+      if (!q) return true;
+      return sansAccents(ch.titre + " " + ch.desc + " " + (CAT_FR[ch.cat] || "") + " " + ch.n).indexOf(q) !== -1;
+    });
+    var body = document.getElementById(pfx + "-body"); if (!body) return;
+    body.innerHTML = lignes(items);
+    compteurs(items);
+  }
+
+  function rendreLivre(l) {
+    var titre = l.titre || "Ouvrage", auteur = l.auteur || "", dispo = actif(l.lien);
+    var interieur = '<span class="livre-cover">' + couvLivre(titre, auteur)
+      + balImg(sourcesImage(l.cover, l.lien), titre).replace('class="doc-img"', 'class="doc-img livre-img"')
+      + '<span class="livre-loupe" aria-hidden="true">👁</span></span>'
+      + '<span class="livre-meta"><span class="livre-titre">' + esc(titre) + '</span>'
+      + (auteur ? '<span class="livre-auteur">' + esc(auteur) + '</span>' : '')
+      + '</span>';
+    if (dispo) {
+      var t = titre + (auteur ? " — " + auteur : "");
+      return '<button type="button" class="livre js-view" data-url="' + esc(l.lien) + '" data-title="' + esc(t) + '" aria-label="Ouvrir : ' + esc(t) + '">' + interieur + '</button>';
+    }
+    return '<div class="livre livre-bientot">' + interieur + '<span class="livre-ruban">Bientôt</span></div>';
+  }
+  function rendreLivres() {
+    var el = document.getElementById(pfx + "-livres"); if (!el) return;
+    var n = document.getElementById(pfx + "-nb-liv");
+    function majCompteur(v) {
+      if (!n) return;
+      var bloc = n.parentNode;
+      if (v > 0) { n.textContent = v; if (bloc) bloc.style.display = ""; }
+      else if (bloc) { bloc.style.display = "none"; }
+    }
+    if (!LIVRES.length) { el.innerHTML = ""; majCompteur(0); return; }
+    el.innerHTML = '<div class="livres-section">'
+      + '<div class="livres-tete">'
+      + '<span class="livres-tag">Bibliothèque CPGE</span>'
+      + '<h3 class="livres-h">Les ouvrages de référence conseillés en MP / MP*</h3>'
+      + '<p class="livres-sub">Cliquez sur un ouvrage pour le feuilleter et le télécharger au format PDF.</p>'
+      + '</div>'
+      + '<div class="livres-grid">' + LIVRES.map(rendreLivre).join("") + '</div>'
+      + '</div>';
+    majCompteur(LIVRES.filter(function (l) { return actif(l.lien); }).length);
+  }
+
+  var dernierFocus = null;
+  function ouvrirViewer(url, titre) {
+    var m = document.getElementById(pfx + "-modal");
+    dernierFocus = document.activeElement;
+    document.getElementById(pfx + "-modal-title").textContent = titre || "Document";
+    document.getElementById(pfx + "-modal-frame").src = urlApercu(url);
+    var dl = document.getElementById(pfx + "-modal-dl");
+    dl.href = urlTelechargement(url);
+    document.getElementById(pfx + "-modal-tab").href = url;
+    m.classList.add("open"); m.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    var c = document.getElementById(pfx + "-modal-close"); if (c) c.focus();
+  }
+  function fermerViewer() {
+    var m = document.getElementById(pfx + "-modal");
+    if (!m.classList.contains("open")) return;
+    m.classList.remove("open"); m.setAttribute("aria-hidden", "true");
+    document.getElementById(pfx + "-modal-frame").src = "about:blank";
+    document.body.style.overflow = "";
+    if (dernierFocus && dernierFocus.focus) dernierFocus.focus();
+  }
+
+  var root = document.getElementById(wid);
+
+  root.addEventListener("click", function (e) {
+    var v = e.target.closest(".js-view");
+    if (v) {
+      ouvrirViewer(v.getAttribute("data-url"), v.getAttribute("data-title"));
+      return;
+    }
+
+    var t = e.target.closest(".js-toggle");
+    if (t) {
+      var c = t.closest(".card"), n = c.getAttribute("data-k"), o = c.classList.toggle("open");
+      t.setAttribute("aria-expanded", String(o));
+      if (o) { ouverts[n] = 1; } else { delete ouverts[n]; }
+      return;
+    }
+
+    var f = e.target.closest(".fb");
+    if (f) {
+      root.querySelectorAll(".fb").forEach(function (x) { x.classList.remove("on"); });
+      f.classList.add("on");
+      etat.cat = f.getAttribute("data-cat") || "";
+      appliquer();
+      return;
+    }
+
+    if (e.target.closest("[data-close]")) fermerViewer();
+  });
+
+  var champ = document.getElementById(pfx + "-q");
+  if (champ) { champ.addEventListener("input", function () { etat.q = champ.value; appliquer(); }); }
+
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") fermerViewer(); });
+
+  root.addEventListener("error", function (e) {
+    var img = e.target;
+    if (!img || img.tagName !== "IMG" || !img.classList.contains("doc-img")) return;
+    var srcs = []; try { srcs = JSON.parse(img.getAttribute("data-srcs") || "[]"); } catch (err) { }
+    var i = parseInt(img.getAttribute("data-i") || "0", 10) + 1;
+    if (i < srcs.length) { img.setAttribute("data-i", String(i)); img.src = srcs[i]; }
+    else {
+      var b0 = img.parentNode;
+      if (b0) {
+        if (b0.classList) { b0.classList.remove("img-ok"); b0.classList.remove("paysage"); }
+        b0.removeChild(img);
+      }
+    }
+  }, true);
+
+  root.addEventListener("load", function (e) {
+    var img = e.target;
+    if (!img || img.tagName !== "IMG" || !img.classList.contains("doc-img")) return;
+    var box = img.parentNode; if (!box || !box.classList) return;
+    box.classList.add("img-ok");
+    if (img.naturalWidth && img.naturalHeight && img.naturalWidth > img.naturalHeight * 1.05) {
+      img.classList.add("paysage");
+      box.classList.add("paysage");
+    }
+  }, true);
+
+  function init() {
+    filtres();
+    appliquer();
+    rendreLivres();
+
+    var h = (location.hash || "").match(/^#ch-([\w-]+)$/);
+    if (h) {
+      var el0 = document.getElementById("cmp-ch-" + h[1]);
+      if (el0) {
+        ouverts[el0.getAttribute("data-k")] = 1;
+        appliquer();
+        var el = document.getElementById("cmp-ch-" + h[1]);
+        if (el && el.scrollIntoView) { setTimeout(function () { el.scrollIntoView({ behavior: "smooth", block: "center" }); }, 180); }
+      }
+    }
+  }
+  if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }
+
+  /* ══════════════════════════════════════════════════════════════
+     EXPOSITION DES DONNÉES EN HEADLESS JSON POUR L'ESPACE MEMBRE
+     ══════════════════════════════════════════════════════════════ */
+  try {
+    var dataScript = document.getElementById("cours-mp-data");
+    if (!dataScript) {
+      dataScript = document.createElement("script");
+      dataScript.id = "cours-mp-data";
+      dataScript.type = "application/json";
+      document.body.appendChild(dataScript);
+    }
+    dataScript.textContent = JSON.stringify({ chapitres: CH, livres: LIVRES });
+  } catch (e) { }
+})();
+</script>

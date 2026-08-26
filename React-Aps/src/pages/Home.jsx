@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { schoolsApi } from "../api.js";
 import {
   AlertTriangle,
@@ -18,29 +18,15 @@ import {
   TrendingUp,
   Briefcase,
   Award,
-  Trophy
+  Trophy,
+  ArrowRight,
+  ChevronRight,
+  ShieldCheck,
+  Video
 } from "../components/Icon.jsx";
 
-const typeOptions = [
-  {
-    id: "post_bac",
-    label: "Post-Bac",
-    hint: "Accès direct après le baccalauréat (ENSA, ENSAM, FMP, IAV, etc.)",
-    icon: <Target size={22} style={{ color: "var(--primary)" }} />
-  },
-  {
-    id: "bac_plus_2",
-    label: "Bac+2 / CPGE / Universités",
-    hint: "Grandes Écoles de Commerce (ISCAE), Concours d'Enseignement (CRMEF), CNC, Masters",
-    icon: <Trophy size={22} style={{ color: "#f59e0b" }} />
-  },
-];
-
-const isEnseignement = (s) => s?.name?.toLowerCase().includes("enseignement");
-const isIscae = (s) => s?.name?.toLowerCase().includes("iscae");
-const isCnc = (s) => s?.name?.toLowerCase().includes("cnc");
-
 function driveFileId(url) {
+  if (!url) return null;
   const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   return match ? match[1] : null;
 }
@@ -51,18 +37,6 @@ function drivePreviewUrl(url) {
 function driveDownloadUrl(url) {
   const id = driveFileId(url);
   return id ? `https://drive.google.com/uc?export=download&id=${id}` : url;
-}
-
-function Card({ children, onClick, highlight = false }) {
-  return (
-    <button
-      className={`exam-card ${highlight ? "exam-card--highlighted" : ""}`}
-      onClick={onClick}
-      style={{ textAlign: "left", border: 0, width: "100%", cursor: "pointer" }}
-    >
-      {children}
-    </button>
-  );
 }
 
 function DocumentPreview({ doc, onClose }) {
@@ -96,33 +70,56 @@ function DocumentPreview({ doc, onClose }) {
 }
 
 function Home() {
-  const [schools, setSchools] = useState([]);
-  const [type, setType] = useState(null);
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Navigation hierarchy:
+  // mainCategory: null (root: CPGE vs Concours L2/L3) | "cpge" | "concours"
+  const [mainCategory, setMainCategory] = useState(() => searchParams.get("cat") || null);
+  const [selectedCpgeSection, setSelectedCpgeSection] = useState(null);
   const [school, setSchool] = useState(null);
   const [subject, setSubject] = useState(null);
   const [year, setYear] = useState(null);
   const [previewDoc, setPreviewDoc] = useState(null);
+
+  const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
 
   useEffect(() => {
     schoolsApi
       .list()
-      .then(setSchools)
+      .then((data) => setSchools(data || []))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
-  const back = () => {
-    if (subject) setSubject(null);
-    else if (year) setYear(null);
-    else if (school) setSchool(null);
-    else setType(null);
+  // Sync search param when category changes
+  useEffect(() => {
+    if (mainCategory) {
+      setSearchParams({ cat: mainCategory });
+    } else {
+      setSearchParams({});
+    }
+  }, [mainCategory, setSearchParams]);
+
+  // Robust back navigation that never blanks out
+  const handleBack = () => {
+    if (subject) {
+      setSubject(null);
+    } else if (year) {
+      setYear(null);
+    } else if (school) {
+      setSchool(null);
+    } else if (selectedCpgeSection) {
+      setSelectedCpgeSection(null);
+    } else if (mainCategory) {
+      setMainCategory(null);
+    }
   };
 
-  // Flatten all exams for direct search capabilities
+  // Flatten all exams for direct search
   const allExams = useMemo(() => {
     const list = [];
     (schools || []).forEach((sc) => {
@@ -144,45 +141,29 @@ function Home() {
   // Filtered exams during search
   const filteredExams = useMemo(() => {
     const q = search.trim().toLowerCase();
+    if (!q) return [];
     return allExams.filter((ex) => {
-      const matchCat =
-        categoryFilter === "all"
-          ? true
-          : categoryFilter === "post_bac"
-          ? ex.schoolType === "post_bac"
-          : categoryFilter === "bac_plus_2"
-          ? ex.schoolType === "bac_plus_2"
-          : true;
-
-      const matchSearch =
-        !q ||
+      return (
         ex.title.toLowerCase().includes(q) ||
         ex.schoolName.toLowerCase().includes(q) ||
         ex.subjectName.toLowerCase().includes(q) ||
         (ex.year && String(ex.year).includes(q)) ||
-        (ex.description && ex.description.toLowerCase().includes(q));
-
-      return matchCat && matchSearch;
+        (ex.description && ex.description.toLowerCase().includes(q))
+      );
     });
-  }, [allExams, search, categoryFilter]);
+  }, [allExams, search]);
 
-  const typeLabel = type ? typeOptions.find((t) => t.id === type)?.label : null;
-  const title = subject
-    ? subject.name
-    : year
-    ? `Année ${year}`
-    : school
-    ? school.name
-    : typeLabel || "Portail des Concours & Examens";
+  const isEnseignement = (s) => s?.name?.toLowerCase().includes("enseignement");
+  const isIscae = (s) => s?.name?.toLowerCase().includes("iscae");
+  const isCnc = (s) => s?.name?.toLowerCase().includes("cnc");
 
-  const visibleSchools = schools.filter((item) => item.type === type);
   const enseignement = school && isEnseignement(school);
 
   const years = enseignement
     ? [
         ...new Set([
           ...(school.programmes || []).map((p) => p.year),
-          ...school.subjects.flatMap((s) => s.exams.map((e) => e.year)),
+          ...(school.subjects || []).flatMap((s) => (s.exams || []).map((e) => e.year)),
         ]),
       ].sort((a, b) => b - a)
     : [];
@@ -191,138 +172,118 @@ function Home() {
     ? (school.programmes || []).filter((p) => p.year === year)
     : [];
   const yearExams = enseignement
-    ? school.subjects.flatMap((s) =>
-        s.exams.filter((e) => e.year === year).map((e) => ({ ...e, subjectName: s.name }))
+    ? (school.subjects || []).flatMap((s) =>
+        (s.exams || [])
+          .filter((e) => e.year === year)
+          .map((e) => ({ ...e, subjectName: s.name }))
       )
     : [];
 
-  const totalExamsCount = allExams.length;
+  // Schools for Concours L2/L3 category (ISCAE, Enseignement, CNC, etc.)
+  const concoursSchools = useMemo(() => {
+    return schools.filter(
+      (s) => s.type === "bac_plus_2" || isIscae(s) || isEnseignement(s) || isCnc(s)
+    );
+  }, [schools]);
 
   return (
-    <div className="page">
-      <div className="page-header fade-up">
-        <div className="section-label">⊙ E-LEARNING MATHEMATICS • PR. A. KHADIR</div>
-        <h1>{search ? "Résultats de recherche" : title}</h1>
-        <p>
+    <div className="page" style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 18px 80px" }}>
+      {/* ── Header ── */}
+      <div className="page-header fade-up" style={{ textAlign: "center", marginBottom: 32 }}>
+        <div
+          className="section-label"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            background: "rgba(67, 97, 238, 0.08)",
+            color: "var(--primary)",
+            padding: "4px 14px",
+            borderRadius: 99,
+            fontWeight: 700,
+            fontSize: "0.78rem",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            marginBottom: 12,
+          }}
+        >
+          <Sparkles size={14} /> E-LEARNING MATHEMATICS • PR. A. KHADIR
+        </div>
+        <h1 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
+          {search ? "Résultats de recherche" : "Portail des Formations & Concours"}
+        </h1>
+        <p style={{ maxWidth: 640, margin: "8px auto 0", color: "var(--text-muted)", fontSize: "1rem" }}>
           {search
-            ? `${filteredExams.length} QCM trouvé(s)`
-            : "Annales corrigées avec solutions détaillées LaTeX et suivi de progression"}
+            ? `${filteredExams.length} QCM / document(s) trouvé(s)`
+            : "Choisissez votre cursus pour accéder aux cours complets, fiches, vidéos et annales corrigées"}
         </p>
       </div>
 
-      {/* ── Search & Filter Toolbar ── */}
+      {/* ── Search Bar ── */}
       <div
         className="card fade-up"
         style={{
-          padding: "16px 20px",
+          padding: "12px 18px",
           marginBottom: 28,
-          background: "var(--surface-2)",
+          background: "var(--surface)",
           border: "1px solid var(--border)",
-          borderRadius: "var(--radius)",
+          borderRadius: 16,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
         }}
       >
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ position: "relative", flex: "1 1 280px" }}>
-            <Search
-              size={16}
-              style={{
-                position: "absolute",
-                left: 12,
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "var(--text-muted)",
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Rechercher un QCM, concours, matière, année (ex. ISCAE, ENSA, 2023, Analyse)..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "9px 36px 9px 36px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-                color: "var(--text)",
-                fontSize: "0.9rem",
-              }}
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                style={{
-                  position: "absolute",
-                  right: 10,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "transparent",
-                  border: 0,
-                  color: "var(--text-muted)",
-                  cursor: "pointer",
-                }}
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-
-          {/* Quick Filter Pills */}
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {[
-              { id: "all", label: "Tous" },
-              { id: "post_bac", label: "Post-Bac" },
-              { id: "bac_plus_2", label: "Bac+2" },
-            ].map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setCategoryFilter(f.id)}
-                className={`user-filter-pill ${categoryFilter === f.id ? "active" : ""}`}
-                style={{ padding: "6px 14px", fontSize: "0.82rem" }}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {!search && (
-          <div
+        <div style={{ position: "relative" }}>
+          <Search
+            size={18}
             style={{
-              marginTop: 10,
-              fontSize: "0.78rem",
+              position: "absolute",
+              left: 14,
+              top: "50%",
+              transform: "translateY(-50%)",
               color: "var(--text-muted)",
-              display: "flex",
-              gap: 16,
-              alignItems: "center",
             }}
-          >
-            <span>📚 {totalExamsCount} QCM disponibles</span>
-            <span>🎓 Concours d'Ingénierie, Commerce & Enseignement</span>
-          </div>
-        )}
+          />
+          <input
+            type="text"
+            placeholder="Rechercher un cours, concours, QCM, chapitre (ex. ISCAE, CRMEF, Algèbre, Wallis, 2024)..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "10px 16px 10px 42px",
+              borderRadius: 12,
+              border: "1px solid var(--border)",
+              background: "var(--bg-subtle, #f8fafc)",
+              color: "var(--text)",
+              fontSize: "0.95rem",
+            }}
+          />
+        </div>
       </div>
 
       {loading && (
-        <div className="center-msg">
-          <span className="spinner" style={{ width: 30, height: 30, borderWidth: 3 }} />
+        <div className="center-msg" style={{ padding: 40, textAlign: "center" }}>
+          <span className="spinner" style={{ width: 32, height: 32, borderWidth: 3 }} />
         </div>
       )}
 
-      {error && <p className="error-msg"><AlertTriangle size={15} /> {error}</p>}
+      {error && (
+        <p className="error-msg" style={{ marginBottom: 20 }}>
+          <AlertTriangle size={15} /> {error}
+        </p>
+      )}
 
-      {/* ── Search results view ── */}
-      {!loading && !error && search.trim().length > 0 && (
+      {/* ── Search Results View ── */}
+      {!loading && search.trim().length > 0 && (
         <div>
           {filteredExams.length === 0 ? (
-            <div className="empty-state" style={{ padding: "48px 16px" }}>
-              <Search size={38} className="empty-state-icon" style={{ color: "var(--text-faint)" }} />
+            <div className="empty-state" style={{ padding: "48px 16px", textAlign: "center" }}>
+              <Search size={42} className="empty-state-icon" style={{ color: "var(--text-faint)" }} />
               <h3>Aucun QCM trouvé</h3>
               <p>Aucun examen ne correspond à votre recherche "{search}".</p>
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={() => setSearch("")}
-                style={{ marginTop: 12 }}
+                style={{ marginTop: 14, borderRadius: 10 }}
               >
                 Effacer la recherche
               </button>
@@ -344,7 +305,7 @@ function Home() {
                       </span>
                     )}
                     <span className="badge" style={{ background: "var(--primary-light)", color: "var(--primary)" }}>
-                      {exam.schoolType === "post_bac" ? "Post-Bac" : "Bac+2"}
+                      {exam.schoolType === "post_bac" ? "Post-Bac" : "Concours"}
                     </span>
                   </div>
                 </Link>
@@ -354,50 +315,393 @@ function Home() {
         </div>
       )}
 
-      {/* ── Hierarchical Navigation ── */}
-      {!loading && !error && !search.trim() && (
+      {/* ── Hierarchical Card Navigation ── */}
+      {!loading && !search.trim() && (
         <>
-          {(type || school || subject) && (
-            <button className="btn btn-secondary" onClick={back} style={{ marginBottom: 24 }}>
-              <ArrowLeft size={15} /> Retour
-            </button>
-          )}
+          {/* Breadcrumb + Back Button */}
+          {(mainCategory || school || subject) && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 24,
+                flexWrap: "wrap",
+              }}
+            >
+              <button className="btn btn-secondary" onClick={handleBack} style={{ borderRadius: 12 }}>
+                <ArrowLeft size={16} /> Retour
+              </button>
 
-          {/* Niveau 1 : Choix du type (Post-Bac vs Bac+2) */}
-          {!type && (
-            <div className="exam-grid">
-              {typeOptions.map((opt) => (
-                <Card key={opt.id} onClick={() => setType(opt.id)}>
-                  <div className="exam-card-icon">{opt.icon}</div>
-                  <h3>{opt.label}</h3>
-                  <p>{opt.hint}</p>
-                </Card>
-              ))}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.88rem", color: "var(--text-muted)" }}>
+                <span
+                  style={{ cursor: "pointer", color: "var(--primary)", fontWeight: 600 }}
+                  onClick={() => {
+                    setSubject(null);
+                    setSchool(null);
+                    setSelectedCpgeSection(null);
+                    setMainCategory(null);
+                  }}
+                >
+                  Accueil
+                </span>
+                <ChevronRight size={14} />
+                {mainCategory === "cpge" && (
+                  <span
+                    style={{
+                      cursor: school || subject ? "pointer" : "default",
+                      color: school || subject ? "var(--primary)" : "var(--text)",
+                      fontWeight: 600,
+                    }}
+                    onClick={() => {
+                      setSubject(null);
+                      setSchool(null);
+                      setSelectedCpgeSection(null);
+                    }}
+                  >
+                    CPGE
+                  </span>
+                )}
+                {mainCategory === "concours" && (
+                  <span
+                    style={{
+                      cursor: school || subject ? "pointer" : "default",
+                      color: school || subject ? "var(--primary)" : "var(--text)",
+                      fontWeight: 600,
+                    }}
+                    onClick={() => {
+                      setSubject(null);
+                      setSchool(null);
+                    }}
+                  >
+                    Concours L2 / L3 & Recrutement
+                  </span>
+                )}
+                {school && (
+                  <>
+                    <ChevronRight size={14} />
+                    <span style={{ fontWeight: 700, color: "var(--text)" }}>{school.name}</span>
+                  </>
+                )}
+                {subject && (
+                  <>
+                    <ChevronRight size={14} />
+                    <span style={{ fontWeight: 700, color: "var(--text)" }}>{subject.name}</span>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Niveau 2 : Écoles & Concours du type choisi */}
-          {type && !school && (
+          {/* ══════════════════════════════════════════════════════
+             NIVEAU 1 : LES 2 GRANDES CARTES (CPGE vs CONCOURS L2/L3)
+             ══════════════════════════════════════════════════════ */}
+          {!mainCategory && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                gap: 24,
+              }}
+            >
+              {/* Carte 1 : CPGE */}
+              <div
+                className="card exam-card"
+                onClick={() => setMainCategory("cpge")}
+                style={{
+                  cursor: "pointer",
+                  padding: "36px 28px",
+                  borderRadius: 20,
+                  border: "2px solid rgba(67, 97, 238, 0.2)",
+                  background: "linear-gradient(145deg, var(--surface) 0%, rgba(67, 97, 238, 0.04) 100%)",
+                  transition: "all 0.25s ease",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  boxShadow: "0 8px 24px rgba(67, 97, 238, 0.08)",
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      width: 58,
+                      height: 58,
+                      borderRadius: 16,
+                      background: "linear-gradient(135deg, #4361ee, #7c3aed)",
+                      color: "white",
+                      display: "grid",
+                      placeItems: "center",
+                      fontSize: "1.6rem",
+                      marginBottom: 20,
+                      boxShadow: "0 6px 18px rgba(67, 97, 238, 0.35)",
+                    }}
+                  >
+                    🎓
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.75rem",
+                      fontWeight: 800,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.1em",
+                      color: "var(--primary)",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Filières d'Excellence
+                  </div>
+                  <h2 style={{ fontSize: "1.6rem", fontWeight: 800, marginBottom: 12, color: "var(--text)" }}>
+                    CPGE (Classes Préparatoires)
+                  </h2>
+                  <p style={{ color: "var(--text-muted)", fontSize: "0.95rem", lineHeight: 1.6, marginBottom: 20 }}>
+                    Accompagnement complet pour les filières scientifiques et commerciales : 
+                    <strong> MPSI, MP, PCSI, PSI, TSI, ECS, ECT</strong>. Cours, fiches résumés, exercices et vidéos d'explication.
+                  </p>
+                </div>
+
+                <div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+                    <span className="badge badge-primary">Passerelle Bac→Prépa</span>
+                    <span className="badge badge-primary">1ère Année (Sup)</span>
+                    <span className="badge badge-primary">2ème Année (Spé)</span>
+                    <span className="badge badge-primary">Passerelle Sup→Spé</span>
+                  </div>
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      fontWeight: 700,
+                      color: "var(--primary)",
+                      fontSize: "0.95rem",
+                    }}
+                  >
+                    Accéder à l'espace CPGE <ArrowRight size={16} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Carte 2 : Concours L2 / L3 */}
+              <div
+                className="card exam-card"
+                onClick={() => setMainCategory("concours")}
+                style={{
+                  cursor: "pointer",
+                  padding: "36px 28px",
+                  borderRadius: 20,
+                  border: "2px solid rgba(217, 161, 58, 0.25)",
+                  background: "linear-gradient(145deg, var(--surface) 0%, rgba(217, 161, 58, 0.05) 100%)",
+                  transition: "all 0.25s ease",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  boxShadow: "0 8px 24px rgba(217, 161, 58, 0.08)",
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      width: 58,
+                      height: 58,
+                      borderRadius: 16,
+                      background: "linear-gradient(135deg, #d97706, #b45309)",
+                      color: "white",
+                      display: "grid",
+                      placeItems: "center",
+                      fontSize: "1.6rem",
+                      marginBottom: 20,
+                      boxShadow: "0 6px 18px rgba(217, 119, 6, 0.35)",
+                    }}
+                  >
+                    🏆
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.75rem",
+                      fontWeight: 800,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.1em",
+                      color: "#b45309",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Grandes Écoles & Recrutement
+                  </div>
+                  <h2 style={{ fontSize: "1.6rem", fontWeight: 800, marginBottom: 12, color: "var(--text)" }}>
+                    Concours L2 / L3 & Recrutement
+                  </h2>
+                  <p style={{ color: "var(--text-muted)", fontSize: "0.95rem", lineHeight: 1.6, marginBottom: 20 }}>
+                    Entraînement intensif avec QCM interactifs, annales officielles et solutions détaillées :
+                    <strong> ISCAE, Recrutement des Enseignants (CRMEF), CNC et Passerelles Universitaires</strong>.
+                  </p>
+                </div>
+
+                <div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+                    <span className="badge badge-warning">Concours ISCAE</span>
+                    <span className="badge badge-success">Recrutement Enseignants</span>
+                    <span className="badge badge-primary">Passerelles L2/L3</span>
+                    <span className="badge">QCM & Annales</span>
+                  </div>
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      fontWeight: 700,
+                      color: "#b45309",
+                      fontSize: "0.95rem",
+                    }}
+                  >
+                    Accéder aux Concours <ArrowRight size={16} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════
+             NIVEAU 2 : DANS LA CARTE CPGE (4 SOUS-CARTES)
+             ══════════════════════════════════════════════════════ */}
+          {mainCategory === "cpge" && !school && (
+            <div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                  gap: 20,
+                  marginBottom: 36,
+                }}
+              >
+                {/* 1. Passerelle Bac → Prépa */}
+                <div
+                  className="card exam-card"
+                  onClick={() => navigate("/cours")}
+                  style={{
+                    cursor: "pointer",
+                    padding: "26px 22px",
+                    borderRadius: 18,
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                  }}
+                >
+                  <div className="exam-card-icon" style={{ background: "rgba(59, 130, 246, 0.1)", color: "#2563eb" }}>
+                    🌉
+                  </div>
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "12px 0 6px" }}>
+                    Passerelle Bac → Prépa
+                  </h3>
+                  <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
+                    Méthodologie, rappels fondamentaux et entraînement pour réussir la transition du lycée vers la prépa.
+                  </p>
+                  <div style={{ marginTop: 14, fontWeight: 700, fontSize: "0.85rem", color: "var(--primary)" }}>
+                    Découvrir les modules ➔
+                  </div>
+                </div>
+
+                {/* 2. 1ère Année Classes Prépa (Sup) */}
+                <div
+                  className="card exam-card"
+                  onClick={() => navigate("/cours?annee=1")}
+                  style={{
+                    cursor: "pointer",
+                    padding: "26px 22px",
+                    borderRadius: 18,
+                    border: "2px solid rgba(67, 97, 238, 0.25)",
+                    background: "linear-gradient(145deg, var(--surface) 0%, rgba(67, 97, 238, 0.05) 100%)",
+                  }}
+                >
+                  <div className="exam-card-icon" style={{ background: "rgba(67, 97, 238, 0.15)", color: "#4361ee" }}>
+                    📘
+                  </div>
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "12px 0 6px" }}>
+                    1ère Année Classes Prépa (Sup)
+                  </h3>
+                  <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
+                    MPSI, PCSI, TSI 1, ECS 1, ECT 1 : cours, résumés, fiches, exercices et vidéos d'explication.
+                  </p>
+                  <div style={{ marginTop: 14, fontWeight: 700, fontSize: "0.85rem", color: "var(--primary)" }}>
+                    Choisir sa filière Sup ➔
+                  </div>
+                </div>
+
+                {/* 3. 2ème Année Classes Prépa (Spé) */}
+                <div
+                  className="card exam-card"
+                  onClick={() => navigate("/cours?annee=2")}
+                  style={{
+                    cursor: "pointer",
+                    padding: "26px 22px",
+                    borderRadius: 18,
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                  }}
+                >
+                  <div className="exam-card-icon" style={{ background: "rgba(124, 58, 237, 0.1)", color: "#7c3aed" }}>
+                    📙
+                  </div>
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "12px 0 6px" }}>
+                    2ème Année Classes Prépa (Spé)
+                  </h3>
+                  <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
+                    MP, PSI, TSI 2, ECS 2, ECT 2 : préparation intensive aux concours (CNC, Mines, Centrale, BCE).
+                  </p>
+                  <div style={{ marginTop: 14, fontWeight: 700, fontSize: "0.85rem", color: "var(--primary)" }}>
+                    Choisir sa filière Spé ➔
+                  </div>
+                </div>
+
+                {/* 4. Passerelle Sup → Spé */}
+                <div
+                  className="card exam-card"
+                  onClick={() => navigate("/passerelle")}
+                  style={{
+                    cursor: "pointer",
+                    padding: "26px 22px",
+                    borderRadius: 18,
+                    border: "2px solid rgba(217, 161, 58, 0.3)",
+                    background: "linear-gradient(145deg, var(--surface) 0%, rgba(217, 161, 58, 0.08) 100%)",
+                  }}
+                >
+                  <div className="exam-card-icon" style={{ background: "rgba(217, 161, 58, 0.15)", color: "#b57809" }}>
+                    🚀
+                  </div>
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "12px 0 6px", color: "var(--text)" }}>
+                    Passerelle Sup → Spé
+                  </h3>
+                  <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
+                    Feuille de route de l'été, 5 filières (MP, PSI, TSI, ECS, ECT), bibliothèque et vidéos d'explication.
+                  </p>
+                  <div style={{ marginTop: 14, fontWeight: 700, fontSize: "0.85rem", color: "#b57809" }}>
+                    Ouvrir la Passerelle ➔
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════
+             NIVEAU 2 : DANS LA CARTE CONCOURS L2 / L3 (ISCAE, CRMEF, ETC.)
+             ══════════════════════════════════════════════════════ */}
+          {mainCategory === "concours" && !school && (
             <div className="exam-grid">
-              {visibleSchools.map((item) => {
+              {concoursSchools.map((item) => {
                 const isItemIscae = isIscae(item);
                 const isItemEns = isEnseignement(item);
                 const isItemCnc = isCnc(item);
 
-                // Customized icons
                 const cardIcon = isItemIscae ? (
-                  <TrendingUp size={22} style={{ color: "#2563eb" }} />
+                  <TrendingUp size={24} style={{ color: "#2563eb" }} />
                 ) : isItemEns ? (
-                  <GraduationCap size={22} style={{ color: "#7c3aed" }} />
+                  <GraduationCap size={24} style={{ color: "#7c3aed" }} />
                 ) : isItemCnc ? (
-                  <Award size={22} style={{ color: "#d97706" }} />
+                  <Award size={24} style={{ color: "#d97706" }} />
                 ) : (
-                  item.icon || <GraduationCap size={20} />
+                  item.icon || <GraduationCap size={22} />
                 );
 
-                // Rich descriptions
                 const cardDescription = isItemIscae
-                  ? (item.description || "Préparez le concours d'accès à la Grande École de Commerce du Maroc. QCM ciblés en mathématiques, logique et culture économique avec corrections détaillées pour booster vos chances d'admission.")
+                  ? (item.description || "Préparez le concours d'accès à la Grande École de Commerce du Maroc. QCM ciblés en mathématiques, logique et culture économique avec corrections détaillées.")
                   : isItemEns
                   ? (item.description || "Cadre de référence officiel, programmes du Ministère de l'Éducation Nationale et annales corrigées pour le recrutement des enseignants (CRMEF / Capes / Agrégation).")
                   : isItemCnc
@@ -405,13 +709,20 @@ function Home() {
                   : item.description || "";
 
                 return (
-                  <Card key={item.id} onClick={() => setSchool(item)}>
+                  <div
+                    key={item.id}
+                    className="card exam-card"
+                    onClick={() => setSchool(item)}
+                    style={{ cursor: "pointer", padding: "26px 22px", borderRadius: 18 }}
+                  >
                     <div className="exam-card-icon">{cardIcon}</div>
-                    <h3 style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span>{item.name}</span>
+                    <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "12px 0 6px" }}>
+                      {item.name}
                     </h3>
-                    <p style={{ lineHeight: 1.55 }}>{cardDescription}</p>
-                    <div className="exam-card-meta">
+                    <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
+                      {cardDescription}
+                    </p>
+                    <div className="exam-card-meta" style={{ marginTop: 14 }}>
                       {isItemIscae && (
                         <span className="badge badge-warning" style={{ fontWeight: 800 }}>
                           Grande École de Commerce 🏆
@@ -419,7 +730,7 @@ function Home() {
                       )}
                       {isItemEns && (
                         <span className="badge badge-success" style={{ fontWeight: 800 }}>
-                          Recrutement & CRMEF 🎓
+                          Recrutement Enseignants 🎓
                         </span>
                       )}
                       {isItemCnc && (
@@ -427,132 +738,214 @@ function Home() {
                           Grandes Écoles d'Ingénieurs ⚡
                         </span>
                       )}
-                      <span className="badge">{item.subjects.length} matière(s)</span>
+                      <span className="badge">{item.subjects?.length || 0} matière(s)</span>
                     </div>
-                  </Card>
+                  </div>
                 );
               })}
-              {visibleSchools.length === 0 && (
-                <p className="empty-state">Aucune école disponible pour ce type de concours.</p>
-              )}
+
+              {/* Concours Post-Bac (Optionnel) */}
+              <div
+                className="card exam-card"
+                onClick={() => {
+                  const postBacSchool = schools.find((s) => s.type === "post_bac");
+                  if (postBacSchool) setSchool(postBacSchool);
+                }}
+                style={{ cursor: "pointer", padding: "26px 22px", borderRadius: 18 }}
+              >
+                <div className="exam-card-icon" style={{ background: "rgba(16, 185, 129, 0.1)", color: "#10b981" }}>
+                  <Target size={24} />
+                </div>
+                <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "12px 0 6px" }}>
+                  Concours Post-Bac (ENSA, ENSAM, Médecine)
+                </h3>
+                <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
+                  Entraînement aux épreuves d'accès direct après le baccalauréat (ENSA, ENSAM, FMP, FMD, IAV).
+                </p>
+                <div className="exam-card-meta" style={{ marginTop: 14 }}>
+                  <span className="badge badge-success">Accès Direct Post-Bac</span>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Niveau 3 : Matières de l'école sélectionnée */}
+          {/* ══════════════════════════════════════════════════════
+             NIVEAU 3 : MATIÈRES DE L'ÉCOLE / CONCOURS SÉLECTIONNÉ
+             ══════════════════════════════════════════════════════ */}
           {school && !enseignement && !subject && (
             <div className="exam-grid">
-              {school.subjects.map((item) => (
-                <Card key={item.id} onClick={() => setSubject(item)}>
+              {(school.subjects || []).map((item) => (
+                <div
+                  key={item.id}
+                  className="card exam-card"
+                  onClick={() => setSubject(item)}
+                  style={{ cursor: "pointer", padding: "26px 22px", borderRadius: 18 }}
+                >
                   <div className="exam-card-icon">
                     <BookOpen size={20} />
                   </div>
-                  <h3>{item.name}</h3>
-                  <p>{item.level || "Matière"}</p>
-                  <div className="exam-card-meta">
-                    <span className="badge">{item.exams.length} QCM</span>
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "12px 0 6px" }}>{item.name}</h3>
+                  <p style={{ fontSize: "0.88rem", color: "var(--text-muted)" }}>{item.level || "Matière de concours"}</p>
+                  <div className="exam-card-meta" style={{ marginTop: 14 }}>
+                    <span className="badge badge-primary">{item.exams?.length || 0} QCM / Test(s)</span>
                   </div>
-                </Card>
+                </div>
               ))}
-              {school.subjects.length === 0 && (
-                <p className="empty-state">Aucune matière disponible.</p>
+              {(school.subjects || []).length === 0 && (
+                <p className="empty-state">Aucune matière disponible pour le moment.</p>
               )}
             </div>
           )}
 
-          {/* Concours d'Enseignement : Années & Programmes */}
-          {enseignement && !year && (
-            <>
-              <div className="programme-banner" style={{ borderRadius: "var(--radius)", overflow: "hidden", marginBottom: 24, boxShadow: "var(--shadow-md)" }}>
-                <img
-                  src="/images/logo-ministere-enseignement.jpg"
-                  alt="Ministère de l'Éducation Nationale"
-                  style={{ width: "100%", maxHeight: 180, objectFit: "cover" }}
-                />
+          {/* Vue spéciale Recrutement Enseignants (avec Cadre de référence & années) */}
+          {school && enseignement && !year && (
+            <div className="enseignement-container">
+              {/* Cadre de référence */}
+              <div className="programme-officiel-card">
+                <div className="programme-officiel-header">
+                  <div className="programme-officiel-icon">
+                    <GraduationCap size={24} />
+                  </div>
+                  <div>
+                    <h3>Cadre de Référence & Programmes Officiels</h3>
+                    <p>Orientations pédagogiques et programmes du Ministère de l'Éducation Nationale</p>
+                  </div>
+                </div>
+                <div className="programmes-list">
+                  {(school.programmes || []).map((prog) => (
+                    <div key={prog.id} className="programme-item">
+                      <div className="programme-item-left">
+                        <FileText size={18} />
+                        <div>
+                          <strong>{prog.label}</strong>
+                          <span className="badge badge-accent" style={{ marginLeft: 8 }}>{prog.year}</span>
+                        </div>
+                      </div>
+                      <div className="programme-item-actions">
+                        <button className="btn btn-secondary btn-sm" onClick={() => setPreviewDoc(prog)}>
+                          <BookOpen size={14} /> Aperçu
+                        </button>
+                        <a
+                          className="btn btn-secondary btn-sm"
+                          href={driveDownloadUrl(prog.document_url)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <Download size={14} /> Télécharger
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              <h2 className="section-title" style={{ marginTop: 32, marginBottom: 16 }}>
+                Annales des Concours par Année
+              </h2>
               <div className="exam-grid">
                 {years.map((y) => (
-                  <Card key={y} onClick={() => setYear(y)}>
+                  <div
+                    key={y}
+                    className="card exam-card"
+                    onClick={() => setYear(y)}
+                    style={{ cursor: "pointer", padding: "26px 22px", borderRadius: 18 }}
+                  >
                     <div className="exam-card-icon">
-                      <Calendar size={20} />
+                      <Calendar size={22} />
                     </div>
-                    <h3>Année {y}</h3>
+                    <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "12px 0 6px" }}>Session {y}</h3>
+                    <p style={{ fontSize: "0.88rem", color: "var(--text-muted)" }}>
+                      Épreuves écrites et QCM du concours de recrutement
+                    </p>
+                    <div className="exam-card-meta" style={{ marginTop: 14 }}>
+                      <span className="badge badge-success">Accéder aux sujets {y} ➔</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recrutement Enseignants - Année spécifique */}
+          {school && enseignement && year && (
+            <div>
+              {yearProgrammes.length > 0 && (
+                <div className="programme-officiel-card" style={{ marginBottom: 24 }}>
+                  <h4 style={{ marginBottom: 12 }}>Documents officiels — Session {year}</h4>
+                  {yearProgrammes.map((prog) => (
+                    <div key={prog.id} className="programme-item">
+                      <div className="programme-item-left">
+                        <FileText size={18} />
+                        <strong>{prog.label}</strong>
+                      </div>
+                      <div className="programme-item-actions">
+                        <button className="btn btn-secondary btn-sm" onClick={() => setPreviewDoc(prog)}>
+                          <BookOpen size={14} /> Aperçu
+                        </button>
+                        <a
+                          className="btn btn-secondary btn-sm"
+                          href={driveDownloadUrl(prog.document_url)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <Download size={14} /> Télécharger
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <h3 style={{ marginBottom: 16 }}>Épreuves et QCM {year}</h3>
+              <div className="exam-grid">
+                {yearExams.map((exam) => (
+                  <Link key={exam.id} to={`/exam/${exam.id}`} className="exam-card">
+                    <div className="exam-card-icon">{school.icon || <ClipboardList size={20} />}</div>
+                    <h3>{exam.title}</h3>
+                    <p>{exam.subjectName}</p>
                     <div className="exam-card-meta">
-                      {(school.programmes || []).some((p) => p.year === y) && (
-                        <span className="badge badge-success">
-                          <FileText size={12} /> Programme officiel disponible
+                      {exam.duration_minutes && (
+                        <span className="badge badge-warning">
+                          <Clock size={12} /> {exam.duration_minutes} min
                         </span>
                       )}
                     </div>
-                  </Card>
+                  </Link>
                 ))}
-                {years.length === 0 && (
-                  <p className="empty-state">Aucune année disponible pour l’instant.</p>
+                {yearExams.length === 0 && (
+                  <p className="empty-state">Aucun examen disponible pour cette année.</p>
                 )}
               </div>
-            </>
-          )}
-
-          {enseignement && year && (
-            <div className="exam-grid">
-              {yearProgrammes.length > 0 ? (
-                yearProgrammes.map((doc) => (
-                  <Card key={doc.id} onClick={() => setPreviewDoc(doc)}>
-                    <div className="exam-card-icon">
-                      <FileText size={20} />
-                    </div>
-                    <h3>{doc.label || `Programme ${year}`}</h3>
-                    <p>Cliquer pour consulter et télécharger le document officiel</p>
-                  </Card>
-                ))
-              ) : (
-                <p className="empty-state">Programme non encore disponible pour {year}.</p>
-              )}
-              {yearExams.map((exam) => (
-                <Link key={exam.id} to={`/exam/${exam.id}`} className="exam-card">
-                  <div className="exam-card-icon">
-                    <ClipboardList size={20} />
-                  </div>
-                  <h3>{exam.title}</h3>
-                  <p>{exam.subjectName}</p>
-                  <div className="exam-card-meta">
-                    <span className="badge">{exam.year}</span>
-                    {exam.duration_minutes && (
-                      <span className="badge badge-warning">
-                        <Clock size={12} /> {exam.duration_minutes} min
-                      </span>
-                    )}
-                  </div>
-                </Link>
-              ))}
-              {yearExams.length === 0 && (
-                <p className="empty-state">Aucun QCM publié pour cette année.</p>
-              )}
             </div>
           )}
 
-          {/* QCM de la matière */}
+          {/* ══════════════════════════════════════════════════════
+             NIVEAU 4 : EXAMENS D'UNE MATIÈRE
+             ══════════════════════════════════════════════════════ */}
           {subject && (
-            <div className="exam-grid">
-              {subject.exams.map((exam) => (
-                <Link key={exam.id} to={`/exam/${exam.id}`} className="exam-card">
-                  <div className="exam-card-icon">
-                    <ClipboardList size={20} />
-                  </div>
-                  <h3>{exam.title}</h3>
-                  <p>{exam.description || "QCM d'évaluation"}</p>
-                  <div className="exam-card-meta">
-                    <span className="badge">{exam.year}</span>
-                    {exam.duration_minutes && (
-                      <span className="badge badge-warning">
-                        <Clock size={12} /> {exam.duration_minutes} min
-                      </span>
-                    )}
-                  </div>
-                </Link>
-              ))}
-              {subject.exams.length === 0 && (
-                <p className="empty-state">Aucun QCM publié pour cette matière.</p>
-              )}
+            <div>
+              <div className="exam-grid">
+                {(subject.exams || []).map((exam) => (
+                  <Link key={exam.id} to={`/exam/${exam.id}`} className="exam-card">
+                    <div className="exam-card-icon">{school?.icon || <ClipboardList size={20} />}</div>
+                    <h3>{exam.title}</h3>
+                    <p>
+                      {school?.name} • {subject.name}
+                    </p>
+                    <div className="exam-card-meta">
+                      {exam.year && <span className="badge">{exam.year}</span>}
+                      {exam.duration_minutes && (
+                        <span className="badge badge-warning">
+                          <Clock size={12} /> {exam.duration_minutes} min
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+                {(subject.exams || []).length === 0 && (
+                  <p className="empty-state">Aucun examen disponible pour cette matière.</p>
+                )}
+              </div>
             </div>
           )}
         </>

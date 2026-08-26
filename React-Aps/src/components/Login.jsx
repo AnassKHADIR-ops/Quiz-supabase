@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../hooks/useTheme.js";
 import {
@@ -90,9 +90,25 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [dark, toggleTheme] = useTheme();
+
+  const redirectUrl = searchParams.get("redirect") || "";
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      if (redirectUrl) {
+        navigate(redirectUrl, { replace: true });
+      } else if (user?.role === "teacher" || user?.role === "admin") {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    }
+  }, [user, redirectUrl, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -100,10 +116,12 @@ function Login() {
     setLoading(true);
     try {
       const loggedUser = await login(email, password);
-      if (loggedUser?.role === "teacher" || loggedUser?.role === "admin") {
-        navigate("/dashboard");
+      if (redirectUrl) {
+        navigate(redirectUrl, { replace: true });
+      } else if (loggedUser?.role === "teacher" || loggedUser?.role === "admin") {
+        navigate("/dashboard", { replace: true });
       } else {
-        navigate("/");
+        navigate("/", { replace: true });
       }
     } catch (err) {
       setError(err.message);
@@ -399,7 +417,10 @@ function Login() {
 
           <div className="auth-footer" style={{ marginTop: 24, fontSize: "0.85rem", textAlign: "center" }}>
             Pas encore de compte ?{" "}
-            <Link to="/signup" style={{ fontWeight: 700, color: "var(--primary)" }}>
+            <Link
+              to={redirectUrl ? `/signup?redirect=${encodeURIComponent(redirectUrl)}` : "/signup"}
+              style={{ fontWeight: 700, color: "var(--primary)" }}
+            >
               S'inscrire gratuitement
             </Link>
           </div>

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../hooks/useTheme.js";
 import {
@@ -13,7 +13,8 @@ import {
   Mail,
   ShieldCheck,
   Sparkles,
-  Users
+  Trophy,
+  GraduationCap
 } from "./Icon.jsx";
 
 function AKLogoLarge() {
@@ -91,9 +92,23 @@ function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { user, register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [dark, toggleTheme] = useTheme();
+
+  const redirectUrl = searchParams.get("redirect") || "";
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      if (redirectUrl) {
+        navigate(redirectUrl, { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    }
+  }, [user, redirectUrl, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,7 +116,11 @@ function Signup() {
     setLoading(true);
     try {
       await register(name, email, password);
-      navigate("/");
+      if (redirectUrl) {
+        navigate(redirectUrl, { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -397,7 +416,10 @@ function Signup() {
 
           <div className="auth-footer" style={{ marginTop: 24, fontSize: "0.85rem", textAlign: "center" }}>
             Déjà un compte ?{" "}
-            <Link to="/login" style={{ fontWeight: 700, color: "var(--primary)" }}>
+            <Link
+              to={redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login"}
+              style={{ fontWeight: 700, color: "var(--primary)" }}
+            >
               Se connecter
             </Link>
           </div>

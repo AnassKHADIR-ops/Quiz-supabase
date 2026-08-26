@@ -1,0 +1,1609 @@
+<!--
+  ============================================================
+   BLOC ELEMENTOR — Transition Sup → Spé
+   À coller dans : Elementor > widget "HTML"
+  ============================================================
+
+  STRUCTURE D'UN CHAPITRE
+  -----------------------
+  {
+    titre : "Algèbre linéaire",
+    why   : "Pourquoi ce chapitre compte",
+    fiche : null | "" | "https://...",      // résumé de cours (1 seul lien)
+    items : [
+      {
+        titre      : "Fiche 1",
+        enonce     : null | "" | "https://...",              // 1 énoncé
+        correction : ... 1 lien OU plusieurs (voir ci-dessous)
+        video      : ... 1 lien OU plusieurs (voir ci-dessous)
+      }
+    ],
+    seances : [ ... ]   // OPTIONNEL — voir "SÉANCES À DISTANCE" plus bas
+  }
+
+  RÈGLE DES LIENS (enonce, correction, video, fiche, seances, livres)
+  ------------------------------------------------------------------
+    "https://..."   ->  bouton actif
+    ""              ->  bouton grisé "bientôt"
+    null            ->  bouton masqué (n'existe pas)
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+#tss *,#tss *::before,#tss *::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ╔══════════════════════════════════════════════════════╗
+   ║  VARIABLES — modifiez les couleurs uniquement ici    ║
+   ╚══════════════════════════════════════════════════════╝ */
+#tss{
+  /* Fonds */
+  --creme:#f9f4eb;
+  --creme-fonce:#f1e9d8;
+  --carte:#fffdf8;
+
+  /* Or / accent */
+  --or:#b57809;
+  --or-fonce:#7c4f04;
+  --or-moyen:#d9a13a;
+  --or-pale:#faefd6;
+  --bordure:rgba(181,120,9,.16);
+
+  /* Textes */
+  --encre:#2b1d08;
+  --encre-moyenne:#5a3e18;
+  --encre-douce:#8a6a3a;
+
+  /* Formes */
+  --rayon:16px;
+  --rayon-petit:10px;
+  --ombre-petite:0 2px 10px rgba(90,60,20,.06);
+  --ombre-moyenne:0 6px 28px rgba(90,60,20,.12);
+  --transition:cubic-bezier(.4,0,.2,1);
+
+  font-family:"Outfit",sans-serif;color:var(--encre);line-height:1.55;
+  background:var(--creme);border-radius:var(--rayon);overflow:hidden;
+}
+
+/* ═══════════ DARK MODE (Contrôlé par classe .dark / [data-theme="dark"]) ═══════════ */
+.dark #tss,
+[data-theme="dark"] #tss {
+  /* Dark Backgrounds harmonisés avec l'application */
+  --creme: #06091a;
+  --creme-fonce: #0c1028;
+  --carte: #0f1629;
+
+  /* Gold / Accent */
+  --or: #e3a93c;
+  --or-fonce: #f3c267;
+  --or-moyen: #d9a13a;
+  --or-pale: rgba(217, 161, 58, 0.16);
+  --bordure: #1e2d50;
+
+  /* Typography / Text */
+  --encre: #f0f4ff;
+  --encre-moyenne: #c8d3f5;
+  --encre-douce: #7c8db5;
+
+  /* Shadows */
+  --ombre-petite: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --ombre-moyenne: 0 6px 28px rgba(0, 0, 0, 0.6);
+}
+
+.dark #tss .btn-enonce,
+[data-theme="dark"] #tss .btn-enonce {
+  background: #1f1b2e !important;
+  color: #c4b5fd !important;
+  border-color: rgba(196, 181, 253, 0.25) !important;
+}
+
+.dark #tss .btn-fiche,
+[data-theme="dark"] #tss .btn-fiche {
+  background: #152238 !important;
+  color: #93c5fd !important;
+  border-color: rgba(147, 197, 253, 0.25) !important;
+}
+
+.dark #tss .btn-corr,
+[data-theme="dark"] #tss .btn-corr {
+  background: #0f291e !important;
+  color: #6ee7b7 !important;
+  border-color: rgba(110, 231, 183, 0.25) !important;
+}
+
+.dark #tss .chapitre-num,
+[data-theme="dark"] #tss .chapitre-num {
+  background: rgba(217, 161, 58, 0.2) !important;
+  color: #f3c267 !important;
+}
+
+.dark #tss .chapitre.ouvert .chapitre-num,
+[data-theme="dark"] #tss .chapitre.ouvert .chapitre-num {
+  background: #d9a13a !important;
+  color: #06091a !important;
+}
+
+/* ═══════════════ HERO ═══════════════ */
+#tss .hero{
+  background:var(--creme-fonce);border-bottom:1px solid var(--bordure);
+  padding:56px 24px 46px;text-align:center;position:relative;overflow:hidden;
+}
+#tss .hero::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 12% 60%,rgba(181,120,9,.09) 0%,transparent 50%),
+             radial-gradient(circle at 88% 15%,rgba(181,120,9,.06) 0%,transparent 40%);
+}
+#tss .hero::after{
+  content:"";position:absolute;bottom:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,transparent,var(--or-moyen),var(--or),var(--or-moyen),transparent);
+}
+#tss .hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;position:relative;
+  font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--or);background:rgba(181,120,9,.08);
+  border:1px solid rgba(181,120,9,.22);padding:6px 18px;border-radius:30px;margin-bottom:18px;
+}
+#tss .hero-eyebrow::before{content:"";width:6px;height:6px;background:var(--or);border-radius:50%}
+#tss .hero h1{
+  font-family:"Cormorant Garamond",serif;
+  font-size:clamp(26px,5vw,48px);font-weight:700;color:var(--encre);
+  line-height:1.15;margin-bottom:12px;position:relative;
+}
+#tss .hero h1 em{color:var(--or);font-style:italic}
+#tss .hero p{font-size:15px;font-weight:300;color:var(--encre-moyenne);max-width:540px;margin:0 auto;line-height:1.7;position:relative}
+
+#tss .bridge{display:flex;align-items:center;justify-content:center;margin:28px auto 0;max-width:420px;position:relative}
+#tss .bridge-node{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0}
+#tss .bridge-badge{
+  width:64px;height:64px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:"Cormorant Garamond",serif;font-size:19px;font-weight:700;
+  border:2px solid var(--bordure);background:var(--carte);color:var(--encre-moyenne);
+  box-shadow:var(--ombre-petite);
+}
+#tss .bridge-node.dest .bridge-badge{background:var(--or);color:#fff;border-color:var(--or);box-shadow:0 6px 18px rgba(181,120,9,.3)}
+#tss .bridge-node small{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--encre-douce)}
+#tss .bridge-path{
+  flex:1;height:2px;margin:0 14px 22px;position:relative;
+  background-image:linear-gradient(90deg,var(--or-moyen) 55%,transparent 45%);
+  background-size:12px 2px;background-repeat:repeat-x;
+  animation:tss-dash 1.4s linear infinite;
+}
+@keyframes tss-dash{from{background-position-x:0}to{background-position-x:12px}}
+#tss .bridge-path::after{
+  content:"";position:absolute;right:-2px;top:50%;transform:translateY(-50%);
+  border-left:8px solid var(--or-moyen);
+  border-top:5px solid transparent;border-bottom:5px solid transparent;
+}
+
+/* ═══════════════ STATS ═══════════════ */
+#tss .stats-row{display:flex;justify-content:center;flex-wrap:wrap;background:var(--carte);border-bottom:1px solid var(--bordure)}
+#tss .stat-item{padding:14px 20px;text-align:center;border-right:1px solid var(--bordure);flex:1;min-width:110px}
+#tss .stat-label{line-height:1.35}
+#tss .stat-item:last-child{border-right:none}
+#tss .stat-num{font-family:"Cormorant Garamond",serif;font-size:26px;font-weight:700;color:var(--or);line-height:1}
+#tss .stat-label{font-size:11px;font-weight:500;color:var(--encre-douce);text-transform:uppercase;letter-spacing:.1em;margin-top:4px;line-height:1.35}
+
+/* ═══════════════ CORPS ═══════════════ */
+#tss .main{padding:28px 0 40px}
+#tss .sec-title{font-family:"Cormorant Garamond",serif;font-size:24px;font-weight:700;color:var(--encre);text-align:center;margin:0 16px 4px}
+#tss .sec-sub{font-size:13px;font-weight:300;color:var(--encre-douce);text-align:center;margin:0 16px 20px}
+
+/* ═══════════════ ONGLETS FILIÈRES ═══════════════ */
+#tss .tabs-nav{
+  display:flex;overflow-x:auto;gap:6px;padding-bottom:2px;
+  scrollbar-width:none;-ms-overflow-style:none;border-bottom:2px solid var(--bordure);
+  -webkit-overflow-scrolling:touch;
+  scroll-snap-type:x proximity;
+}
+#tss .tabs-nav::-webkit-scrollbar{display:none}
+
+#tss .tabs-nav > .tab-btn:first-child{margin-left:auto}
+#tss .tabs-nav > .tab-btn:last-child{margin-right:auto}
+#tss .tab-btn{scroll-snap-align:center}
+#tss .tab-btn{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:12px 20px 14px;background:transparent;border:none;border-bottom:3px solid transparent;
+  margin-bottom:-2px;cursor:pointer;font-family:"Outfit",sans-serif;white-space:nowrap;
+  transition:all .22s var(--transition);border-radius:var(--rayon-petit) var(--rayon-petit) 0 0;
+}
+#tss .tab-btn:hover{background:rgba(181,120,9,.04)}
+#tss .tab-btn.active{background:var(--carte);border-bottom-color:var(--or);box-shadow:0 -2px 12px rgba(181,120,9,.07)}
+#tss .tab-icon{
+  width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:17px;font-weight:700;background:var(--creme-fonce);color:var(--encre-moyenne);
+  border:1px solid var(--bordure);transition:all .22s var(--transition);font-family:"Cormorant Garamond",serif;
+}
+#tss .tab-btn.active .tab-icon{background:var(--or);color:#fff;border-color:var(--or);box-shadow:0 4px 12px rgba(181,120,9,.25)}
+#tss .tab-name{font-size:12.5px;font-weight:500;color:var(--encre-douce);transition:color .2s}
+#tss .tab-btn.active .tab-name{color:var(--or);font-weight:600}
+
+#tss .tab-panel{display:none;animation:tss-in .3s var(--transition)}
+#tss .tab-panel.active{display:block}
+@keyframes tss-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════════ ACCORDÉON CHAPITRES ═══════════════ */
+#tss .chap-list{
+  background:var(--carte);border:1px solid var(--bordure);border-top:none;
+  border-radius:0 0 var(--rayon) var(--rayon);overflow:hidden;box-shadow:var(--ombre-petite);
+}
+#tss .chap-item{border-bottom:1px solid var(--bordure)}
+#tss .chap-item:last-child{border-bottom:none}
+
+#tss .chap-head{
+  display:flex;align-items:center;gap:14px;width:100%;
+  padding:16px 20px;background:transparent;border:none;cursor:pointer;
+  font-family:"Outfit",sans-serif;text-align:left;transition:background .18s;
+}
+#tss .chap-head:hover{background:rgba(181,120,9,.035)}
+#tss .chap-item.open .chap-head{background:rgba(181,120,9,.05)}
+
+#tss .chap-idx{
+  width:34px;height:34px;flex-shrink:0;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:"Cormorant Garamond",serif;font-size:17px;font-weight:700;
+  background:var(--creme-fonce);color:var(--or-fonce);border:1px solid var(--bordure);
+  transition:all .22s var(--transition);
+}
+#tss .chap-item.open .chap-idx{background:var(--or);color:#fff;border-color:var(--or)}
+
+#tss .chap-txt{flex:1;min-width:0}
+#tss .chap-titre{font-size:15px;font-weight:600;color:var(--encre);line-height:1.35;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#tss .chap-why{font-size:12px;color:var(--encre-douce);margin-top:2px;line-height:1.5;font-weight:300}
+#tss .chap-count{
+  font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--or);background:var(--or-pale);border:1px solid rgba(181,120,9,.2);
+  padding:2px 9px;border-radius:20px;
+  white-space:nowrap;
+}
+#tss .yt-icon{color:#FF0000;display:inline-flex;align-items:center}
+
+#tss .chap-chev{flex-shrink:0;width:20px;height:20px;color:var(--or-moyen);transition:transform .25s var(--transition)}
+#tss .chap-item.open .chap-chev{transform:rotate(180deg)}
+
+#tss .chap-body{
+  display:grid;grid-template-rows:0fr;
+  transition:grid-template-rows .28s var(--transition);
+  background:rgba(181,120,9,.02);
+}
+#tss .chap-item.open .chap-body{grid-template-rows:1fr}
+#tss .chap-body-inner{overflow:hidden}
+#tss .chap-body-pad{padding:18px 20px 24px}
+
+/* ═══════════════ ARCHITECTURE 2 COLONNES (.ch-grid) ═══════════════ */
+#tss .ch-grid{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,290px);
+  gap:20px 24px;align-items:start;
+}
+#tss .ch-grid.solo{grid-template-columns:minmax(0,1fr)}
+#tss .ch-side{
+  background:linear-gradient(180deg,rgba(181,120,9,.08),rgba(181,120,9,.02));
+  border:1px solid var(--bordure);border-radius:var(--rayon-petit);
+  padding:14px 14px 16px;
+}
+@media (max-width:900px){#tss .ch-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* ── Section Documents (Rubriques) ── */
+#tss .doc-sec{margin-bottom:22px}
+#tss .doc-sec:last-child{margin-bottom:0}
+#tss .doc-sec-t{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+#tss .doc-sec-t b{
+  font-family:"Outfit",sans-serif;font-size:11.5px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--or-fonce);
+}
+#tss .doc-sec-t i{font-style:normal;font-size:13px;line-height:1}
+#tss .doc-sec-t s{text-decoration:none;flex:1;height:1px;background:var(--bordure)}
+#tss .doc-sec-n{
+  font-size:10px;font-weight:600;color:var(--encre-douce);
+  background:var(--creme-fonce);border:1px solid var(--bordure);
+  border-radius:20px;padding:1px 7px;
+}
+
+/* ── Grille Séances Vidéo ── */
+#tss .session-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+#tss .session-card{
+  background:var(--carte);border:1px solid var(--bordure);
+  border-radius:var(--rayon-petit);overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:var(--ombre-petite);
+  transition:transform .22s var(--transition),box-shadow .22s var(--transition),border-color .22s var(--transition);
+}
+#tss .session-card:hover{
+  transform:translateY(-3px);border-color:var(--or-moyen);
+  box-shadow:0 10px 24px rgba(43,29,8,.1);
+}
+#tss .session-thumb-wrap{
+  position:relative;width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,#101a2e,#1a2f52);
+  overflow:hidden;text-decoration:none;display:block;
+}
+#tss .session-thumb-img{width:100%;height:100%;object-fit:cover;transition:transform .3s ease;display:block}
+#tss .session-card:hover .session-thumb-img{transform:scale(1.04)}
+#tss .session-lock-ov{
+  position:absolute;inset:0;background:linear-gradient(180deg,rgba(16,26,46,0.25) 0%,rgba(16,26,46,0.85) 100%);
+  display:flex;flex-direction:column;justify-content:space-between;padding:8px 10px;
+}
+#tss .session-lock-badge{
+  align-self:flex-end;font-family:"Outfit",sans-serif;font-size:9.5px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;color:#fff;background:rgba(181,120,9,.94);
+  border:1px solid rgba(255,255,255,.3);padding:3px 8px;border-radius:20px;
+  box-shadow:0 2px 6px rgba(0,0,0,.35);display:inline-flex;align-items:center;gap:4px;
+}
+#tss .session-play-btn{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:44px;height:44px;border-radius:50%;background:rgba(181,120,9,.25);
+  border:2px solid rgba(255,253,249,.95);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);transition:transform .2s ease,background .2s ease;
+}
+#tss .session-card:hover .session-play-btn{background:#b57809;transform:translate(-50%,-50%) scale(1.08)}
+#tss .session-info{padding:11px 12px 13px;display:flex;flex-direction:column;flex:1;gap:4px}
+#tss .session-t{font-family:"Outfit",sans-serif;font-size:13.5px;font-weight:700;color:var(--encre);line-height:1.32}
+#tss .session-d{font-size:11.5px;color:var(--encre-douce);line-height:1.35}
+#tss .session-actions{display:flex;gap:6px;margin-top:auto;padding-top:8px;flex-wrap:wrap}
+#tss .session-actions .btn{flex:1;min-height:34px;font-size:11.5px;padding:6px 8px}
+
+/* ── Grille Fiches de Synthèse (Right Sidebar) ── */
+#tss .doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:12px 10px}
+#tss .doc-card{
+  display:flex;flex-direction:column;gap:8px;background:var(--carte);border:1px solid var(--bordure);
+  border-radius:var(--rayon-petit);padding:8px;box-shadow:var(--ombre-petite);
+  transition:transform .22s var(--transition),box-shadow .22s var(--transition),border-color .22s var(--transition);
+}
+#tss .doc-card:hover{
+  transform:translateY(-3px);border-color:var(--or-moyen);
+  box-shadow:0 8px 18px rgba(43,29,8,.08);
+}
+#tss .doc-thumb{
+  position:relative;display:block;width:100%;aspect-ratio:1/1.32;border-radius:3px 7px 7px 3px;
+  overflow:hidden;background:var(--creme-fonce);padding:0;border:none;font-family:inherit;
+  box-shadow:0 4px 10px rgba(43,29,8,.12);cursor:pointer;
+}
+#tss .doc-thumb::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:7px;z-index:3;
+  background:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.02));
+}
+#tss .doc-thumb::after{
+  content:"";position:absolute;left:7px;top:0;bottom:0;width:1.5px;z-index:3;
+  background:rgba(200,165,106,.55);
+}
+#tss .doc-thumb .gen{
+  position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;
+  padding:10px 8px 8px 14px;text-align:left;color:#f7f1e4;
+}
+#tss .doc-thumb .gen-k{
+  display:block;font-family:"Outfit",sans-serif;font-size:8px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;opacity:.85;
+}
+#tss .doc-thumb .gen-orn{width:16px;height:1.5px;background:rgba(247,241,228,.55);margin:5px 0 7px;flex-shrink:0}
+#tss .doc-thumb .gen-t{font-family:"Outfit",sans-serif;font-size:11px;font-weight:700;line-height:1.25}
+#tss .doc-thumb .doc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2}
+#tss .doc-loupe{
+  position:absolute;z-index:4;right:6px;bottom:6px;width:24px;height:24px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+  background:rgba(43,29,8,.65);color:#fff;opacity:0;transform:scale(.85);transition:opacity .22s,transform .22s;
+}
+#tss .doc-card:hover .doc-loupe{opacity:1;transform:scale(1)}
+#tss .doc-info{display:flex;flex-direction:column;gap:1px;padding:0 2px}
+#tss .doc-t{font-size:11.5px;font-weight:600;color:var(--encre);line-height:1.3}
+#tss .doc-d{font-size:10px;color:var(--encre-douce);line-height:1.3}
+
+/* ── Lignes d'Exercices / TD ── */
+#tss .doc-list{display:flex;flex-direction:column;gap:9px}
+#tss .doc-line{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  background:var(--carte);border:1px solid var(--bordure);
+  border-radius:12px;padding:12px 14px;box-shadow:0 1px 3px rgba(43,29,8,.04);
+  width:100%;box-sizing:border-box;flex-wrap:wrap;
+  transition:border-color .2s var(--transition),box-shadow .2s var(--transition),transform .2s var(--transition);
+}
+#tss .doc-line:hover{
+  border-color:var(--or-moyen);box-shadow:0 4px 12px rgba(43,29,8,.07);transform:translateY(-1px);
+}
+#tss .doc-line-ic{
+  position:relative;width:30px;height:38px;flex-shrink:0;border-radius:2px 6px 6px 2px;
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:#f7f1e4;
+  box-shadow:0 2px 6px rgba(43,29,8,.16);background:linear-gradient(150deg,#22406e,#12233f);
+}
+#tss .doc-line-ic::after{content:"";position:absolute;left:3px;top:3px;bottom:3px;width:1px;background:rgba(247,241,228,.45)}
+#tss .doc-line-txt{
+  flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:3px;
+  word-break:normal;overflow-wrap:break-word;white-space:normal;
+}
+#tss .doc-line-t{
+  font-size:13.5px;font-weight:600;color:var(--encre);line-height:1.4;
+  display:block;white-space:normal;word-break:normal;
+}
+#tss .doc-line-d{font-size:11px;color:var(--encre-douce);line-height:1.35;white-space:normal}
+#tss .doc-line-b{
+  display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+  flex-shrink:0;max-width:100%;
+}
+#tss .doc-line-b .btn{
+  white-space:normal;max-width:100%;text-align:left;line-height:1.3;
+}
+
+@media (max-width:768px){
+  #tss .doc-line{flex-direction:column;align-items:flex-start;gap:10px}
+  #tss .doc-line-b{width:100%}
+  #tss .doc-line-b .btn{flex:1 1 auto;min-width:120px}
+}
+
+/* ═══════════════ BOUTONS ═══════════════ */
+#tss .btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px 13px;border-radius:var(--rayon-petit);
+  font-size:12px;font-weight:600;font-family:"Outfit",sans-serif;
+  text-decoration:none;border:1.5px solid transparent;
+  cursor:pointer;transition:all .2s var(--transition);
+  min-height:34px;
+}
+#tss .btn:hover{transform:translateY(-1px);box-shadow:var(--ombre-petite)}
+#tss .btn:active{transform:none}
+#tss .btn-fiche{background:#eef5ff;color:#1a4f8c;border-color:rgba(26,79,140,.18)}
+#tss .btn-fiche:hover{background:#dbe9fc}
+#tss .btn-enonce{background:#f4efff;color:#5b3ca8;border-color:rgba(91,60,168,.18)}
+#tss .btn-enonce:hover{background:#e6dbfb}
+#tss .btn-corr{background:#ebfaf5;color:#0f7a56;border-color:rgba(15,122,86,.18)}
+#tss .btn-corr:hover{background:#d4f5ea}
+#tss .btn-yt{background:linear-gradient(135deg,#c4302b,#9e201b);color:#fff;border-color:transparent;box-shadow:0 2px 6px rgba(196,48,43,.25)}
+#tss .btn-yt:hover{background:linear-gradient(135deg,#a82823,#7d1713);color:#fff;box-shadow:0 4px 12px rgba(196,48,43,.4)}
+#tss .btn-soon{background:var(--creme-fonce);color:var(--encre-douce);border-color:var(--bordure);opacity:.6;cursor:default}
+#tss .btn-soon:hover{transform:none;box-shadow:none}
+
+/* ═══════════════ BIBLIOTHÈQUE / LIVRES ═══════════════ */
+#tss .livres-section{
+  border-top:1px solid var(--bordure);
+  margin-top:6px;padding:30px 20px 8px;
+  background:linear-gradient(180deg,rgba(181,120,9,.035),transparent 55%);
+}
+#tss .livres-tete{text-align:center;margin-bottom:26px}
+#tss .livres-tag{
+  display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--or);background:var(--or-pale);
+  border:1px solid rgba(181,120,9,.2);padding:4px 14px;border-radius:20px;margin-bottom:9px;
+}
+#tss .livres-h{font-family:"Cormorant Garamond",serif;font-size:22px;font-weight:700;color:var(--encre);line-height:1.2}
+#tss .livres-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:28px 20px;justify-items:center;
+}
+#tss .livre{
+  appearance:none;-webkit-appearance:none;background:none;border:none;padding:0;margin:0;
+  font-family:inherit;text-align:center;cursor:pointer;
+  width:100%;max-width:172px;position:relative;
+  display:flex;flex-direction:column;gap:12px;align-items:center;
+}
+#tss .livre-cover{
+  position:relative;width:100%;aspect-ratio:1/1.46;
+  border-radius:3px 8px 8px 3px;overflow:hidden;background:var(--creme-fonce);
+  box-shadow:0 10px 22px rgba(43,29,8,.18),0 2px 6px rgba(43,29,8,.12);
+  transition:transform .28s var(--transition),box-shadow .28s var(--transition);
+}
+#tss .livre-cover::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:9px;z-index:3;
+  background:linear-gradient(90deg,rgba(0,0,0,.30),rgba(0,0,0,.02));
+}
+#tss .livre-cover::after{
+  content:"";position:absolute;left:9px;top:0;bottom:0;width:1.5px;z-index:3;
+  background:rgba(217,161,58,.55);
+}
+#tss .livre:hover .livre-cover{
+  transform:translateY(-7px) rotate(-.6deg);
+  box-shadow:0 20px 36px rgba(43,29,8,.26),0 5px 12px rgba(43,29,8,.16);
+}
+#tss .livre-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2}
+#tss .livre-gen{
+  position:absolute;inset:0;z-index:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  padding:26px 14px 16px 20px;text-align:center;color:#f6efe0;
+}
+#tss .livre-gen-orn{width:26px;height:1.5px;background:rgba(246,239,224,.6);margin-bottom:14px;flex-shrink:0}
+#tss .livre-gen-titre{font-family:"Cormorant Garamond",serif;font-size:16.5px;font-weight:700;line-height:1.25}
+#tss .livre-gen-auteur{margin-top:auto;font-size:10px;letter-spacing:.08em;opacity:.85;text-transform:uppercase}
+#tss .livre-loupe{
+  position:absolute;z-index:4;right:8px;bottom:8px;width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  background:rgba(43,29,8,.6);color:#fff;opacity:0;transform:scale(.85);
+  transition:opacity .22s,transform .22s;
+}
+#tss .livre:hover .livre-loupe{opacity:1;transform:scale(1)}
+#tss .livre-meta{display:flex;flex-direction:column;gap:2px;padding:0 2px}
+#tss .livre-titre{font-size:13px;font-weight:600;color:var(--encre);line-height:1.3}
+#tss .livre-auteur{font-size:11.5px;color:var(--encre-douce)}
+#tss .livre-bientot{cursor:default}
+#tss .livre-bientot .livre-cover{opacity:.7;filter:saturate(.7)}
+#tss .livre-ruban{
+  position:absolute;top:9px;right:-4px;z-index:5;
+  font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;
+  background:var(--or-fonce);padding:3px 10px;border-radius:3px 0 0 3px;
+  box-shadow:0 2px 6px rgba(43,29,8,.3);
+}
+
+/* ═══════════════ MODAL / LECTEUR ═══════════════ */
+#tss-modal{
+  position:fixed;inset:0;background:rgba(43,29,8,.85);backdrop-filter:blur(6px);
+  z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;
+  animation:tss-fade-in .3s ease;
+}
+#tss-modal.active{display:flex}
+#tss-modal-content{
+  background:#f9f4eb;width:100%;max-width:1000px;height:85vh;
+  border-radius:16px;position:relative;overflow:hidden;
+  box-shadow:0 6px 28px rgba(90,60,20,.12);display:flex;flex-direction:column;
+  font-family:"Outfit",sans-serif;
+}
+#tss-modal-header{
+  padding:14px 20px;background:#fffdf8;border-bottom:1px solid rgba(181,120,9,.16);
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+}
+#tss-modal-title{font-weight:600;color:#2b1d08;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tss-modal-close{
+  background:#faefd6;border:none;width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  color:#b57809;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:20px;line-height:1;transition:all .2s;
+}
+#tss-modal-close:hover{background:#b57809;color:#fff}
+#tss-modal-body{flex:1;background:#000;position:relative}
+#tss-modal-body iframe{width:100%;height:100%;border:none;display:block}
+#tss-modal-footer{
+  padding:12px 20px;background:#fffdf8;border-top:1px solid rgba(181,120,9,.16);
+  display:flex;justify-content:flex-end;
+}
+#tss-dl-btn{
+  display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:10px;
+  background:#b57809;color:#fff;text-decoration:none;font-size:13px;font-weight:500;
+  font-family:"Outfit",sans-serif;transition:opacity .2s;
+}
+#tss-dl-btn:hover{opacity:.88}
+@keyframes tss-fade-in{from{opacity:0}to{opacity:1}}
+
+/* ═══════════════ FEUILLE DE ROUTE ═══════════════ */
+#tss .roadmap{margin:44px auto 0;max-width:860px;padding:0 20px}
+#tss .rm-list{position:relative;margin-top:26px;padding-left:26px}
+#tss .rm-list::before{
+  content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;
+  background-image:linear-gradient(180deg,var(--or-moyen) 55%,transparent 45%);
+  background-size:2px 12px;background-repeat:repeat-y;
+}
+#tss .rm-item{position:relative;padding:0 0 22px 18px}
+#tss .rm-item:last-child{padding-bottom:0}
+#tss .rm-item::before{
+  content:"";position:absolute;left:-25px;top:4px;width:16px;height:16px;border-radius:50%;
+  background:var(--carte);border:2.5px solid var(--or-moyen);box-shadow:0 0 0 4px var(--creme);
+}
+#tss .rm-week{
+  display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--or);background:var(--or-pale);border:1px solid rgba(181,120,9,.2);
+  padding:3px 12px;border-radius:20px;margin-bottom:6px;
+}
+#tss .rm-titre{font-family:"Cormorant Garamond",serif;font-size:19px;font-weight:700;color:var(--encre);line-height:1.3}
+#tss .rm-desc{font-size:13px;font-weight:300;color:var(--encre-moyenne);line-height:1.65;margin-top:3px;max-width:640px}
+
+/* ═══════════════ NOTE ═══════════════ */
+#tss .info-note{
+  background:var(--carte);border:1px solid var(--bordure);
+  border-left:4px solid var(--or);border-radius:var(--rayon);
+  padding:15px 20px;display:flex;gap:13px;align-items:flex-start;
+  margin:36px 20px 0;box-shadow:var(--ombre-petite);
+}
+#tss .info-note svg{flex-shrink:0;color:var(--or);margin-top:2px}
+#tss .info-note p{font-size:13px;color:var(--encre-moyenne);line-height:1.6}
+
+@media (max-width:600px){
+  #tss .hero{padding:40px 16px 36px}
+  #tss .bridge-badge{width:50px;height:50px;font-size:16px}
+  #tss .chap-body-pad{padding:20px 14px 24px 14px}
+  #tss .item-actions{padding-left:0}
+  #tss .seance-actions{padding-left:0}
+  #tss .btn{flex:1;min-width:120px}
+  #tss .livres-grid{grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:22px 14px}
+  #tss-modal{padding:0}
+  #tss-modal-content{height:100vh;border-radius:0}
+}
+</style>
+
+<div id="tss">
+  <!-- ═══════ HERO ═══════ -->
+  <div class="hero">
+    <div class="hero-eyebrow">Accompagnement Mathématiques</div>
+    <h1>La Passerelle <em>Sup → Spé</em></h1>
+    <p>Tout ce qu'il faut maîtriser pour réussir votre rentrée en deuxième année de CPGE.</p>
+
+    <div class="bridge">
+      <div class="bridge-node">
+        <div class="bridge-badge">Sup</div>
+        <small>Terminer</small>
+      </div>
+      <div class="bridge-path"></div>
+      <div class="bridge-node dest">
+        <div class="bridge-badge">Spé</div>
+        <small>Anticiper</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ STATS (calculées automatiquement) ═══════ -->
+  <div class="stats-row">
+    <div class="stat-item"><div class="stat-num" id="tss-nb-fil">0</div><div class="stat-label">Filières</div></div>
+    <div class="stat-item"><div class="stat-num" id="tss-nb-chap">0</div><div class="stat-label">Chapitres</div></div>
+    <div class="stat-item"><div class="stat-num" id="tss-nb-fiche">0</div><div class="stat-label">Fiches de cours</div></div>
+    <div class="stat-item"><div class="stat-num" id="tss-nb-exo">0</div><div class="stat-label">Fiches d'exercices</div></div>
+  </div>
+
+  <!-- ═══════ CORPS ═══════ -->
+  <div class="main">
+    <h2 class="sec-title">Vos ressources de révision</h2>
+    <p class="sec-sub">Sélectionnez votre filière pour accéder aux fiches et exercices.</p>
+
+    <div id="tss-tabs-nav" class="tabs-nav"></div>
+    <div id="tss-tabs-content"></div>
+
+    <div class="roadmap">
+      <h2 class="sec-title">Feuille de route de l'été</h2>
+      <p class="sec-sub">Une organisation progressive pour ne pas arriver épuisé à la rentrée.</p>
+      <div id="tss-roadmap" class="rm-list"></div>
+    </div>
+
+    <div class="info-note">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <p><strong>Conseil :</strong> Ne cherchez pas à tout faire en une semaine. La régularité est la clé de la réussite en classe préparatoire.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ LECTEUR (PDF + document gratuit) ═══════ -->
+<div id="tss-modal">
+  <div id="tss-modal-content">
+    <div id="tss-modal-header">
+      <div id="tss-modal-title">Aperçu du document</div>
+      <button id="tss-modal-close" aria-label="Fermer">×</button>
+    </div>
+    <div id="tss-modal-body">
+      <iframe id="tss-iframe" src="about:blank" allow="accelerometer; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+    </div>
+    <div id="tss-modal-footer">
+      <a id="tss-dl-btn" href="#" target="_blank" rel="noopener">Ouvrir dans un nouvel onglet</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+
+  /* ══════════════════════════════════════════════════════════════
+     ADRESSE DE VOTRE ESPACE MEMBRE REACT (Vidéos & Corrections)
+     ══════════════════════════════════════════════════════════════ */
+  var REACT_APP_URL = "https://quiz.anasskhadir.com"; // Espace membre sécurisé
+
+  /* ══════════════════════════════════════════════════════════════
+     TOUTES VOS FILIÈRES (MP, PSI, TSI, ECS, ECT)
+     ══════════════════════════════════════════════════════════════ */
+  var FILIERES = [
+    {
+      nom: "MP", de: "MPSI", vers: "MP", icon: "∑",
+      chapitres: [
+        {
+          titre: "Algèbre linéaire",
+          why: "Socle de toute la réduction des endomorphismes en MP.",
+          fiche: "https://drive.google.com/file/d/14p5mq_yxJqDasYcXNCglRc016HuNNw3M/view?usp=sharing",
+          items: [
+            { titre: "Fiche 1 de révision d'algèbre linéaire", enonce: "https://drive.google.com/file/d/1Zy5WClguDAGXKTcH0gsBfDWes0twhGpL/view?usp=sharing", correction:[
+                { label: "Exos 1-2 & 14", url: "https://drive.google.com/file/d/1mz7emSAwMvTbU_gj0J6HJZSk5ejhcveB/view?usp=sharing" },
+                { label: "Exos 16 & 17", url: "https://drive.google.com/file/d/1mCPWqCNIB3Mzw2uueuAMCbdFKIO94NGc/view?usp=sharing" }
+                ], video: null },
+            { titre: "Exercice sur les projecteurs", enonce: "https://drive.google.com/file/d/1GByznR3IyXyiJuRr93vxuXiO86CkXCaX/view?usp=sharing", correction: "https://drive.google.com/file/d/1xodzCmuCKHOW2FcLAvF5sL2RUHxcYrmm/view?usp=sharing", video: null },
+            { titre: "Image et noyau itérés, indice de Fitting", enonce: "https://drive.google.com/file/d/1ZggfM2jY7rp8ru0-emdmcuvPAVjhc-_W/view?usp=sharing", correction: "https://drive.google.com/file/d/1KL1GbmwZ-B5pSDLveO7nkrqnkajcoPFy/view?usp=sharing", video: "https://drive.google.com/file/d/1CD93AzmoWJgJvGjVp2AsIBmP8Iyb3j4Q/view?usp=sharing" },
+            { titre: "Extrait du CNC Marocain pour 1ère année - Année 2024 Filière MP", enonce: "https://drive.google.com/file/d/11Ajy7k2RMiCFQY5mNuFQ4KF7wxtM5XeY/view?usp=sharing", correction: "https://drive.google.com/file/d/1LgxdWbiV4M_E_6MggZmGHdH_QunCV3No/view?usp=sharing", video: null },
+            { titre: "Extrait – Session 2009 – MP: Approximation polynômiale au sens des moindres carrés", enonce: "https://drive.google.com/file/d/1kmXsUUFYEaV7XahuOWHVDpxFKJ8_5wv-/view?usp=sharing", correction: null, video: null },
+            { titre: "CNC - Session 2011 - MP", enonce: "https://drive.google.com/file/d/14mBZeR1PcoBCHu5q4SvLXauDWT82WtFz/view?usp=sharing", correction: null, video: null },
+            { titre: "CNC - 2014 : Caractérisation des homothéties en dimension 2 Application au commutant", enonce: "https://drive.google.com/file/d/1DWioB60yIslTU0zwIYfJNpRE9YfS-3BC/view?usp=sharing", correction: null, video: null },
+            { titre: "Concours National Commun – Session 2016 – Filière MP : tout hyperplan vectoriel de E contient au moins une matrice inversible", enonce: "https://drive.google.com/file/d/1753wxjMvyCBmZYY41Gv2pMsyVeTpMr4r/view?usp=sharing", correction: null, video: null },
+            { titre: "ECOLE POLYTECHNIQUE - 2017: forme symplectique", enonce: "https://drive.google.com/file/d/1KrN0BjTH2dvszlGU20Swluan2h4DNAls/view?usp=sharing", correction: null, video: null }
+          ],
+          seances: []
+        },
+        {
+          titre: "Révision d'analyse",
+          why: "Prérequis directs et indispensables pour aborder l'analyse en toute confiance.",
+          fiche: null,
+          items: [
+            { titre: "Fiche N° 1", enonce: "https://drive.google.com/file/d/1A9AYWRPgKhj1c-fp1VWJuipRlHRpaANm/view?usp=sharing", correction: null, video: null }
+          ],
+          seances: [
+            { titre: "Correction du premier problème de la fiche N°1", video: null, support: 'https://drive.google.com/file/d/1kPL2Oe8aZTLwPkssKJOMGRxWfy2wGS8h/view?usp=sharing' },
+            { titre: "Correction du deuxième problème de la fiche N°1: Fonction Gamma", video: 'https://youtu.be/rawCPGARZ04', support: 'https://drive.google.com/file/d/1u89mFPNP8qfhjc4S4PIQuuwqBHxn31PL/view?usp=sharing' },
+            { titre: "Correction du troisième problème de la fiche N°1", video: null, support: 'https://drive.google.com/file/d/1jvKURxojuYy1hnLX-OET_xYSeiIrrUYt/view?usp=sharing' }
+          ]
+        },
+        {
+          titre: "Calculs des determinants",
+          why: "Prérequis directs et indispensables pour calculer les determinants",
+          fiche: [
+            { label: "détaillée", url: "https://drive.google.com/file/d/1OuO-2h5nZwik2nktS8pcwZEkNPhLsRKT/view?usp=sharing" },
+            { label: "de synthèse et d'entraînement", url: "https://drive.google.com/file/d/1NKOGhEGplv4E8J18ZJTrsssOwfTWO_TG/view?usp=sharing" }
+          ],
+          items: [
+            { titre: "Déterminants classiques", enonce: "https://drive.google.com/file/d/1E6Kb4Lpm6OHaV2szdY04gKvVmA32pWg5/view?usp=sharing", correction: [
+                { label: "Calcul des determinants: Vandermonde, la matrice circulante et de la matrice compagnon", url: "https://drive.google.com/file/d/13RN-WPd1YMvbg6TWL4D8-wXht02Iar3b/view?usp=sharing" },
+                { label: "Exos 3: Déterminant de Cauchy et de la matrice de Hilbert", url: "https://drive.google.com/file/d/1jRdEyzRoAA4DnT5yEMZtFEQZ5wpKWO2r/view?usp=sharing" }
+              ], video: null }
+          ],
+          seances: [
+            { titre: "Calcul des determinants: Vandermonde, la matrice circulante et de la matrice compagnon", video: 'https://youtu.be/8EXSXe7i_KQ', support: 'https://drive.google.com/file/d/13RN-WPd1YMvbg6TWL4D8-wXht02Iar3b/view?usp=sharing' }
+          ]
+        },
+        {
+          titre: "Suites & séries numériques",
+          why: "Fondation directe des séries de fonctions, des séries entières et des familles sommables étudiées en spé.",
+          fiche: [
+            { label: "détaillée", url: "https://drive.google.com/file/d/1qSDn8RmZD0wneRHG8aOWGCkq_sqWErsT/view?usp=sharing" },
+            { label: "de synthèse et d'entraînement", url: "https://drive.google.com/file/d/1bS28V56U00uiETGqhJNMfbQ_2UvhtWzu/view?usp=sharing" },
+            { label: "Séries numériques", url: "https://drive.google.com/file/d/1xSklzyd29I4Al_JKIdDHS9vuRlI-Dmdc/view?usp=sharing" }
+          ],
+          items: [
+            { titre: "CCINP MP 2014: convergence de séries par transformation d’Abel", enonce: "https://drive.google.com/file/d/1n1zUz9wwZvOP1kzMp87ptg7Ir_Ha5zcT/view?usp=sharing", correction: "https://drive.google.com/file/d/1GLWuEzAi5ZVX8e_vVYfKFidv2TA7Vnfn/view?usp=sharing", video: null },
+            { titre: "Formule de Wallis - Formule de Stirling - Développement asymptotique de n!", enonce: "https://drive.google.com/file/d/1UeOo0klVvAmJxVgRi3y7ugdNP55Ufv5K/view?usp=sharing", correction: "https://drive.google.com/file/d/14V9IQBRhb8uuutx7BLwjxrIulE1IblC-/view?usp=sharing", video: 'https://youtu.be/v2JkFvxiiFg' },
+            { titre: "CCINP 2025- Autour du théorème de comparaison avec une intégrale", enonce: "https://drive.google.com/file/d/1VH1zvss1ShTgl_r_9Jt5eLmYqNOkzIKk/view?usp=sharing", correction: "", video: null },
+            { titre: "Centrale 2015: Séries et Intégrales impropres", enonce: "https://drive.google.com/file/d/1s8DeY4O1Qh7D1as8N2tAmHPWZ3u90fiC/view?usp=sharing", correction: "", video: null },
+            { titre: "Mines-Ponts 2020: Séries numériques et Intégrales", enonce: "https://drive.google.com/file/d/103OGWPhu67Z_V1v7TnQlib7T0Msv7CVY/view?usp=sharing", correction: "", video: null }
+          ],
+          seances: [
+            { titre: "Série de Bertrand", video: 'https://youtu.be/uEQFSHQ5k2I', support: "https://drive.google.com/file/d/1uIbE36LoFvYh7zyi9m5U3W2fBWEDPM92/view?usp=sharing" }
+          ]
+        },
+        {
+          titre: "Intégration sur un segment - Intégrales généralisées",
+          why: "Base de l'intégration sur un intervalle quelconque et des intégrales à paramètre.",
+          fiche: "https://drive.google.com/file/d/1KHTrCFgCFXOjYtew6_2xWm6jiKSjkYdc/view?usp=sharing",
+          items: [
+            { titre: "Mines-Ponts 2020: Séries numériques et Intégrales", enonce: "https://drive.google.com/file/d/1npw04u-mKk0XCSJhCvFUcSr2x1YuVuMp/view?usp=sharing", correction: "", video: null },
+            { titre: "Extrait du CNC 2026 filière MP: Transformé de Laplace", enonce: "https://drive.google.com/file/d/13xri3BmvqO9BsFgB7LXr79PFVIkoUYJ0/view?usp=sharing", correction: "", video: null },
+            { titre: "CNC – Session 2017 – Filière MP: Calcul de la somme de la série de Riemann, pour alpha=2", enonce: "https://drive.google.com/file/d/1rRBcaMLSzV6uTutVrKeawvogleIaV4sU/view?usp=sharing", correction: "", video: null },
+            { titre: "CONCOURS Mine Pont 2026: Lemme fondamental du calcul variationnel", enonce: "https://drive.google.com/file/d/1c8goDOp3yWcUdgPERUXa7ZkrvbbTGtzJ/view?usp=sharing", correction: "", video: null },
+            { titre: "CONCOURS D’ADMISSION 2026- ECOLE POLYTECHNIQUE ESPCI: Sommes de Riemann", enonce: "https://drive.google.com/file/d/1c8goDOp3yWcUdgPERUXa7ZkrvbbTGtzJ/view?usp=sharing", correction: "", video: null },
+            { titre: "CONCOURS Mine Pont Session 2024", enonce: "https://drive.google.com/file/d/1j8QK2Q4VS7tbC2A0BLdl-wdLLOncmJTq/view?usp=sharing", correction: "", video: null },
+            { titre: "Centrale 2015 - Séries et Intégrales impropres: Fonction Gamma d'Euler", enonce: "https://drive.google.com/file/d/1o_nreJx8Anfg9GQus29KEWMBezR9yLdN/view?usp=sharing", correction: "", video: null },
+            { titre: "Fiche de révision", enonce: "https://drive.google.com/file/d/1HjTf9KEc5jAiFkbRpNkFNJmkzxdLg92e/view?usp=sharing", correction: "https://drive.google.com/file/d/1uIbE36LoFvYh7zyi9m5U3W2fBWEDPM92/view?usp=sharing", video: null }
+          ],
+          seances: [
+            { titre: "Intégrale de Dirichlet", video: 'https://youtu.be/VNkWUwhJT2g', support: "https://drive.google.com/file/d/1uIbE36LoFvYh7zyi9m5U3W2fBWEDPM92/view?usp=sharing" },
+            { titre: "Intégrales généralisées & séries numériques : 2 problèmes corrigés pas à pas", video: 'https://youtu.be/m164u6S0dOI', support: "https://drive.google.com/file/d/1FuzlIr-JtHUJvoJf_LIxEwbC_WBoml6c/view?usp=sharing" }
+          ]
+        },
+        {
+          titre: "Probabilités",
+          why: "Les probabilités sur un univers fini préparent l'étude des variables aléatoires discrètes infinies de deuxième année.",
+          fiche: "",
+          items: [
+            { titre: "CNC 2016: Une démonstration probabiliste du théorème de Stone-Weierstrass", enonce: "https://drive.google.com/file/d/1QLm_IpukDR3ukj95ys5-sz63Pw9-Ovbs/view?usp=sharing", correction: "", video: null },
+            { titre: "CONCOURS 2015: Variables aléatoires sous-gaussiennes", enonce: "https://drive.google.com/file/d/19t7KCwPr3Pk792xp0ihPOT_vKEWWpQEo/view?usp=sharing", correction: "", video: null },
+            { titre: "CONCOURS 2015 - Filière MP. Théorème d’approximation de Weierstrass", enonce: "https://drive.google.com/file/d/1VHGSyBpFCUbwjp_RmhVl4gnC_grbTBwJ/view?usp=sharing", correction: "", video: null },
+            { titre: "ECOLE POLYTECHNIQUE Session 2026", enonce: "https://drive.google.com/file/d/1VjCUQMvNlIvdEsB1x0vo9l5IV21pBLrN/view?usp=sharing", correction: "", video: null },
+            { titre: "Inégalité de Hölder- Une inégalité de déviation- Inégalités de Khintchine", enonce: "https://drive.google.com/file/d/1azKXrWOM3rKIHHvZ6ocnINp0IHFW6snf/view?usp=sharing", correction: "", video: null }
+          ],
+          seances: []
+        },
+        {
+          titre: "Espaces Euclidiens",
+          why: "Indispensables à la réduction des endomorphismes symétriques et à l'étude des espaces préhilbertiens.",
+          fiche: "https://drive.google.com/file/d/1bRrvkojc9E-MZiYS35LArTJi44bln8Zy/view?usp=sharing",
+          items: [
+            { titre: "Mini exercice pour déterminer l'orthogonal (CCINP 2021)", enonce: "https://drive.google.com/file/d/1y2rzX5UjsgidvbRc_2UWSvsljljpV83X/view?usp=sharing", correction: "", video: null },
+            { titre: "Extrait de CNC 2022-MP: Construction d'une base orthonormée d'un sous espace vectoriel de Rn", enonce: "https://drive.google.com/file/d/1Bo9NUIKCeXJGICnzbixWYW0DENT2SRPM/view?usp=sharing", correction: "", video: null },
+            { titre: "CCINP SESSION 2026", enonce: "https://drive.google.com/file/d/1vQC6gVzp5LSkjPxfntu99M1WSyyFINj7/view?usp=sharing", correction: "", video: null },
+            { titre: "Concours National Commun – Session 2026 – MP", enonce: "https://drive.google.com/file/d/1UaZ5RL87k9vsrAfK-2EsAzOxxn8y5BGW/view?usp=sharing", correction: "", video: null },
+            { titre: "EXTRAIT X-ENS 2025", enonce: "https://drive.google.com/file/d/174CRTg6or__NogtSHSLcU24KPKRFbAh0/view?usp=sharing", correction: "", video: null },
+            { titre: "Concours National Commun – Session 2019 – MP: Détérminant de Gram et application au calcul d’un minimum", enonce: "https://drive.google.com/file/d/1WzU_1Ida4PGGMg2ci6Q4Z84wQuCLBqVe/view?usp=sharing", correction: "", video: null }
+          ],
+          seances: [
+            { titre: "Séance 1 de cours", video: 'https://youtu.be/1FsyIs3b584', support: "https://drive.google.com/file/d/1Kt6mwfiKp_fMYaOvXT36Nzar7gI9AdZP/view?usp=sharing" },
+            { titre: "Séance 2 de cours", video: 'https://youtu.be/8dH0NMKnQ_4', support: "https://drive.google.com/file/d/1Wxy3FiqERxLg3y4KRDnC9Odr1ZZPy_A4/view?usp=sharing" },
+            { titre: "Séance 3 de cours", video: 'https://youtu.be/yWdVgNslkug', support: "https://drive.google.com/file/d/1CJ8EwgteCVqN8NczvRiah-WMecsIAL1T/view?usp=sharing" },
+            { titre: "Séance 4 de cours", video: 'https://youtu.be/9fDOolSob9A', support: "https://drive.google.com/file/d/1qYrC-fr2KjtuXp1AabjIaGTXED3PN9p9/view?usp=sharing" }
+          ]
+        },
+        {
+          titre: "Polynômes & fractions",
+          why: "Indispensables pour les polynômes en CPGE",
+          fiche: null,
+          items: [
+            { titre: "Centrale-Supélec Mathematics - 2021 Inégalités de Bernstein", enonce: "https://drive.google.com/file/d/1uoXUkzQNY1aUeLwy39AbqolqAhmv5Eie/view?usp=sharing", correction: "", video: null },
+            { titre: "Exercice 1 sur les polynômes", enonce: "https://drive.google.com/file/d/1AfvinK-vBBn0gvVsCCkJyFhoY8uTsBdV/view?usp=sharing", correction: null, video: "https://youtu.be/wrS32nCwmR4" },
+            { titre: "Exercice 2 sur les polynômes", enonce: "https://drive.google.com/file/d/19DGyzsVk8z6Te0h1BYVz94AnULLQIRZX/view?usp=sharing", correction: null, video: 'https://youtu.be/QlE5DLxkcHs' },
+            { titre: "Exercice 3 sur les polynômes", enonce: "https://drive.google.com/file/d/1a4JP2lx1Sxlz15bh3rL94iVsHjf3Gj18/view?usp=sharing", correction: null, video: "https://youtu.be/2Cug0ds1jJw" }
+          ],
+          seances: []
+        },
+        {
+          titre: "Calcul matriciel",
+          why: "Maîtriser les opérations sur les matrices, les systèmes linéaires et les inverses afin de modéliser, résoudre et analyser efficacement des problèmes d'algèbre linéaire.",
+          fiche: null,
+          items: [
+            { titre: "Problème dans le chapitre du calcul matriciel", enonce: "https://drive.google.com/file/d/1_201-3ajlM3S46X50a6Ld-_2o_qPN7w5/view?usp=sharing", correction: null, video:"https://www.youtube.com/watch?v=-2LJGMON7Cw"},
+            { titre: "Exercice 1", enonce: "https://drive.google.com/file/d/1RECaFZG5edDfNNEckHzyJTRRt_iYy3w0/view?usp=sharing", correction: null, video: 'https://youtu.be/Sp4sGLjFKz4' },
+            { titre: "Exercice 2", enonce: "https://drive.google.com/file/d/1RECaFZG5edDfNNEckHzyJTRRt_iYy3w0/view?usp=sharing", correction: null, video: "https://youtu.be/J7xe9-uTA9Y" },
+            { titre: "Exercice 3", enonce: "https://drive.google.com/file/d/1RECaFZG5edDfNNEckHzyJTRRt_iYy3w0/view?usp=sharing", correction: null, video: "https://youtu.be/wberhwdFWhc" },
+            { titre: "Exercice 4", enonce: "https://drive.google.com/file/d/1RECaFZG5edDfNNEckHzyJTRRt_iYy3w0/view?usp=sharing", correction: null, video: "https://youtu.be/Zrd5LJBr_DQ" },
+            { titre: "Exercice 5", enonce: "https://drive.google.com/file/d/1MMUbUjziq4L3H439iaa0RQvs74u9PQEg/view?usp=sharing", correction: null, video: "https://youtu.be/h9toQqA8u1o" },
+            { titre: "Exercice 6", enonce: "https://drive.google.com/file/d/1KFSUZAbHJV5JqZVfjDwIgORNgaKDfS6k/view?usp=sharing", correction: null, video: "https://www.youtube.com/watch?v=5nvsbjydNAE" }
+          ],
+          seances: []
+        }
+      ],
+      livres: [
+        { titre: "100% CONCOURS Prépas- Tous les exercices d'algèbre et de géométrie MP", auteur: "", lien: "https://drive.google.com/file/d/1euuNqpDcv_h1PfHggzBM0oOVp_27syq6/view?usp=sharing", cover: null },
+        { titre: "100% CONCOURS Prépas- Tous les exercices d'analyse MP", auteur: "", lien: "https://drive.google.com/file/d/1qGAVRf_YtAvKQqF3rnUefchBwB15LShn/view?usp=sharing", cover: null },
+        { titre: "Analyse pour la Licence", auteur: "MARIE-CÉCILE DARRACQ & JEAN-ETIENNE ROMBALDI", lien: "https://drive.google.com/file/d/1d3EizGMWvYkS3M4PU_fF2RrgOOGeaPvk/view?usp=sharing", cover: null },
+        { titre: "Exercices d'algèbre et de probabilités MP/MP*", auteur: "David Delaunay", lien: "https://drive.google.com/file/d/17hG5SbNQWfBP77chZt9oFdQ-81ql4hgy/view?usp=sharing", cover: 'https://drive.google.com/file/d/1XnvLYt8bVd6qCLcGRgo5wtToe-OejkMe/view?usp=sharing' },
+        { titre: "Annales de concours MP", auteur: "David Denaulay", lien: "https://drive.google.com/file/d/1Z54eUgLv2iUoHm4IQixuIuV__MldvRRx/view?usp=sharing", cover:'https://drive.google.com/file/d/1-xxdWWFqvx1S_15byJbz3Pm65T12Rq7J/view?usp=sharing' },
+        { titre: "Probabilité discrètes MP/MP*", auteur: "Jamel Jaber", lien: "https://drive.google.com/file/d/1gUSRREt2CF2aaCQz-PgURIWOV9UjOwN9/view?usp=sharing", cover: 'https://drive.google.com/file/d/1q3EBxihbo2LmnVOJVZPi13PMhH2ywN6W/view?usp=sharing' },
+        { titre: "Annales de concours MP", auteur: "JEAN-FRANÇOIS DANTZER", lien: "https://drive.google.com/file/d/1W7y6uo8xLnGr0sdLMYkl3i16VJ-XJHVy/view?usp=sharing", cover: null },
+        { titre: "EXERCICES INCONTOURNABLES", auteur: null, lien: "https://drive.google.com/file/d/1V2at6I19YJSQoHoPZXFdRTkjKg7onidb/view?usp=sharing", cover: null },
+        { titre: "Maths 2e année H-Prépa", auteur: null, lien: "https://drive.google.com/file/d/1gOseXaiWakHATfU0_OOypzYR7OSpMAGg/view?usp=sharing", cover: null },
+        { titre: "Mathématiques en MP (cours de la MP*4 Louis-le-Grand)", auteur: 'Omar Bennouna, Issam Tauil & M.C.', lien: "https://drive.google.com/file/d/1d7a2fjtJIyBZTXLteuprK-MmhwqZ3z-Q/view?usp=sharing", cover: null },
+        { titre: "Maths Tout-en-un MPI/MPI", auteur: null, lien: "https://drive.google.com/file/d/1NkMjZjypjjprW2VALv5Mk7S5QKvtenlL/view?usp=sharing", cover: null }
+      ]
+    },
+    {
+      nom: "PSI", de: "PCSI", vers: "PSI", icon: "∫",
+      chapitres: [
+        { titre: "Espaces vectoriels", why: "La réduction, chapitre central de PSI, s'appuie dessus.",
+          fiche: "", items: [ { titre: "Structure d'espace vectoriel", enonce: "", correction: "", video: null } ] },
+        { titre: "Calcul matriciel", why: "Outil quotidien en algèbre comme en SI.", fiche: "", items: [] },
+        { titre: "Suites & fonctions", why: "Sans réflexes solides ici, les séries deviennent un mur.", fiche: "", items: [] },
+        { titre: "Intégration & équations différentielles", why: "Les équations différentielles reviennent dès la rentrée.", fiche: "", items: [] },
+        { titre: "Produit scalaire", why: "Prépare les espaces préhilbertiens.", fiche: "", items: [] }
+      ],
+      livres: [
+        { titre: "J'assure aux concours Maths- PSI", auteur: 'Sylvain Gugger', lien: "https://drive.google.com/file/d/164lo3gixEqVzwsHfBdN0jiNRk4a5KPEg/view?usp=sharing", cover: "https://drive.google.com/file/d/1eZvAUPdrQeJPBZmZGzg781RgxXNA39ys/view?usp=sharing" }
+      ]
+    },
+    {
+      nom: "TSI", de: "TSI 1", vers: "TSI 2", icon: "T",
+      chapitres: [
+        { titre: "Intégration sur un segment - Intégrales généralisées", why: "Base de l'intégration sur un intervalle quelconque et des intégrales à paramètre.",
+          fiche: "https://drive.google.com/file/d/1KHTrCFgCFXOjYtew6_2xWm6jiKSjkYdc/view?usp=sharing", 
+          items: [
+            { titre: "Sujets: Intégrale sur un segment.", enonce: "https://drive.google.com/file/d/15fwfeFIpGaUVsDrT8otnX2H6hjBdBrei/view?usp=sharing", correction: null, video: null },
+            { titre: "Sujets: Intégrale généralisée.", enonce: "https://drive.google.com/file/d/118WMHlBvjyQAClcFfyn-jjZp9v8ifl7F/view?usp=sharing", correction: null, video: null }
+          ],
+          seances: [
+            { titre: "Séance 1", video: "https://youtu.be/CU7rXoNvIL0", support: 'https://drive.google.com/file/d/1maeKWNDY08Zl3x4VkvHQIhNgvo9SZeWg/view?usp=sharing' }
+          ]
+        }
+      ],
+      livres: [
+        { titre: "Problèmes de mathématiques TSI 1", auteur: "Ali Essaidi", lien: "https://drive.google.com/file/d/1yY4z6XyNqKhvHrEzK3IzX8QNaKkBax8c/view?usp=sharing", cover: null }
+      ]
+    },
+    {
+      nom: "ECS", de: "ECS 1", vers: "ECS 2", icon: "E",
+      chapitres: [
+        {
+          titre: "Algèbre linéaire",
+          why: "Base de la réduction et de l'algèbre linéaire.",
+          fiche: "https://drive.google.com/file/d/14p5mq_yxJqDasYcXNCglRc016HuNNw3M/view?usp=sharing",
+          items: [
+            {
+              titre: "Fiche 1 de révision d'algèbre linéaire",
+              enonce: "https://drive.google.com/file/d/1Zy5WClguDAGXKTcH0gsBfDWes0twhGpL/view?usp=sharing",
+              correction: [
+                { label: "Exos 1-2 & 14", url: "https://drive.google.com/file/d/1mz7emSAwMvTbU_gj0J6HJZSk5ejhcveB/view?usp=sharing" },
+                { label: "Exos 16 à 18", url: "https://drive.google.com/file/d/1mCPWqCNIB3Mzw2uueuAMCbdFKIO94NGc/view?usp=sharing" }
+              ],
+              video: null
+            },
+            {
+              titre: "Exercice sur les projecteurs",
+              enonce: "https://drive.google.com/file/d/1GByznR3IyXyiJuRr93vxuXiO86CkXCaX/view?usp=sharing",
+              correction: "https://drive.google.com/file/d/1xodzCmuCKHOW2FcLAvF5sL2RUHxcYrmm/view?usp=sharing",
+              video: null
+            },
+            {
+              titre: "TD d'algèbre linéaire",
+              enonce: "https://drive.google.com/file/d/1XRtbzl24BLU1NDbhLej3dWFLFoEkzQRz/view?usp=sharing",
+              correction: [
+                { label: " et quelques indications des exercices", url: "https://drive.google.com/file/d/1faL6pTnij4F8B2EGcVS3xuEbZeLMDazi/view?usp=sharing" },
+                { label: "des exos: 14-15-19 et 21", url: "https://drive.google.com/file/d/1myVCwNtSERZ77LZM-5-ATJTaJnNOXFsT/view?usp=sharing" }
+              ],
+              video: null
+            }
+          ],
+          seances: [
+            { titre: "Séance de révision 1", video: null, support: "https://drive.google.com/file/d/1c1aVxTOyaju3Rbidqb1T9jOiXvTpjrHJ/view?usp=sharing" },
+            { titre: "Séance de révision 2", video: null, support: "https://drive.google.com/file/d/1jpG-z4Ee_TWHmzIBubRcJ1h6s5BaojTP/view?usp=sharing" },
+            { titre: "Séance de révision 3", video: null, support: "https://drive.google.com/file/d/1HijO1yekpLA2IoJKlQSJs1sCpmpvP-6f/view?usp=sharing" },
+            { titre: "Séance de révision 4", support: "https://drive.google.com/file/d/1pVqBU80Qi2kaN13LQ36NM1MGQmiq2KiW/view?usp=sharing", video: 'https://youtu.be/0Mdd_ZLeN3U?si=RSpZwFh2Bz8UfacY' },
+            { titre: "Séance de révision 5", support: "https://drive.google.com/file/d/1KREmSCU1ocajxPEQ1zr6j6JQOnfPO7QK/view?usp=sharing", video: 'https://youtu.be/nCY1psyB09Y' },
+            { titre: "Séance 6: Eléments propres des endomorphismes et des matrices carrées", support: "https://drive.google.com/file/d/1IgT_yzY6mWWQIEKLaO0PVbab9FEvLUFC/view?usp=sharing", video: null },
+            { titre: "Séance 7: Algèbre lineaire (Savoir utiliser le polynôme anulateur d'un endomorphisme/matrice)", video: null, support: "https://drive.google.com/file/d/1mpknd1Vn-SxEp5R7l64LQ_8_Cr4XDpVi/view?usp=sharing" },
+            { titre: "Séance 8: Algèbre lineaire- sous espaces propres et diagonalisation", video: null, support: "https://drive.google.com/file/d/1gRcn1_8E-nsubTQk511V1ObN6SIbsB3Z/view?usp=sharing" },
+            { titre: "Séance 9: Algèbre linéaire - réduction des endomorphismes (diagonalisation)", video: null, support: "https://drive.google.com/file/d/1R3zbJyqtjtgHvJo2Qwh9vBmXGmSiUM6c/view?usp=sharing" }
+          ]
+        },
+        {
+          titre: "Algèbre bilinéaire",
+          why: "Un cours complet avec la pratique de chaque partie sur des extraits de concours",
+          fiche: "", 
+          items: [],
+          seances: [
+            { titre: "Séance 1: Algèbre bilinéaire - Produit scalaire normes et Inégalité de Cauchy-schwartz", video: null, support: "https://drive.google.com/file/d/1yaVTy-vHFVcNCvPrvDIqeUAjAUPJ6Zfa/view?usp=sharing" },
+            { titre: "Séance 2: Algèbre bilinéaire - Orthogonalité", video: null, support: "https://drive.google.com/file/d/1Xn5MvoD9Q2g5Qz_zgllpkUz6CFQX12VT/view?usp=sharing" },
+            { titre: "Séance 3: Algèbre bilinéaire - Orthogonalité et matrice orthogonale", video: null, support: "https://drive.google.com/file/d/112CnIb6M4wa_BlzWkLYc7v1QsoE0hrR8/view?usp=sharing" },
+            { titre: "Séance 4: Algèbre bilinéaire - Orthogonalité, matrice du produit scalaire", video: null, support: "https://drive.google.com/file/d/1paNDMPClvqa4RkymeAKgyv0gkQLwE-jj/view?usp=sharing" },
+            { titre: "Séance 5: Algèbre bilinéaire -  Orthogonalité, projection orthogonale et distance d'un vecteur à un sous espace vectoriel ", video: null, support: "https://drive.google.com/file/d/1E3Wxpb5ONJwEZCw2mBsDWyFRbqerjzfT/view?usp=sharing" },
+            { titre: "Séance 6: Algèbre bilinéaire - Réduction des endomorphismes symétriques ", video: null, support: "https://drive.google.com/file/d/1NC8DjQdB3FVgcDxo6vR0geQdlKl_iSH7/view?usp=sharing" }
+          ]
+        },
+        {
+          titre: "Calcul matriciel",
+          why: "maîtriser les opérations sur les matrices, les systèmes linéaires et les inverses afin de modéliser, résoudre et analyser efficacement des problèmes d'algèbre linéaire.",
+          fiche: null,
+          items: [
+            { titre: "Exercice 2: calcul matriciel", enonce: "https://drive.google.com/file/d/1_201-3ajlM3S46X50a6Ld-_2o_qPN7w5/view?usp=sharing", correction: null, video: null },
+            { titre: "Exercice 1", enonce: "https://drive.google.com/file/d/1RECaFZG5edDfNNEckHzyJTRRt_iYy3w0/view?usp=sharing", correction: null, video: 'https://youtu.be/Sp4sGLjFKz4?si=VHtzbDmrqnRUrb7_' },
+            { titre: "Exercice 2", enonce: "https://drive.google.com/file/d/1RECaFZG5edDfNNEckHzyJTRRt_iYy3w0/view?usp=sharing",  correction: null, video: "https://youtu.be/J7xe9-uTA9Y?si=Qz-lfBWE9mva3Bjo" },
+            { titre: "Exercice 3", enonce: "https://drive.google.com/file/d/1RECaFZG5edDfNNEckHzyJTRRt_iYy3w0/view?usp=sharing", correction: null, video: "https://youtu.be/wberhwdFWhc?si=_R8HZwe1sP_2RCxO" },
+            { titre: "Exercice 5", enonce: "https://drive.google.com/file/d/1MMUbUjziq4L3H439iaa0RQvs74u9PQEg/view?usp=sharing", correction: null, video: "https://youtu.be/h9toQqA8u1o?si=f84PrnYlhRufDK-y" }
+          ],
+          seances: []
+        },
+        { titre: "Fonctions & continuité", why: "Prérequis de l'intégration et de l'optimisation.", fiche: "", items: [], seances: [] },
+        {
+          titre: "Probabilités",
+          why: "Les probabilités discrètes puis continues les prolongent.",
+          fiche: "https://drive.google.com/file/d/1B3zEjKJe1GjlZ0hZKjR4ASSZ0TD1yuLg/view?usp=sharing",
+          items: [
+            {
+              titre: "TD 1: Probabilités sur un univers dénombrable",
+              enonce: "https://drive.google.com/file/d/1csPA7_aR1XGZq-mVLbdQVsqzWMpridYD/view?usp=sharing",
+              correction: null,
+              video: null
+            }
+          ],
+          seances: [
+            { titre: "Séance 1 de probabilités ", video: null, support: "https://drive.google.com/file/d/1xT2nesFcgIwO8kb2Qyanvx84Y1vFjFTW/view?usp=sharing" },
+            { titre: "Séance 2 de probabilités ", video: null, support: "https://drive.google.com/file/d/1Mr7TLWIsE5qFpJzZHtopz2E6RKK70-Kx/view?usp=sharing" },
+            { titre: "Séance 3 de probabilités ", video: null, support: "https://drive.google.com/file/d/1yvTlLdnXyamK5Bq4CXVxiQsO4zdaX3Ae/view?usp=sharing" },
+            { titre: "Séance 4 de probabilités ", video: null, support: "https://drive.google.com/file/d/1aPDxajAfSwJw6LyWiBji4CEyMgxBSytk/view?usp=sharing" }
+          ]
+        },
+        { titre: "Intégration", why: "Indispensable aux probabilités à densité.", fiche: "", items: [], seances: [] },
+        {
+          titre: "Les variables aléatoires réelles",
+          why: "La suite des cours de probabilités et approfondissement dans le même style des concours",
+          fiche: null,
+          items: [],
+          seances: [
+            { titre: "Séance 1 de variables aléatoires: Définitions et cas pratiques ", video: null, support: "https://drive.google.com/file/d/1N5AjcoqoQN9xDBaIQJPTkblJ6B-Iq0jc/view?usp=sharing" },
+            { titre: "Séance 2 de variables aléatoires: Image et espérance d'une v.a.r ", video: null, support: "https://drive.google.com/file/d/1H_T8J4AXzrs9tnSpjcFYFmPDtsRYfjgP/view?usp=sharing" }
+          ]
+        }
+      ],
+      livres: [
+        { titre: "J'intégre Mathématiques approfondies 1er année - QUESTIONS ET MÉTHODES Informatique", auteur: "Coordonné par O. SARFATI et M. ALFRÉ", lien: "https://drive.google.com/file/d/1GgSwETxHjZPEXwiT_gkiebFtqfp-s5Rk/view?usp=sharing", cover: null },
+        { titre: "J'intégre Mathématiques approfondies 2e année - QUESTIONS ET MÉTHODES Informatique", auteur: "Coordonné par Olivier Sarfati", lien: "https://drive.google.com/file/d/16fYVpH660ljua4A9mmEu1-LDpEUqcZLA/view?usp=sharing", cover: null },
+        { titre: "Mathématiques Cours et exercices ECS 2e année", auteur: "Cécile Lardon & Jean-Marie Monier", lien: "https://drive.google.com/file/d/1IiGNSp_GY-OTq_S5RHcsw_Jb5ttdtH9i/view?usp=sharing", cover: "https://drive.google.com/file/d/1bJaESVMI77emwKUqVWZzIItk_T9G8rdb/view?usp=sharing" },
+        { titre: "Mathématiques Méthodes et exercices ECS 2e année ", auteur: "Cécile Lardon & Jean-Marie Monier", lien: "https://drive.google.com/file/d/1zQ4gHg9Fm0s9VqYHF-bBQvf6HF4PTw6J/view?usp=sharing", cover: "https://drive.google.com/file/d/1zQ4gHg9Fm0s9VqYHF-bBQvf6HF4PTw6J/view?usp=sharing" },
+        { titre: "Mathématiques Méthodes et exercices ECS 2e année ", auteur: "Cécile Lardon & Jean-Marie Monier", lien: "https://drive.google.com/file/d/11xkX65wbkRqHkdcqi9QRELygYhRgMDFT/view?usp=sharing", cover: "https://drive.google.com/file/d/1jLdbzPqh2y5cpJYLd3Tbos9IuIMyvUTr/view?usp=sharing" }
+      ]
+    },
+    {
+      nom: "ECT", de: "ECT 1", vers: "ECT 2", icon: "€",
+      chapitres: [
+        { titre: "Matrices & déterminants", why: "L'aisance calculatoire conditionne toute l'analyse.", fiche: "", items: [] },
+        { titre: "Suites numériques", why: "Base des modèles financiers et des séries.", fiche: "", items: [] },
+        { titre: "Algèbre linéaire", why: "Ouvre le calcul matriciel appliqué.", fiche: "", items: [] },
+        { titre: "Probabilités", why: "Fondations des probabilités appliquées.", fiche: "", items: [] },
+        { titre: "Statistiques", why: "Prérequis de la statistique inférentielle.", fiche: "", items: [] }
+      ],
+      livres: [
+        { titre: "Cours complet de mathématiques ECT", auteur: "", lien: "", cover: null },
+        { titre: "Exercices & problèmes corrigés", auteur: "", lien: "", cover: null },
+        { titre: "Annales de concours ECT", auteur: "", lien: "", cover: null }
+      ]
+    }
+  ];
+
+  var PLAN = [
+    { semaine: "Semaines 1–2", titre: "Décompresser… puis diagnostiquer",
+      desc: "Reposez-vous d'abord. Puis relisez vos DS : listez les chapitres où vous avez perdu des points." },
+    { semaine: "Semaines 3–4", titre: "Consolider chapitre par chapitre",
+      desc: "Dépliez les chapitres de votre filière et travaillez leurs fiches. Objectif : refaire les classiques." },
+    { semaine: "Semaines 5–6", titre: "Automatiser le calcul",
+      desc: "20 à 30 minutes par jour de calcul pur. La vitesse est le premier facteur discriminant." },
+    { semaine: "Semaines 7–8", titre: "S'ouvrir sur le programme de Spé",
+      desc: "Parcourez le premier chapitre de 2ᵉ année sans chercher à tout maîtriser." }
+  ];
+
+  /* ---------- Outils ---------- */
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function estActif(u) { return typeof u === "string" && u.trim() !== ""; }
+  function existe(u) { return u !== null && u !== undefined; }
+
+  function normaliserLiens(champ) {
+    if (!existe(champ)) return [];
+    if (typeof champ === "string") return [{ url: champ, label: "" }];
+    if (Array.isArray(champ)) {
+      return champ.map(function (x) {
+        if (typeof x === "string") return { url: x, label: "" };
+        return { url: (x && x.url) || "", label: (x && x.label) || "" };
+      });
+    }
+    return [];
+  }
+
+  function aLienActif(champ) {
+    return normaliserLiens(champ).some(function (l) { return estActif(l.url); });
+  }
+
+  function idYoutube(url) {
+    var m = String(url).match(/(?:youtu\.be\/|v\/|embed\/|watch\?v=|&v=)([^#&?]{11})/);
+    return m ? m[1] : null;
+  }
+
+  function estDrive(url) { return String(url).indexOf("drive.google.com") !== -1 || idDriveSouple(url) !== null; }
+
+  function idDrive(url) { return idDriveSouple(url); }
+
+  function idDriveSouple(v) {
+    if (!estActif(v)) return null;
+    var str = String(v).trim();
+    var m = str.match(/\/d\/([^/?#]+)/);
+    if (m) return m[1];
+    m = str.match(/[?&]id=([^&]+)/);
+    if (m) return m[1];
+    if (/^[a-zA-Z0-9_-]{20,}$/.test(str)) return str;
+    return null;
+  }
+
+  function getEmbedUrl(url, type) {
+    if (!url) return "about:blank";
+    var str = String(url).trim();
+    var ytMatch = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    if (ytMatch) {
+      return "https://www.youtube-nocookie.com/embed/" + ytMatch[1] + "?autoplay=1&rel=0";
+    }
+    var driveId = idDriveSouple(str);
+    if (driveId) {
+      return "https://drive.google.com/file/d/" + driveId + "/preview";
+    }
+    return str;
+  }
+
+  function getDownloadUrl(url) {
+    if (!url) return "";
+    var driveId = idDriveSouple(url);
+    return driveId ? "https://drive.google.com/uc?export=download&id=" + driveId : url;
+  }
+
+  function drivePreview(url) { return getEmbedUrl(url, "pdf"); }
+
+  function urlsImageDrive(id) {
+    return [
+      "https://lh3.googleusercontent.com/d/" + id + "=w600",
+      "https://drive.google.com/thumbnail?id=" + id + "&sz=w600",
+      "https://drive.google.com/thumbnail?id=" + id + "&sz=w1000",
+      "https://drive.google.com/uc?export=view&id=" + id
+    ];
+  }
+
+  function sourcesCouverture(livre) {
+    if (!livre) return [];
+    var target = livre.cover || livre.lien || livre.url || (typeof livre === "string" ? livre : "");
+    if (estActif(target)) {
+      var id = idDriveSouple(target);
+      return id ? urlsImageDrive(id) : [target];
+    }
+    return [];
+  }
+
+  function getYoutubeThumbnail(url) {
+    if (!url) return null;
+    var m = String(url).match(/(?:youtu\.be\/|v\/|embed\/|watch\?v=|&v=)([^#&?]{11})/);
+    if (m) return "https://img.youtube.com/vi/" + m[1] + "/hqdefault.jpg";
+    var id = idDriveSouple(url);
+    if (id) return "https://lh3.googleusercontent.com/d/" + id + "=w600";
+    return null;
+  }
+
+  /* ---------- Lecteur intégré (Documents gratuits & Livres) ---------- */
+
+  function ouvrirLecteur(url, titre, type) {
+    var modal  = document.getElementById("tss-modal");
+    var iframe = document.getElementById("tss-iframe");
+    var mTitre = document.getElementById("tss-modal-title");
+    var dlBtn  = document.getElementById("tss-dl-btn");
+    var footer = document.getElementById("tss-modal-footer");
+
+    if (!modal || !iframe) return;
+
+    if (mTitre) mTitre.textContent = titre;
+    iframe.src = getEmbedUrl(url, type);
+    if (dlBtn) {
+      dlBtn.textContent = "Télécharger le PDF";
+      dlBtn.href = getDownloadUrl(url);
+    }
+    if (footer) footer.style.display = "flex";
+    modal.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function fermerLecteur() {
+    var modal  = document.getElementById("tss-modal");
+    var iframe = document.getElementById("tss-iframe");
+    if (modal) modal.classList.remove("active");
+    if (iframe) iframe.src = "about:blank";
+    document.body.style.overflow = "";
+  }
+
+  /* ---------- Fabrication des boutons sécurisés & gratuits ---------- */
+
+  function bouton(url, classe, icone, libelle, type, titreLecteur, filNom) {
+    if (!existe(url)) return "";
+    if (!estActif(url))
+      return '<span class="btn btn-soon">' + icone + " " + esc(libelle) + "</span>";
+
+    // 🔒 1. SÉCURISATION VIDÉOS (Redirection React Member Area avec callback redirect)
+    if (type === "video") {
+      var targetPath = "/passerelle?fil=" + encodeURIComponent(filNom || "MP") +
+                     "&video=" + encodeURIComponent(url) +
+                     "&title=" + encodeURIComponent(titreLecteur) +
+                     "&view=video";
+      var loginUrl = REACT_APP_URL + "/login?redirect=" + encodeURIComponent(targetPath);
+      return '<a class="btn ' + classe + '" href="' + esc(loginUrl) + '" target="_blank" rel="noopener">' +
+             icone + " " + esc(libelle) + ' <small style="font-size:10px;opacity:.85;margin-left:3px">🔒</small></a>';
+    }
+
+    // 🔒 2. SÉCURISATION CORRECTIONS PDF (Redirection React Member Area avec callback redirect)
+    if (type === "correction") {
+      var targetPath = "/passerelle?fil=" + encodeURIComponent(filNom || "MP") +
+                     "&pdf=" + encodeURIComponent(url) +
+                     "&title=" + encodeURIComponent(titreLecteur) +
+                     "&view=corr";
+      var loginUrl = REACT_APP_URL + "/login?redirect=" + encodeURIComponent(targetPath);
+      return '<a class="btn ' + classe + '" href="' + esc(loginUrl) + '" target="_blank" rel="noopener">' +
+             icone + " " + esc(libelle) + ' <small style="font-size:10px;opacity:.85;margin-left:3px">🔒</small></a>';
+    }
+
+    // 📖 3. RESSOURCES GRATUITES (Énoncés, Fiches, Livres, Supports -> Lecteur intégré)
+    return '<button type="button" class="btn ' + classe + '" data-url="' + esc(url) +
+           '" data-type="pdf" data-titre="' + esc(titreLecteur) + '">' +
+           icone + " " + esc(libelle) + "</button>";
+  }
+
+  function boutonsChamp(champ, classe, icone, libelleBase, type, titreBase, filNom) {
+    var liens = normaliserLiens(champ);
+    if (liens.length === 0) return "";
+    var multiple = liens.length > 1;
+    return liens.map(function (lien, i) {
+      var etiquette = lien.label ? lien.label : (multiple ? String(i + 1) : "");
+      var libelle   = libelleBase + (etiquette ? " · " + etiquette : "");
+      var titre     = titreBase + (etiquette ? " (" + etiquette + ")" : "");
+      return bouton(lien.url, classe, icone, libelle, type, titre, filNom);
+    }).join("");
+  }
+
+  /* ---------- 1. Fiches de synthèse (Colonne Droite) ---------- */
+
+  function carteFichePasserelle(f, chap) {
+    var url = f.url || f.u || (typeof f === "string" ? f : "");
+    var titre = f.label || f.titre || f.t || "Fiche de synthèse";
+    var sous = f.sous || "L'essentiel du chapitre";
+    var dispo = estActif(url);
+    var srcs = sourcesCouverture({ cover: f.cover, lien: url });
+    var imgHtml = srcs.length
+      ? '<img class="doc-img" data-srcs="' + esc(JSON.stringify(srcs)) + '" data-i="0" src="' + esc(srcs[0]) + '" alt="' + esc(titre) + '" loading="lazy" referrerpolicy="no-referrer" crossorigin="anonymous" onerror="tssImgSuivante(this)">'
+      : '';
+
+    var inner = '<span class="gen" style="background:linear-gradient(150deg,#6d4a72,#3a2440)">'
+              +   '<span class="gen-k">Résumé</span>'
+              +   '<span class="gen-orn"></span>'
+              +   '<span class="gen-t">' + esc(titre) + '</span>'
+              + '</span>'
+              + imgHtml
+              + (dispo ? '<span class="doc-loupe" aria-hidden="true">👁</span>' : '');
+
+    var thumb = dispo
+      ? '<button type="button" class="doc-thumb" data-url="' + esc(url) + '" data-type="pdf" data-titre="' + esc(titre + " — " + chap.titre) + '" aria-label="Ouvrir : ' + esc(titre) + '">' + inner + '</button>'
+      : '<div class="doc-thumb">' + inner + '</div>';
+
+    return '<article class="doc-card' + (dispo ? "" : " soon") + '">'
+         +   thumb
+         +   '<div class="doc-info">'
+         +     '<span class="doc-t">' + esc(titre) + '</span>'
+         +     (sous ? '<span class="doc-d">' + esc(sous) + '</span>' : '')
+         +   '</div>'
+         + '</article>';
+  }
+
+  /* ---------- 2. Séances vidéo & replays (Colonne Gauche) ---------- */
+
+  function carteSessionPasserelle(s, i, chap, filNom) {
+    var titre = s.titre || ("Séance " + (i + 1));
+    var sous = s.sous || "Théorie & Replay interactif";
+    var videoLiens = normaliserLiens(s.video);
+    var premierLienVideo = videoLiens.length > 0 ? videoLiens[0].url : "";
+    var supportLiens = normaliserLiens(s.support);
+    var premierLienSupport = supportLiens.length > 0 ? supportLiens[0].url : "";
+
+    var thumbUrl = getYoutubeThumbnail(premierLienVideo) || "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop&q=80";
+
+    var targetPath = premierLienVideo
+      ? "/passerelle?fil=" + encodeURIComponent(filNom || "MP") +
+        "&video=" + encodeURIComponent(premierLienVideo) +
+        "&title=" + encodeURIComponent(titre + " — " + chap.titre) +
+        "&view=video"
+      : "";
+    var loginUrl = targetPath ? REACT_APP_URL + "/login?redirect=" + encodeURIComponent(targetPath) : "";
+
+    var thumbHtml = premierLienVideo
+      ? '<a class="session-thumb-wrap" href="' + esc(loginUrl) + '" target="_blank" rel="noopener" aria-label="Accéder au replay : ' + esc(titre) + '">'
+        + '<img class="session-thumb-img" src="' + esc(thumbUrl) + '" alt="' + esc(titre) + '" loading="lazy" />'
+        + '<div class="session-lock-ov">'
+        +   '<span class="session-lock-badge">🔒 Espace Membre</span>'
+        +   '<div class="session-play-btn" title="Déverrouiller le replay">🔒</div>'
+        + '</div>'
+        + '</a>'
+      : '';
+
+    var btnSupport = estActif(premierLienSupport)
+      ? '<button type="button" class="btn btn-fiche" data-url="' + esc(premierLienSupport) + '" data-type="pdf" data-titre="' + esc("Support : " + titre + " — " + chap.titre) + '">📄 Support PDF</button>'
+      : '';
+
+    var btnVideo = premierLienVideo
+      ? '<a class="btn btn-yt" href="' + esc(loginUrl) + '" target="_blank" rel="noopener">▶️ Regarder <small style="font-size:10px;opacity:.85;margin-left:3px">🔒</small></a>'
+      : '';
+
+    return '<article class="session-card">'
+         +   thumbHtml
+         +   '<div class="session-info">'
+         +     '<span class="session-t">' + esc(titre) + '</span>'
+         +     (sous ? '<span class="session-d">' + esc(sous) + '</span>' : '')
+         +     '<div class="session-actions">'
+         +       btnSupport
+         +       btnVideo
+         +     '</div>'
+         +   '</div>'
+         + '</article>';
+  }
+
+  /* ---------- 3. Ligne d'Exercice / TD (Colonne Gauche) ---------- */
+
+  function ligneItemPasserelle(it, n, chap, filNom) {
+    var actions = [
+      boutonsChamp(it.enonce,     "btn-enonce", "📝", "Énoncé",     "enonce",     "Énoncé : " + it.titre, filNom),
+      boutonsChamp(it.correction, "btn-corr",   "✅", "Correction", "correction", "Correction : " + it.titre, filNom),
+      boutonsChamp(it.video,      "btn-yt",     "▶️", "Vidéo",      "video",      "Vidéo : " + it.titre, filNom)
+    ].join("");
+
+    if (!actions) return "";
+
+    return '<div class="doc-line">'
+         +   '<span class="doc-line-ic" aria-hidden="true">📝</span>'
+         +   '<span class="doc-line-txt">'
+         +     '<span class="doc-line-t"><span style="color:var(--or-fonce);font-weight:700;margin-right:6px">#' + n + '</span>' + esc(it.titre) + '</span>'
+         +   '</span>'
+         +   '<span class="doc-line-b">' + actions + '</span>'
+         + '</div>';
+  }
+
+  /* ---------- 4. Rendu complet 2 Colonnes d'un Chapitre ---------- */
+
+  function rendreChapitre(chap, filNom) {
+    var fiches = [];
+    if (chap.fiches && Array.isArray(chap.fiches)) {
+      fiches = chap.fiches;
+    } else if (chap.fiche) {
+      fiches = normaliserLiens(chap.fiche).map(function (l) {
+        return { titre: l.label || "Fiche de résumé", url: l.url, sous: "L'essentiel du chapitre" };
+      });
+    }
+
+    var seances = chap.seances || [];
+    var items = chap.items || [];
+
+    var gauche = "";
+    if (seances.length > 0) {
+      gauche += '<section class="doc-sec">'
+              +   '<div class="doc-sec-t"><i>🎬</i><b>Séances à distance & Replays</b><span class="doc-sec-n">' + seances.length + '</span><s></s></div>'
+              +   '<div class="session-grid">' + seances.map(function (s, i) { return carteSessionPasserelle(s, i, chap, filNom); }).join("") + '</div>'
+              + '</section>';
+    }
+
+    if (items.length > 0) {
+      var itemLines = items.map(function (it, i) { return ligneItemPasserelle(it, i + 1, chap, filNom); }).filter(Boolean).join("");
+      if (itemLines) {
+        gauche += '<section class="doc-sec">'
+                +   '<div class="doc-sec-t"><i>📝</i><b>S\'entraîner (Fiches d\'exercices & Annales)</b><span class="doc-sec-n">' + items.length + '</span><s></s></div>'
+                +   '<div class="doc-list">' + itemLines + '</div>'
+                + '</section>';
+      }
+    }
+
+    var cote = "";
+    if (fiches.length > 0) {
+      cote += '<section class="doc-sec">'
+            +   '<div class="doc-sec-t"><i>📑</i><b>Fiches de synthèse</b><span class="doc-sec-n">' + fiches.length + '</span><s></s></div>'
+            +   '<div class="doc-grid">' + fiches.map(function (f) { return carteFichePasserelle(f, chap); }).join("") + '</div>'
+            + '</section>';
+    }
+
+    if (!gauche && !cote) {
+      return '<div class="chap-body-pad"><div class="vide">Contenu pédagogique en cours de finalisation.</div></div>';
+    }
+
+    var grilleHtml = "";
+    if (gauche && cote) {
+      grilleHtml = '<div class="ch-grid">'
+                 +   '<div class="ch-main">' + gauche + '</div>'
+                 +   '<aside class="ch-side">' + cote + '</aside>'
+                 + '</div>';
+    } else if (gauche) {
+      grilleHtml = '<div class="ch-grid solo"><div class="ch-main">' + gauche + '</div></div>';
+    } else {
+      grilleHtml = '<div class="ch-grid solo"><div class="ch-main">' + cote + '</div></div>';
+    }
+
+    return '<div class="chap-body-pad">' + grilleHtml + '</div>';
+  }
+
+  /* ---------- Rendu de l'étagère de livres ---------- */
+
+  var COUV_COULEURS = [
+    ["#22324f", "#16233c"],
+    ["#5f2e2e", "#43201f"],
+    ["#3c4d38", "#293524"],
+    ["#5b4526", "#3f2f18"],
+    ["#43384f", "#2d2536"],
+    ["#2b4c4f", "#1c3335"]
+  ];
+  function hashTitre(s) {
+    var h = 0; s = String(s || "");
+    for (var i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+    return h;
+  }
+  function couvCouleurs(titre) { return COUV_COULEURS[hashTitre(titre) % COUV_COULEURS.length]; }
+
+  window.tssImgSuivante = function (img) {
+    try {
+      var srcs = JSON.parse(img.getAttribute("data-srcs") || "[]");
+      var i = parseInt(img.getAttribute("data-i") || "0", 10) + 1;
+      if (i < srcs.length) { img.setAttribute("data-i", String(i)); img.src = srcs[i]; }
+      else { img.remove(); }
+    } catch (e) { img.remove(); }
+  };
+
+  function coverGeneree(titre, auteur) {
+    var c = couvCouleurs(titre);
+    return '<div class="livre-gen" style="background:linear-gradient(150deg,' + c[0] + ',' + c[1] + ')">'
+         +   '<span class="livre-gen-orn"></span>'
+         +   '<span class="livre-gen-titre">' + esc(titre) + "</span>"
+         +   (auteur ? '<span class="livre-gen-auteur">' + esc(auteur) + "</span>" : "")
+         + "</div>";
+  }
+
+  function rendreLivre(livre) {
+    var titre  = livre.titre || "Ouvrage";
+    var auteur = livre.auteur || "";
+    var actif  = estActif(livre.lien);
+
+    var srcs = sourcesCouverture(livre);
+    var img = srcs.length
+      ? '<img class="livre-img" data-srcs="' + esc(JSON.stringify(srcs)) + '" data-i="0" '
+        + 'src="' + esc(srcs[0]) + '" alt="" loading="lazy" onerror="tssImgSuivante(this)">'
+      : "";
+
+    var interieur =
+        '<span class="livre-cover">' + coverGeneree(titre, auteur) + img
+      +   '<span class="livre-loupe">👁</span></span>'
+      + '<span class="livre-meta"><span class="livre-titre">' + esc(titre) + "</span>"
+      +   (auteur ? '<span class="livre-auteur">' + esc(auteur) + "</span>" : "")
+      + "</span>";
+
+    if (actif) {
+      return '<button type="button" class="livre" data-url="' + esc(livre.lien) + '" data-type="pdf" '
+           +   'data-titre="' + esc(titre + (auteur ? " — " + auteur : "")) + '">'
+           +   interieur
+           + "</button>";
+    }
+    return '<div class="livre livre-bientot">' + interieur
+         +   '<span class="livre-ruban">Bientôt</span>'
+         + "</div>";
+  }
+
+  function rendreLivres(fil) {
+    var livres = fil.livres || [];
+    if (!livres.length) return "";
+    var cartes = livres.map(rendreLivre).join("");
+    return '<div class="livres-section">'
+         +   '<div class="livres-tete">'
+         +     '<span class="livres-tag">Bibliothèque</span>'
+         +     '<h3 class="livres-h">Les ouvrages conseillés en ' + esc(fil.nom) + "</h3>"
+         +   "</div>"
+         +   '<div class="livres-grid">' + cartes + "</div>"
+         + "</div>";
+  }
+
+  /* ---------- Rendu d'une filière ---------- */
+
+  var SVG_YT = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>';
+
+  function rendrePanneau(fil) {
+    var items = (fil.chapitres || []).map(function (chap, i) {
+      var aVideo = (chap.items || []).some(function (it) { return aLienActif(it.video); }) ||
+                   (chap.seances || []).some(function (s) { return aLienActif(s.video); });
+      var nbExos = (chap.items || []).filter(function (it) { return aLienActif(it.enonce); }).length;
+
+      var badge = nbExos > 0
+        ? '<span class="chap-count">' + nbExos + " fiche" + (nbExos > 1 ? "s" : "") + " d'exercices</span>"
+        : "";
+      var yt    = aVideo ? '<span class="yt-icon" title="Vidéo disponible">' + SVG_YT + "</span>" : "";
+      var why   = chap.why ? '<div class="chap-why">' + esc(chap.why) + "</div>" : "";
+
+      return '<div class="chap-item">'
+           +   '<button type="button" class="chap-head" aria-expanded="false">'
+           +     '<span class="chap-idx">' + (i + 1) + "</span>"
+           +     '<span class="chap-txt">'
+           +       '<span class="chap-titre">' + esc(chap.titre) + yt + badge + "</span>" + why
+           +     "</span>"
+           +     '<svg class="chap-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>'
+           +   "</button>"
+           +   '<div class="chap-body"><div class="chap-body-inner">' + rendreChapitre(chap, fil.nom) + "</div></div>"
+           + "</div>";
+    }).join("");
+
+    return '<div class="chap-list">' + items + "</div>" + rendreLivres(fil);
+  }
+
+  /* ---------- Statistiques ---------- */
+
+  function cle(txt) {
+    return String(txt || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ");
+  }
+
+  function calculerStats() {
+    var chapitres = {};
+    var fiches    = {};
+    var exos      = {};
+
+    FILIERES.forEach(function (fil) {
+      (fil.chapitres || []).forEach(function (ch) {
+        chapitres[cle(ch.titre)] = true;
+
+        normaliserLiens(ch.fiche).forEach(function (l) {
+          if (estActif(l.url)) fiches[l.url.trim()] = true;
+        });
+
+        (ch.items || []).forEach(function (it) {
+          normaliserLiens(it.enonce).forEach(function (l) {
+            if (estActif(l.url)) exos[l.url.trim()] = true;
+          });
+        });
+      });
+    });
+
+    function nombre(ensemble) { return Object.keys(ensemble).length; }
+
+    var nF = document.getElementById("tss-nb-fil");
+    var nC = document.getElementById("tss-nb-chap");
+    var nFi = document.getElementById("tss-nb-fiche");
+    var nE = document.getElementById("tss-nb-exo");
+
+    if (nF) nF.textContent = FILIERES.length;
+    if (nC) nC.textContent = nombre(chapitres);
+    if (nFi) nFi.textContent = nombre(fiches);
+    if (nE) nE.textContent = nombre(exos);
+  }
+
+  /* ---------- Construction de la page ---------- */
+
+  function construire() {
+    var nav = document.getElementById("tss-tabs-nav");
+    var contenu = document.getElementById("tss-tabs-content");
+    var rm = document.getElementById("tss-roadmap");
+    if (!nav || !contenu) return;
+
+    var navHtml = "", panneauxHtml = "";
+
+    FILIERES.forEach(function (fil, i) {
+      var id = "tss-panel-" + i;
+      navHtml += '<button type="button" class="tab-btn' + (i === 0 ? " active" : "") + '" data-panel="' + id + '">'
+               +   '<div class="tab-icon">' + fil.icon + "</div>"
+               +   '<div class="tab-name">' + esc(fil.de) + " → " + esc(fil.vers) + "</div>"
+               + "</button>";
+      panneauxHtml += '<div id="' + id + '" class="tab-panel' + (i === 0 ? " active" : "") + '">'
+                    + rendrePanneau(fil) + "</div>";
+    });
+
+    nav.innerHTML = navHtml;
+    contenu.innerHTML = panneauxHtml;
+
+    if (rm) {
+      rm.innerHTML = PLAN.map(function (p) {
+        return '<div class="rm-item">'
+             +   '<span class="rm-week">' + esc(p.semaine) + "</span>"
+             +   '<div class="rm-titre">' + esc(p.titre) + "</div>"
+             +   '<div class="rm-desc">' + esc(p.desc) + "</div>"
+             + "</div>";
+      }).join("");
+    }
+
+    calculerStats();
+  }
+
+  /* ---------- Interactions (un seul écouteur sécurisé) ---------- */
+
+  var tssEl = document.getElementById("tss");
+  if (tssEl) {
+    tssEl.addEventListener("click", function (e) {
+      /* Ouverture d'un PDF gratuit, support ou livre */
+      var btnRessource = e.target.closest("[data-url]");
+      if (btnRessource) {
+        ouvrirLecteur(btnRessource.dataset.url, btnRessource.dataset.titre, btnRessource.dataset.type);
+        return;
+      }
+
+      /* Changement d'onglet de filière */
+      var onglet = e.target.closest(".tab-btn");
+      if (onglet) {
+        document.querySelectorAll("#tss-tabs-nav .tab-btn").forEach(function (b) { b.classList.remove("active"); });
+        onglet.classList.add("active");
+        document.querySelectorAll("#tss-tabs-content .tab-panel").forEach(function (p) { p.classList.remove("active"); });
+        var panneau = document.getElementById(onglet.dataset.panel);
+        if (panneau) panneau.classList.add("active");
+        onglet.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        return;
+      }
+
+      /* Ouverture / fermeture d'un chapitre */
+      var tete = e.target.closest(".chap-head");
+      if (tete) {
+        var ouvert = tete.closest(".chap-item").classList.toggle("open");
+        tete.setAttribute("aria-expanded", String(ouvert));
+      }
+    });
+  }
+
+  var modal = document.getElementById("tss-modal");
+  if (modal) {
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal || e.target.id === "tss-modal-close") fermerLecteur();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && modal.classList.contains("active")) fermerLecteur();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", construire);
+  } else {
+    construire();
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     EXPOSITION DES DONNÉES EN HEADLESS JSON POUR L'ESPACE MEMBRE REACT
+     ══════════════════════════════════════════════════════════════ */
+  try {
+    var dataScript = document.getElementById("passerelle-data");
+    if (!dataScript) {
+      dataScript = document.createElement("script");
+      dataScript.id = "passerelle-data";
+      dataScript.type = "application/json";
+      document.body.appendChild(dataScript);
+    }
+    dataScript.textContent = JSON.stringify(FILIERES);
+  } catch (e) {}
+})();
+</script>

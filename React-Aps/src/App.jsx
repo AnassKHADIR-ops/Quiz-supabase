@@ -13,6 +13,8 @@ import StudentProfile from "./pages/StudentProfile.jsx";
 import Management from "./pages/Management.jsx";
 import QcmEditor from "./pages/QcmEditor.jsx";
 import ResultDetail from "./pages/ResultDetail.jsx";
+import Courses from "./pages/Courses.jsx";
+import Passerelle from "./pages/Passerelle.jsx";
 
 function App() {
   const location = useLocation();
@@ -35,6 +37,30 @@ function App() {
           element={
             <ProtectedRoute>
               <Home />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cours"
+          element={
+            <ProtectedRoute>
+              <Courses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/courses"
+          element={
+            <ProtectedRoute>
+              <Courses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/passerelle"
+          element={
+            <ProtectedRoute>
+              <Passerelle />
             </ProtectedRoute>
           }
         />
