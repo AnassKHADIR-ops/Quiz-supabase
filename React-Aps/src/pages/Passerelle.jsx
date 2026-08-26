@@ -433,7 +433,7 @@ function ExerciseDocLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) {
           isUrlActive(co.url) ? (
             <button
               key={coIdx}
-              onClick={() => openPdf(co.url, `Correction : ${item.titre}`)}
+              onClick={() => onOpenPdf(co.url, `Correction : ${item.titre}`)}
               className="btn btn-secondary btn-sm"
               style={{
                 background: "var(--tss-btn-corr-bg)",

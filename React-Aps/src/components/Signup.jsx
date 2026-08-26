@@ -14,7 +14,8 @@ import {
   ShieldCheck,
   Sparkles,
   Trophy,
-  GraduationCap
+  GraduationCap,
+  Users
 } from "./Icon.jsx";
 
 function AKLogoLarge() {
