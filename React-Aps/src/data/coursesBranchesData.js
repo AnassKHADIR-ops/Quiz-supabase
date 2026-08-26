@@ -326,6 +326,36 @@ export const CPGE_CURRICULUM = {
         icon: "∑",
         livres: [
           {
+            titre: "100% CONCOURS Prépas - Tous les exercices d'algèbre et de géométrie MP",
+            auteur: "",
+            lien: "https://drive.google.com/file/d/1euuNqpDcv_h1PfHggzBM0oOVp_27syq6/view?usp=sharing",
+            cover: null
+          },
+          {
+            titre: "100% CONCOURS Prépas - Tous les exercices d'analyse MP",
+            auteur: "",
+            lien: "https://drive.google.com/file/d/1qGAVRf_YtAvKQqF3rnUefchBwB15LShn/view?usp=sharing",
+            cover: null
+          },
+          {
+            titre: "Analyse pour la Licence",
+            auteur: "Marie-Cécile Darracq & Jean-Etienne Rombaldi",
+            lien: "https://drive.google.com/file/d/1d3EizGMWvYkS3M4PU_fF2RrgOOGeaPvk/view?usp=sharing",
+            cover: null
+          },
+          {
+            titre: "Exercices d'algèbre et de probabilités MP/MP*",
+            auteur: "David Delaunay",
+            lien: "https://drive.google.com/file/d/17hG5SbNQWfBP77chZt9oFdQ-81ql4hgy/view?usp=sharing",
+            cover: "https://drive.google.com/file/d/1XnvLYt8bVd6qCLcGRgo5wtToe-OejkMe/view?usp=sharing"
+          },
+          {
+            titre: "Annales de concours MP",
+            auteur: "David Delaunay",
+            lien: "https://drive.google.com/file/d/1Z54eUgLv2iUoHm4IQixuIuV__MldvRRx/view?usp=sharing",
+            cover: "https://drive.google.com/file/d/1-xxdWWFqvx1S_15byJbz3Pm65T12Rq7J/view?usp=sharing"
+          },
+          {
             titre: "Probabilités discrètes MP/MP*",
             auteur: "Jamel Jaber",
             lien: "https://drive.google.com/file/d/1gUSRREt2CF2aaCQz-PgURIWOV9UjOwN9/view?usp=sharing",
@@ -339,25 +369,25 @@ export const CPGE_CURRICULUM = {
           },
           {
             titre: "Exercices incontournables",
-            auteur: "Édition Concours",
+            auteur: null,
             lien: "https://drive.google.com/file/d/1V2at6I19YJSQoHoPZXFdRTkjKg7onidb/view?usp=sharing",
             cover: null
           },
           {
             titre: "Maths 2e année H-Prépa",
-            auteur: "Collection H-Prépa",
+            auteur: null,
             lien: "https://drive.google.com/file/d/1gOseXaiWakHATfU0_OOypzYR7OSpMAGg/view?usp=sharing",
             cover: null
           },
           {
-            titre: "Mathématiques en MP (Cours MP4 Louis-le-Grand)",
+            titre: "Mathématiques en MP (cours de la MP*4 Louis-le-Grand)",
             auteur: "Omar Bennouna, Issam Tauil & M.C.",
             lien: "https://drive.google.com/file/d/1d7a2fjtJIyBZTXLteuprK-MmhwqZ3z-Q/view?usp=sharing",
             cover: null
           },
           {
             titre: "Maths Tout-en-un MPI/MPI*",
-            auteur: "Dunod",
+            auteur: null,
             lien: "https://drive.google.com/file/d/1NkMjZjypjjprW2VALv5Mk7S5QKvtenlL/view?usp=sharing",
             cover: null
           }

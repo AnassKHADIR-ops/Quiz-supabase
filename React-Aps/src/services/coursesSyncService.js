@@ -326,7 +326,10 @@ export function parseWordPressCurriculum(pages) {
       }
     }
 
-    if (normalizedChapitres && normalizedChapitres.length > 0) {
+    if (
+      (normalizedChapitres && normalizedChapitres.length > 0) ||
+      (normalizedLivres && normalizedLivres.length > 0)
+    ) {
       updatedAny = true;
       const targetYearObj = curriculum[year] || curriculum.annee1;
       let branch = targetYearObj.branches.find((b) => b.id === branchId);
@@ -345,7 +348,9 @@ export function parseWordPressCurriculum(pages) {
         targetYearObj.branches.push(branch);
       }
 
-      branch.chapitres = normalizedChapitres;
+      if (normalizedChapitres && normalizedChapitres.length > 0) {
+        branch.chapitres = normalizedChapitres;
+      }
       if (normalizedLivres && normalizedLivres.length > 0) {
         branch.livres = normalizedLivres;
       }
