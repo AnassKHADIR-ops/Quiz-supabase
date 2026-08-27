@@ -642,7 +642,7 @@ export const PASSERELLE_DATA = {
             {
               id: "tsi-int-s2",
               titre: "Séance 2",
-              video: null,
+              video: "https://youtu.be/qUgdlmmAbTM",
               support: "https://drive.google.com/file/d/14lx99cLOjm1At902iiO9CDcHjLpPLFxW/view?usp=sharing"
             }
           ]
