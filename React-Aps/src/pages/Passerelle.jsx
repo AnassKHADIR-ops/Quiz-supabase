@@ -398,15 +398,15 @@ function ExerciseDocLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) {
 
   return (
     <div className="doc-line">
-      <span className="doc-line-ic" aria-hidden="true">📝</span>
-      <div className="doc-line-txt">
-        <span className="doc-line-t">
-          <span style={{ color: "var(--primary)", fontWeight: 700, marginRight: 6 }}>
-            #{index + 1}
+      <div className="doc-line-head">
+        <span className="doc-line-ic" aria-hidden="true">📝</span>
+        <div className="doc-line-txt">
+          <span className="doc-line-t">
+            <span className="doc-line-num">#{index + 1}</span>
+            {item.titre}
           </span>
-          {item.titre}
-        </span>
-        {item.sous && <span className="doc-line-d">{item.sous}</span>}
+          {item.sous && <span className="doc-line-d">{item.sous}</span>}
+        </div>
       </div>
       <div className="doc-line-b">
         {/* Énoncés */}
@@ -414,15 +414,16 @@ function ExerciseDocLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) {
           isUrlActive(en.url) ? (
             <button
               key={enIdx}
+              type="button"
               onClick={() => onOpenPdf(en.url, `Énoncé : ${item.titre}`)}
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm btn-doc-action"
               style={{
                 background: "var(--tss-btn-enonce-bg)",
                 color: "var(--tss-btn-enonce-color)",
                 borderColor: "var(--tss-btn-enonce-border)",
               }}
             >
-              <FileText size={13} />
+              <FileText size={15} />
               <span>Énoncé {en.label ? `(${en.label})` : ""}</span>
             </button>
           ) : null
@@ -433,15 +434,17 @@ function ExerciseDocLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) {
           isUrlActive(co.url) ? (
             <button
               key={coIdx}
+              type="button"
               onClick={() => onOpenPdf(co.url, `Correction : ${item.titre}`)}
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm btn-doc-action"
               style={{
                 background: "var(--tss-btn-corr-bg)",
                 color: "var(--tss-btn-corr-color)",
                 borderColor: "var(--tss-btn-corr-border)",
+                fontWeight: 700,
               }}
             >
-              <CheckCircle size={13} />
+              <CheckCircle size={15} />
               <span>Correction {co.label ? `· ${co.label}` : ""}</span>
             </button>
           ) : null
@@ -452,15 +455,17 @@ function ExerciseDocLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) {
           isUrlActive(vi.url) ? (
             <button
               key={viIdx}
+              type="button"
               onClick={() => onOpenVideo(vi.url, `${item.titre} ${vi.label ? `(${vi.label})` : ""}`)}
-              className="btn btn-primary btn-sm"
+              className="btn btn-primary btn-sm btn-doc-action"
               style={{
                 background: "linear-gradient(135deg, #c4302b, #9e201b)",
                 borderColor: "transparent",
                 color: "#fff",
+                fontWeight: 700,
               }}
             >
-              <PlayCircle size={13} />
+              <PlayCircle size={15} />
               <span>Vidéo {vi.label ? `(${vi.label})` : ""}</span>
             </button>
           ) : null
@@ -559,7 +564,7 @@ function Passerelle() {
   // Dynamic real-time synchronization from WordPress
   const { passerelleData, isSyncing, isLive, lastSynced, refreshSync } = usePasserelleSync();
 
-  const [activeFiliereId, setActiveFiliereId] = useState("mp");
+  const [activeFiliereId, setActiveFiliereId] = useState(() => searchParams.get("fil") || searchParams.get("filiere") || "mp");
   const [openChapterIds, setOpenChapterIds] = useState(new Set(["mp-alg-lin", "ecs-alg-lin"]));
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -573,7 +578,7 @@ function Passerelle() {
     );
   }, [passerelleData, activeFiliereId]);
 
-  // Deep linking from WordPress Elementor: ?fil=mp&chap=...&video=...&title=...
+  // Deep linking & popstate handling from URL
   useEffect(() => {
     const filParam = searchParams.get("fil") || searchParams.get("filiere");
     if (filParam && passerelleData?.filieres) {
@@ -600,18 +605,26 @@ function Passerelle() {
         titre: titleParam || "Vidéo d'explication",
         video_url: videoUrlParam,
       });
-    } else if (pdfUrlParam) {
+    } else {
+      setVideoModalData(null);
+    }
+
+    if (pdfUrlParam) {
       setPdfModalData({
         title: titleParam || "Correction détaillée",
         url: pdfUrlParam,
       });
-    } else if (chapParam && filiere) {
+    } else {
+      setPdfModalData(null);
+    }
+
+    if (chapParam && filiere) {
       const foundChap = (filiere.chapitres || []).find(
         (c) => String(c.id) === String(chapParam) || c.titre.toLowerCase().includes(chapParam.toLowerCase())
       );
       if (foundChap) {
         setOpenChapterIds((prev) => new Set([...prev, foundChap.id]));
-        if (viewParam === "video") {
+        if (viewParam === "video" && !videoUrlParam) {
           let targetVideo = null;
           let targetTitle = foundChap.titre;
 
@@ -642,7 +655,14 @@ function Passerelle() {
         }
       }
     }
-  }, [searchParams, passerelleData]);
+  }, [searchParams, passerelleData, filiere]);
+
+  const handleSelectFiliere = (fId) => {
+    setActiveFiliereId(fId);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("fil", fId);
+    setSearchParams(newParams, { replace: false });
+  };
 
   const toggleChapter = (chapId) => {
     setOpenChapterIds((prev) => {
@@ -654,14 +674,42 @@ function Passerelle() {
   };
 
   const openVideo = (url, titre) => {
+    if (!url) return;
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("video", url);
+    if (titre) newParams.set("title", titre);
+    setSearchParams(newParams, { replace: false });
     setVideoModalData({
       titre: titre || "Vidéo d'explication",
       video_url: url,
     });
   };
 
+  const closeVideo = () => {
+    setVideoModalData(null);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("video");
+    newParams.delete("title");
+    newParams.delete("view");
+    setSearchParams(newParams, { replace: true });
+  };
+
   const openPdf = (url, title) => {
+    if (!url) return;
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("pdf", url);
+    if (title) newParams.set("title", title);
+    setSearchParams(newParams, { replace: false });
     setPdfModalData({ title, url });
+  };
+
+  const closePdf = () => {
+    setPdfModalData(null);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("pdf");
+    newParams.delete("corr");
+    newParams.delete("title");
+    setSearchParams(newParams, { replace: true });
   };
 
   // Filtered chapters for current filière
@@ -891,30 +939,24 @@ function Passerelle() {
 
       {/* ── Filières Tabs & Controls ── */}
       <div
+        className="filter-toolbar-container"
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 16,
-          justifyContent: "space-between",
-          alignItems: "center",
           marginBottom: 20,
         }}
       >
-        {/* Filière Selector */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {/* Filière Selector Horizontal Scroll */}
+        <div className="horizontal-scroll-row" style={{ gap: 8, flex: "1 1 auto" }}>
           {(passerelleData.filieres || []).map((f) => {
             const isSelected = activeFiliereId === f.id;
             return (
               <button
                 key={f.id}
-                onClick={() => {
-                  setActiveFiliereId(f.id);
-                  setSearchParams({ fil: f.id });
-                }}
+                type="button"
+                onClick={() => handleSelectFiliere(f.id)}
                 className={`btn ${isSelected ? "btn-primary" : "btn-secondary"}`}
                 style={{
                   borderRadius: 14,
-                  padding: "10px 20px",
+                  padding: "10px 18px",
                   fontWeight: 700,
                   display: "inline-flex",
                   alignItems: "center",
@@ -923,6 +965,8 @@ function Passerelle() {
                   background: isSelected ? "linear-gradient(135deg, #b57809, #7c4f04)" : "var(--tss-carte)",
                   color: isSelected ? "#ffffff" : "var(--tss-encre)",
                   boxShadow: isSelected ? "0 4px 14px rgba(181, 120, 9, 0.25)" : "none",
+                  minHeight: 44,
+                  flexShrink: 0,
                 }}
               >
                 <span
@@ -947,27 +991,29 @@ function Passerelle() {
           })}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", flex: "1 1 320px", justifyContent: "flex-end" }}>
           {/* Expand/Collapse All */}
           <div style={{ display: "flex", gap: 6 }}>
             <button
+              type="button"
               onClick={() => setOpenChapterIds(new Set((filiere?.chapitres || []).map((c) => c.id)))}
               className="btn btn-secondary btn-sm"
-              style={{ fontSize: "0.8rem", padding: "6px 12px", borderRadius: 8 }}
+              style={{ fontSize: "0.8rem", padding: "6px 12px", borderRadius: 8, whiteSpace: "nowrap" }}
             >
               Tout déplier
             </button>
             <button
+              type="button"
               onClick={() => setOpenChapterIds(new Set())}
               className="btn btn-secondary btn-sm"
-              style={{ fontSize: "0.8rem", padding: "6px 12px", borderRadius: 8 }}
+              style={{ fontSize: "0.8rem", padding: "6px 12px", borderRadius: 8, whiteSpace: "nowrap" }}
             >
               Tout replier
             </button>
           </div>
 
-          {/* Search Bar */}
-          <div style={{ position: "relative", minWidth: 260 }}>
+          {/* Search Bar (100% on mobile) */}
+          <div className="mobile-full-search">
             <input
               type="text"
               placeholder="Rechercher un chapitre, exercice..."
@@ -981,6 +1027,8 @@ function Passerelle() {
                 background: "var(--tss-carte)",
                 color: "var(--tss-encre)",
                 borderColor: "var(--tss-bordure)",
+                width: "100%",
+                minHeight: 40,
               }}
             />
             <div
@@ -1339,7 +1387,7 @@ function Passerelle() {
             titre: videoModalData.titre || videoModalData.title,
             video_url: videoModalData.video_url || videoModalData.url,
           }}
-          onClose={() => setVideoModalData(null)}
+          onClose={closeVideo}
         />
       )}
 
@@ -1348,7 +1396,7 @@ function Passerelle() {
         <PDFPreviewModal
           title={pdfModalData.title}
           url={pdfModalData.url}
-          onClose={() => setPdfModalData(null)}
+          onClose={closePdf}
         />
       )}
     </div>

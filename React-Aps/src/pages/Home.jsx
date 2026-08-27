@@ -73,13 +73,11 @@ function Home() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Navigation hierarchy:
-  // mainCategory: null (root: CPGE vs Concours L2/L3) | "cpge" | "concours"
-  const [mainCategory, setMainCategory] = useState(() => searchParams.get("cat") || null);
-  const [selectedCpgeSection, setSelectedCpgeSection] = useState(null);
-  const [school, setSchool] = useState(null);
-  const [subject, setSubject] = useState(null);
-  const [year, setYear] = useState(null);
+  // Navigation state directly driven by URL searchParams for full browser/phone back-button support
+  const mainCategory = searchParams.get("cat") || null;
+  const schoolParam = searchParams.get("school") || null;
+  const subjectParam = searchParams.get("subject") || null;
+  const yearParam = searchParams.get("year") ? Number(searchParams.get("year")) : null;
   const [previewDoc, setPreviewDoc] = useState(null);
 
   const [schools, setSchools] = useState([]);
@@ -95,27 +93,84 @@ function Home() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Sync search param when category changes
-  useEffect(() => {
-    if (mainCategory) {
-      setSearchParams({ cat: mainCategory });
-    } else {
-      setSearchParams({});
-    }
-  }, [mainCategory, setSearchParams]);
+  // Derived school from URL param + schools data
+  const school = useMemo(() => {
+    if (!schoolParam || !schools.length) return null;
+    return (
+      schools.find(
+        (s) =>
+          String(s.id).toLowerCase() === schoolParam.toLowerCase() ||
+          s.name.toLowerCase() === schoolParam.toLowerCase()
+      ) || null
+    );
+  }, [schoolParam, schools]);
 
-  // Robust back navigation that never blanks out
+  // Derived subject from URL param + school data
+  const subject = useMemo(() => {
+    if (!subjectParam || !school?.subjects) return null;
+    return (
+      school.subjects.find(
+        (sub) =>
+          String(sub.id).toLowerCase() === subjectParam.toLowerCase() ||
+          sub.name.toLowerCase() === subjectParam.toLowerCase()
+      ) || null
+    );
+  }, [subjectParam, school]);
+
+  const year = yearParam;
+
+  // History-aware navigation functions
+  const selectCategory = (cat) => {
+    setSearchParams(cat ? { cat } : {}, { replace: false });
+  };
+
+  const selectSchool = (s) => {
+    setSearchParams(
+      { cat: mainCategory || "concours", school: String(s.id) },
+      { replace: false }
+    );
+  };
+
+  const selectSubject = (sub) => {
+    setSearchParams(
+      {
+        cat: mainCategory || "concours",
+        school: String(school?.id || schoolParam),
+        subject: String(sub.id),
+      },
+      { replace: false }
+    );
+  };
+
+  const selectYear = (y) => {
+    setSearchParams(
+      {
+        cat: mainCategory || "concours",
+        school: String(school?.id || schoolParam),
+        year: String(y),
+      },
+      { replace: false }
+    );
+  };
+
+  // Robust back navigation: steps back one level in the hierarchy
   const handleBack = () => {
     if (subject) {
-      setSubject(null);
+      setSearchParams(
+        { cat: mainCategory || "concours", school: String(school?.id || schoolParam) },
+        { replace: false }
+      );
     } else if (year) {
-      setYear(null);
+      setSearchParams(
+        { cat: mainCategory || "concours", school: String(school?.id || schoolParam) },
+        { replace: false }
+      );
     } else if (school) {
-      setSchool(null);
-    } else if (selectedCpgeSection) {
-      setSelectedCpgeSection(null);
+      setSearchParams({ cat: mainCategory || "concours" }, { replace: false });
     } else if (mainCategory) {
-      setMainCategory(null);
+      setSearchParams({}, { replace: false });
+    } else {
+      navigate(-1);
     }
   };
 
@@ -336,12 +391,7 @@ function Home() {
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.88rem", color: "var(--text-muted)" }}>
                 <span
                   style={{ cursor: "pointer", color: "var(--primary)", fontWeight: 600 }}
-                  onClick={() => {
-                    setSubject(null);
-                    setSchool(null);
-                    setSelectedCpgeSection(null);
-                    setMainCategory(null);
-                  }}
+                  onClick={() => selectCategory(null)}
                 >
                   Accueil
                 </span>
@@ -353,11 +403,7 @@ function Home() {
                       color: school || subject ? "var(--primary)" : "var(--text)",
                       fontWeight: 600,
                     }}
-                    onClick={() => {
-                      setSubject(null);
-                      setSchool(null);
-                      setSelectedCpgeSection(null);
-                    }}
+                    onClick={() => selectCategory("cpge")}
                   >
                     CPGE
                   </span>
@@ -369,10 +415,7 @@ function Home() {
                       color: school || subject ? "var(--primary)" : "var(--text)",
                       fontWeight: 600,
                     }}
-                    onClick={() => {
-                      setSubject(null);
-                      setSchool(null);
-                    }}
+                    onClick={() => selectCategory("concours")}
                   >
                     Concours L2 / L3 & Recrutement
                   </span>
@@ -380,7 +423,22 @@ function Home() {
                 {school && (
                   <>
                     <ChevronRight size={14} />
-                    <span style={{ fontWeight: 700, color: "var(--text)" }}>{school.name}</span>
+                    <span
+                      style={{
+                        cursor: subject || year ? "pointer" : "default",
+                        color: subject || year ? "var(--primary)" : "var(--text)",
+                        fontWeight: 700,
+                      }}
+                      onClick={() => (subject || year) && selectSchool(school)}
+                    >
+                      {school.name}
+                    </span>
+                  </>
+                )}
+                {year && (
+                  <>
+                    <ChevronRight size={14} />
+                    <span style={{ fontWeight: 700, color: "var(--text)" }}>Session {year}</span>
                   </>
                 )}
                 {subject && (
@@ -407,7 +465,7 @@ function Home() {
               {/* Carte 1 : CPGE */}
               <div
                 className="card exam-card"
-                onClick={() => setMainCategory("cpge")}
+                onClick={() => selectCategory("cpge")}
                 style={{
                   cursor: "pointer",
                   padding: "36px 28px",
@@ -484,7 +542,7 @@ function Home() {
               {/* Carte 2 : Concours L2 / L3 */}
               <div
                 className="card exam-card"
-                onClick={() => setMainCategory("concours")}
+                onClick={() => selectCategory("concours")}
                 style={{
                   cursor: "pointer",
                   padding: "36px 28px",
@@ -712,7 +770,7 @@ function Home() {
                   <div
                     key={item.id}
                     className="card exam-card"
-                    onClick={() => setSchool(item)}
+                    onClick={() => selectSchool(item)}
                     style={{ cursor: "pointer", padding: "26px 22px", borderRadius: 18 }}
                   >
                     <div className="exam-card-icon">{cardIcon}</div>
@@ -749,7 +807,7 @@ function Home() {
                 className="card exam-card"
                 onClick={() => {
                   const postBacSchool = schools.find((s) => s.type === "post_bac");
-                  if (postBacSchool) setSchool(postBacSchool);
+                  if (postBacSchool) selectSchool(postBacSchool);
                 }}
                 style={{ cursor: "pointer", padding: "26px 22px", borderRadius: 18 }}
               >
@@ -778,7 +836,7 @@ function Home() {
                 <div
                   key={item.id}
                   className="card exam-card"
-                  onClick={() => setSubject(item)}
+                  onClick={() => selectSubject(item)}
                   style={{ cursor: "pointer", padding: "26px 22px", borderRadius: 18 }}
                 >
                   <div className="exam-card-icon">
@@ -847,7 +905,7 @@ function Home() {
                   <div
                     key={y}
                     className="card exam-card"
-                    onClick={() => setYear(y)}
+                    onClick={() => selectYear(y)}
                     style={{ cursor: "pointer", padding: "26px 22px", borderRadius: 18 }}
                   >
                     <div className="exam-card-icon">

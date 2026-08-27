@@ -71,6 +71,14 @@ function App() {
           }
         />
         <Route
+          path="/cpge"
+          element={
+            <ProtectedRoute>
+              <Courses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/passerelle"
           element={
             <ProtectedRoute>

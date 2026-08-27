@@ -404,57 +404,61 @@ function CourseExerciseLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) 
 
   return (
     <div className="doc-line">
-      <span className="doc-line-ic" aria-hidden="true">📝</span>
-      <div className="doc-line-txt">
-        <span className="doc-line-t">
-          <span style={{ color: "var(--primary)", fontWeight: 700, marginRight: 6 }}>
-            #{index + 1}
+      <div className="doc-line-head">
+        <span className="doc-line-ic" aria-hidden="true">📝</span>
+        <div className="doc-line-txt">
+          <span className="doc-line-t">
+            <span className="doc-line-num">#{index + 1}</span>
+            {titre}
           </span>
-          {titre}
-        </span>
-        {sous && <span className="doc-line-d">{sous}</span>}
+          {sous && <span className="doc-line-d">{sous}</span>}
+        </div>
       </div>
       <div className="doc-line-b">
         {isUrlActive(enonceUrl) && (
           <button
+            type="button"
             onClick={() => onOpenPdf(enonceUrl, `Énoncé : ${titre} — ${chapTitre}`)}
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary btn-sm btn-doc-action"
             style={{
               background: "var(--tss-btn-enonce-bg, #f4efff)",
               color: "var(--tss-btn-enonce-color, #5b3ca8)",
               borderColor: "var(--tss-btn-enonce-border, rgba(91,60,168,.2))",
             }}
           >
-            <FileText size={13} />
+            <FileText size={15} />
             <span>Énoncé</span>
           </button>
         )}
         {isUrlActive(corrUrl) && (
           <button
+            type="button"
             onClick={() => onOpenPdf(corrUrl, `Correction : ${titre} — ${chapTitre}`)}
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary btn-sm btn-doc-action"
             style={{
               background: "var(--tss-btn-corr-bg, #ebfaf5)",
               color: "var(--tss-btn-corr-color, #0f7a56)",
-              borderColor: "var(--tss-btn-corr-border, rgba(15,122,86,.2))",
-              fontWeight: 600,
+              borderColor: "var(--tss-btn-corr-border, rgba(15,122,86,.25))",
+              fontWeight: 700,
             }}
           >
-            <CheckCircle size={13} />
+            <CheckCircle size={15} />
             <span>Correction</span>
           </button>
         )}
         {isUrlActive(videoUrl) && (
           <button
+            type="button"
             onClick={() => onOpenVideo(videoUrl, `Vidéo : ${titre} — ${chapTitre}`)}
-            className="btn btn-primary btn-sm"
+            className="btn btn-primary btn-sm btn-doc-action"
             style={{
               background: "linear-gradient(135deg, #c4302b, #9e201b)",
               borderColor: "transparent",
               color: "#fff",
+              fontWeight: 700,
             }}
           >
-            <PlayCircle size={13} />
+            <PlayCircle size={15} />
             <span>Vidéo</span>
           </button>
         )}
@@ -487,7 +491,7 @@ function Courses() {
   const [selectedVideoModal, setSelectedVideoModal] = useState(null);
   const [pdfModalData, setPdfModalData] = useState(null);
 
-  // Deep linking from WordPress / Login: ?annee=2&branche=mp&video=...&title=... or ?pdf=...
+  // Deep linking & popstate handling from URL
   useEffect(() => {
     const anneeParam = searchParams.get("annee");
     if (anneeParam === "2") setSelectedYear("annee2");
@@ -516,13 +520,19 @@ function Courses() {
         titre: titleParam || "Séance de cours (Replay)",
         video_url: videoUrlParam,
       });
-    } else if (pdfUrlParam) {
+    } else {
+      setSelectedVideoModal(null);
+    }
+
+    if (pdfUrlParam) {
       setPdfModalData({
         title: titleParam || "Document / Correction",
         url: pdfUrlParam,
       });
+    } else {
+      setPdfModalData(null);
     }
-  }, [searchParams, curriculum]);
+  }, [searchParams, curriculum, selectedYear]);
 
   // If year changes, ensure valid branch
   useEffect(() => {
@@ -532,16 +542,6 @@ function Courses() {
       setSelectedBranch(branches[0].id);
     }
   }, [selectedYear, selectedBranch, curriculum]);
-
-  // Sync URL query params
-  useEffect(() => {
-    const anneeParam = selectedYear === "annee2" ? "2" : "1";
-    const currentParams = Object.fromEntries(searchParams.entries());
-    setSearchParams(
-      { ...currentParams, annee: anneeParam, branche: selectedBranch },
-      { replace: true }
-    );
-  }, [selectedYear, selectedBranch, setSearchParams]);
 
   // Current branch object
   const currentBranch = useMemo(() => {
@@ -568,24 +568,24 @@ function Courses() {
     });
   }, [currentBranch, activeCat, searchQuery]);
 
-  // Handle deep-linking from search or external Elementor link
-  useEffect(() => {
-    const videoParam = searchParams.get("video");
-    const pdfParam = searchParams.get("pdf") || searchParams.get("corr");
-    const titleParam = searchParams.get("title");
-
-    if (videoParam) {
-      setSelectedVideoModal({
-        titre: titleParam || "Explication vidéo",
-        video_url: videoParam,
-      });
-    } else if (pdfParam) {
-      setPdfModalData({
-        url: pdfParam,
-        title: titleParam || "Document pédagogique",
-      });
+  const handleSelectYear = (yr) => {
+    setSelectedYear(yr);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("annee", yr === "annee2" ? "2" : "1");
+    const branches = curriculum[yr]?.branches || [];
+    if (branches.length > 0) {
+      newParams.set("branche", branches[0].id);
+      setSelectedBranch(branches[0].id);
     }
-  }, [searchParams]);
+    setSearchParams(newParams, { replace: false });
+  };
+
+  const handleSelectBranch = (brId) => {
+    setSelectedBranch(brId);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("branche", brId);
+    setSearchParams(newParams, { replace: false });
+  };
 
   const toggleChapterAccordion = (chapId) => {
     setOpenChapterIds((prev) => {
@@ -598,15 +598,40 @@ function Courses() {
 
   const openVideo = (url, titre) => {
     if (!url) return;
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("video", url);
+    if (titre) newParams.set("title", titre);
+    setSearchParams(newParams, { replace: false });
     setSelectedVideoModal({
       video_url: url,
       titre: titre || "Vidéo d'explication",
     });
   };
 
+  const closeVideo = () => {
+    setSelectedVideoModal(null);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("video");
+    newParams.delete("title");
+    setSearchParams(newParams, { replace: true });
+  };
+
   const openPdf = (url, title) => {
     if (!url) return;
-    setPdfModalData({ url, title });
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("pdf", url);
+    if (title) newParams.set("title", title);
+    setSearchParams(newParams, { replace: false });
+    setPdfModalData({ url, title: title || "Document pédagogique" });
+  };
+
+  const closePdf = () => {
+    setPdfModalData(null);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("pdf");
+    newParams.delete("corr");
+    newParams.delete("title");
+    setSearchParams(newParams, { replace: true });
   };
 
   return (
@@ -725,34 +750,37 @@ function Courses() {
             }}
           >
             <button
-              onClick={() => setSelectedYear("annee1")}
+              type="button"
+              onClick={() => handleSelectYear("annee1")}
               className={`btn btn-sm ${selectedYear === "annee1" ? "btn-primary" : "btn-secondary"}`}
-              style={{ borderRadius: 10, padding: "8px 16px", fontWeight: 700 }}
+              style={{ borderRadius: 10, padding: "8px 16px", fontWeight: 700, minHeight: 40 }}
             >
               1ère Année (Sup)
             </button>
             <button
-              onClick={() => setSelectedYear("annee2")}
+              type="button"
+              onClick={() => handleSelectYear("annee2")}
               className={`btn btn-sm ${selectedYear === "annee2" ? "btn-primary" : "btn-secondary"}`}
-              style={{ borderRadius: 10, padding: "8px 16px", fontWeight: 700 }}
+              style={{ borderRadius: 10, padding: "8px 16px", fontWeight: 700, minHeight: 40 }}
             >
               2ème Année (Spé)
             </button>
           </div>
         </div>
 
-        {/* ── Filières / Branches Pills ── */}
+        {/* ── Filières / Branches Pills (Horizontally scrollable on mobile) ── */}
         <div style={{ marginTop: 24, borderTop: "1px solid rgba(67, 97, 238, 0.14)", paddingTop: 20 }}>
           <div style={{ fontSize: "0.82rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 10 }}>
             Sélectionnez votre filière :
           </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div className="horizontal-scroll-row" style={{ gap: 10 }}>
             {yearData.branches.map((br) => {
               const isSelected = br.id === selectedBranch;
               return (
                 <button
                   key={br.id}
-                  onClick={() => setSelectedBranch(br.id)}
+                  type="button"
+                  onClick={() => handleSelectBranch(br.id)}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -767,6 +795,8 @@ function Courses() {
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                     boxShadow: isSelected ? "0 4px 14px rgba(67, 97, 238, 0.3)" : "none",
+                    minHeight: 44,
+                    flexShrink: 0,
                   }}
                 >
                   <span
@@ -795,54 +825,78 @@ function Courses() {
       <div
         className="card"
         style={{
-          padding: "16px 20px",
+          padding: "14px 18px",
           borderRadius: 16,
           marginBottom: 24,
           border: "1px solid var(--border)",
           background: "var(--surface)",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14 }}>
-          {/* Categories */}
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <div className="filter-toolbar-container">
+          {/* Categories Horizontal Scroll */}
+          <div className="horizontal-scroll-row" style={{ gap: 6, flex: "1 1 auto" }}>
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
+                type="button"
                 onClick={() => setActiveCat(cat.id)}
                 className={`btn btn-sm ${activeCat === cat.id ? "btn-primary" : "btn-secondary"}`}
-                style={{ borderRadius: 20, padding: "6px 14px", fontSize: "0.82rem" }}
+                style={{ borderRadius: 20, padding: "7px 15px", fontSize: "0.84rem", minHeight: 38 }}
               >
                 {cat.label}
               </button>
             ))}
           </div>
 
-          {/* Search box */}
-          <div style={{ position: "relative", minWidth: 260, flex: "1 1 260px", maxWidth: 400 }}>
-            <Search
-              size={16}
-              style={{
-                position: "absolute",
-                left: 12,
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "var(--text-muted)",
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Rechercher un chapitre, concept, fiche..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "8px 14px 8px 36px",
-                borderRadius: 10,
-                border: "1px solid var(--border)",
-                background: "var(--bg-subtle, #f8fafc)",
-                fontSize: "0.88rem",
-              }}
-            />
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", flex: "1 1 320px", justifyContent: "flex-end" }}>
+            {/* Expand / Collapse All */}
+            <div style={{ display: "flex", gap: 6 }}>
+              <button
+                type="button"
+                onClick={() => setOpenChapterIds(new Set(filteredChapters.map((c) => c.id)))}
+                className="btn btn-secondary btn-sm"
+                style={{ fontSize: "0.8rem", padding: "6px 12px", borderRadius: 8, whiteSpace: "nowrap" }}
+              >
+                Tout déplier
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpenChapterIds(new Set())}
+                className="btn btn-secondary btn-sm"
+                style={{ fontSize: "0.8rem", padding: "6px 12px", borderRadius: 8, whiteSpace: "nowrap" }}
+              >
+                Tout replier
+              </button>
+            </div>
+
+            {/* Search box (100% on mobile) */}
+            <div className="mobile-full-search">
+              <Search
+                size={16}
+                style={{
+                  position: "absolute",
+                  left: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "var(--text-muted)",
+                  pointerEvents: "none",
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Rechercher un chapitre, exercice..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "9px 14px 9px 36px",
+                  borderRadius: 10,
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-subtle, #f8fafc)",
+                  fontSize: "0.88rem",
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -1177,13 +1231,13 @@ function Courses() {
         <SecureVideoModal
           videoUrl={selectedVideoModal.video_url}
           title={selectedVideoModal.titre}
-          onClose={() => setSelectedVideoModal(null)}
+          onClose={closeVideo}
         />
       )}
 
       {/* ── PDF Preview Modal ── */}
       {pdfModalData && (
-        <div className="modal-backdrop" onMouseDown={() => setPdfModalData(null)} style={{ zIndex: 1000 }}>
+        <div className="modal-backdrop" onMouseDown={closePdf} style={{ zIndex: 1000 }}>
           <div
             className="document-preview-modal"
             onMouseDown={(e) => e.stopPropagation()}
@@ -1225,7 +1279,7 @@ function Courses() {
                 </a>
                 <button
                   className="management-modal-close"
-                  onClick={() => setPdfModalData(null)}
+                  onClick={closePdf}
                   style={{
                     background: "transparent",
                     border: "none",
