@@ -336,19 +336,61 @@ function CourseFicheCard({ fiche, chapTitre, onOpenPdf }) {
 }
 
 function CourseSessionCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo }) {
-  const titre = seance.titre || seance.t || `Séance ${index + 1}`;
-  const videoUrl = seance.video || seance.v || seance.vid || "";
-  const supportUrl = seance.support || seance.u || seance.pdf || "";
-  const sous = seance.sous || (videoUrl ? "Théorie & Replay interactif" : "Support de cours & TD");
+  const titre = seance.titre || seance.title || seance.t || seance.name || `Séance ${index + 1}`;
 
-  const thumbUrl = getYoutubeThumbnail(videoUrl) || "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop&q=80";
+  const videoUrl =
+    seance.video ||
+    seance.videoUrl ||
+    seance.video_url ||
+    seance.replayUrl ||
+    seance.replay_url ||
+    seance.youtube ||
+    seance.youtubeId ||
+    seance.youtube_id ||
+    seance.v ||
+    seance.vid ||
+    "";
+
+  const supportUrl =
+    seance.support ||
+    seance.supportUrl ||
+    seance.support_url ||
+    seance.pdf ||
+    seance.pdfUrl ||
+    seance.pdf_url ||
+    seance.fiche ||
+    seance.u ||
+    "";
+
+  const rawThumb =
+    seance.thumbnail ||
+    seance.thumbnailUrl ||
+    seance.thumbnail_url ||
+    seance.cover ||
+    seance.thumb ||
+    null;
+
+  const hasVideo = isUrlActive(videoUrl);
+  const hasSupport = isUrlActive(supportUrl);
+
+  const sous =
+    seance.sous ||
+    seance.description ||
+    seance.desc ||
+    (hasVideo ? "Théorie & Replay interactif" : "Support de cours & TD");
+
+  const thumbUrl =
+    rawThumb ||
+    getYoutubeThumbnail(videoUrl || seance) ||
+    "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop&q=80";
 
   return (
     <article className="session-card">
-      {isUrlActive(videoUrl) ? (
+      {hasVideo ? (
         <div
           className="session-thumb-wrap"
           onClick={() => onOpenVideo(videoUrl, `${titre} — ${chapTitre}`)}
+          style={{ cursor: "pointer" }}
         >
           <img className="session-thumb-img" src={thumbUrl} alt={titre} loading="lazy" />
           <div className="session-lock-ov">
@@ -356,7 +398,7 @@ function CourseSessionCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo })
             <div className="session-play-btn">▶</div>
           </div>
         </div>
-      ) : isUrlActive(supportUrl) ? (
+      ) : hasSupport ? (
         <div
           className="session-thumb-wrap"
           style={{
@@ -382,7 +424,7 @@ function CourseSessionCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo })
         <span className="session-t">{titre}</span>
         {sous && <span className="session-d">{sous}</span>}
         <div className="session-actions">
-          {isUrlActive(supportUrl) && (
+          {hasSupport && (
             <button
               type="button"
               className="btn btn-secondary btn-sm"
@@ -396,7 +438,7 @@ function CourseSessionCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo })
               📄 Support PDF
             </button>
           )}
-          {isUrlActive(videoUrl) && (
+          {hasVideo && (
             <button
               type="button"
               className="btn btn-primary btn-sm"

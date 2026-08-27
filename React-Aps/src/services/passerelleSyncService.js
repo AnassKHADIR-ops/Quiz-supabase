@@ -1,4 +1,5 @@
 import { PASSERELLE_DATA } from "../data/passerelleData.js";
+import { extractYouTubeId, getYoutubeThumbnail } from "../utils/driveUtils.js";
 
 const CACHE_KEY = "passerelle_live_data";
 const CACHE_TIMESTAMP_KEY = "passerelle_last_synced";
@@ -137,25 +138,94 @@ export function normalizeLiveFilieres(filieres) {
             id: c.id || `${id}-chap-${cIdx + 1}`,
             titre: c.titre || `Chapitre ${cIdx + 1}`,
             why: c.why || "",
-            fiche: c.fiche || null,
+            fiche: c.fiche || c.ficheUrl || c.fiche_url || null,
             items: Array.isArray(c.items)
-              ? c.items.map((it, itIdx) => ({
-                  id: it.id || `${id}-item-${cIdx + 1}-${itIdx + 1}`,
-                  titre: it.titre || `Fiche ${itIdx + 1}`,
-                  enonce: it.enonce || null,
-                  correction: it.correction || null,
-                  video: it.video || null,
-                  sous: it.sous || null,
-                }))
+              ? c.items.map((it, itIdx) => {
+                  const videoUrl =
+                    it.video ||
+                    it.videoUrl ||
+                    it.video_url ||
+                    it.replayUrl ||
+                    it.replay_url ||
+                    it.youtube ||
+                    it.youtubeId ||
+                    it.v ||
+                    it.vid ||
+                    null;
+                  const enonceUrl = it.enonce || it.enonceUrl || it.enonce_url || it.sujet || null;
+                  const corrUrl = it.correction || it.correctionUrl || it.correction_url || it.corr || null;
+                  const thumb = it.thumbnail || it.thumbnailUrl || it.thumbnail_url || it.cover || it.thumb || null;
+                  const ytId = extractYouTubeId(videoUrl);
+                  const finalThumb = thumb || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null);
+
+                  return {
+                    id: it.id || `${id}-item-${cIdx + 1}-${itIdx + 1}`,
+                    titre: it.titre || it.title || `Fiche ${itIdx + 1}`,
+                    enonce: enonceUrl,
+                    enonce_url: enonceUrl,
+                    correction: corrUrl,
+                    correction_url: corrUrl,
+                    video: videoUrl,
+                    video_url: videoUrl,
+                    videoUrl: videoUrl,
+                    youtubeId: ytId,
+                    thumbnail: finalThumb,
+                    thumbnailUrl: finalThumb,
+                    sous: it.sous || null,
+                  };
+                })
               : [],
             seances: Array.isArray(c.seances)
-              ? c.seances.map((s, sIdx) => ({
-                  id: s.id || `${id}-seance-${cIdx + 1}-${sIdx + 1}`,
-                  titre: s.titre || `Séance ${sIdx + 1}`,
-                  video: s.video || s.v || null,
-                  support: s.support || s.pdf || s.u || null,
-                  sous: s.sous || (s.video ? "Théorie & Replay interactif" : "Support de cours PDF"),
-                }))
+              ? c.seances.map((s, sIdx) => {
+                  const videoUrl =
+                    s.video ||
+                    s.videoUrl ||
+                    s.video_url ||
+                    s.replayUrl ||
+                    s.replay_url ||
+                    s.youtube ||
+                    s.youtubeId ||
+                    s.youtube_id ||
+                    s.v ||
+                    s.vid ||
+                    s.url ||
+                    null;
+                  const supportUrl =
+                    s.support ||
+                    s.supportUrl ||
+                    s.support_url ||
+                    s.pdf ||
+                    s.pdfUrl ||
+                    s.pdf_url ||
+                    s.fiche ||
+                    s.u ||
+                    null;
+                  const thumb =
+                    s.thumbnail ||
+                    s.thumbnailUrl ||
+                    s.thumbnail_url ||
+                    s.cover ||
+                    s.thumb ||
+                    null;
+                  const ytId = extractYouTubeId(videoUrl);
+                  const finalThumb =
+                    thumb || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null);
+
+                  return {
+                    id: s.id || `${id}-seance-${cIdx + 1}-${sIdx + 1}`,
+                    titre: s.titre || s.title || `Séance ${sIdx + 1}`,
+                    video: videoUrl,
+                    video_url: videoUrl,
+                    videoUrl: videoUrl,
+                    youtubeId: ytId,
+                    support: supportUrl,
+                    support_url: supportUrl,
+                    supportUrl: supportUrl,
+                    thumbnail: finalThumb,
+                    thumbnailUrl: finalThumb,
+                    sous: s.sous || s.description || s.desc || (videoUrl ? "Théorie & Replay interactif" : "Support de cours PDF"),
+                  };
+                })
               : [],
           }))
         : [],
@@ -163,8 +233,8 @@ export function normalizeLiveFilieres(filieres) {
         ? f.livres.map((l) => ({
             titre: l.titre || "Ouvrage",
             auteur: l.auteur || "",
-            lien: l.lien || "",
-            cover: l.cover || null,
+            lien: l.lien || l.url || "",
+            cover: l.cover || l.cover_url || null,
           }))
         : [],
     };

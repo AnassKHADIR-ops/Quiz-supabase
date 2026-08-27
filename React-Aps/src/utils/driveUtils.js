@@ -39,22 +39,61 @@ export function getDriveImageUrls(driveUrlOrId) {
   ];
 }
 
-// Extract YouTube ID from URL or return raw ID
+// Extract YouTube ID from URL, iframe string, or return raw ID
 export function extractYouTubeId(urlOrId) {
   if (!urlOrId) return "";
-  const str = String(urlOrId).trim();
+  let str = "";
+  if (typeof urlOrId === "object") {
+    str = String(
+      urlOrId.youtubeId ||
+      urlOrId.youtube_id ||
+      urlOrId.video ||
+      urlOrId.videoUrl ||
+      urlOrId.video_url ||
+      urlOrId.replayUrl ||
+      urlOrId.url ||
+      ""
+    ).trim();
+  } else {
+    str = String(urlOrId).trim();
+  }
+
+  if (!str) return "";
+
+  // If already an 11-char ID
   if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
-  const match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+
+  // Extract from iframe src if string is an HTML tag
+  const iframeMatch = str.match(/src=["']([^"']+)["']/i);
+  if (iframeMatch) str = iframeMatch[1];
+
+  // Match youtube URLs
+  const match = str.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([a-zA-Z0-9_-]{11})/i);
   return match ? match[1] : "";
 }
 
 // Generate YouTube or Drive video thumbnail
-export function getYoutubeThumbnail(url) {
-  if (!url) return null;
-  const ytId = extractYouTubeId(url);
+export function getYoutubeThumbnail(urlOrObject) {
+  if (!urlOrObject) return null;
+  if (typeof urlOrObject === "object") {
+    const customThumb =
+      urlOrObject.thumbnail ||
+      urlOrObject.thumbnailUrl ||
+      urlOrObject.thumbnail_url ||
+      urlOrObject.cover ||
+      urlOrObject.thumb;
+    if (customThumb && typeof customThumb === "string" && customThumb.trim() !== "") {
+      return customThumb.trim();
+    }
+  }
+
+  const ytId = extractYouTubeId(urlOrObject);
   if (ytId) return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-  const driveId = extractDriveFileId(url);
+
+  const rawUrl = typeof urlOrObject === "object" ? urlOrObject.url || urlOrObject.video || "" : urlOrObject;
+  const driveId = extractDriveFileId(rawUrl);
   if (driveId) return `https://lh3.googleusercontent.com/d/${driveId}=w600`;
+
   return null;
 }
 

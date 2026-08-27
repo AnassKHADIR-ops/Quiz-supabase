@@ -40,12 +40,26 @@ function isUrlActive(u) {
 
 function normalizeLinks(champ) {
   if (!champ) return [];
-  if (typeof champ === "string") return [{ url: champ, label: "" }];
+  if (typeof champ === "string") {
+    const trimmed = champ.trim();
+    return trimmed ? [{ url: trimmed, label: "" }] : [];
+  }
+  if (typeof champ === "object" && !Array.isArray(champ)) {
+    const url = (champ.url || champ.video || champ.videoUrl || champ.video_url || champ.replayUrl || champ.support || champ.pdf || champ.lien || champ.link || champ.href || "").trim();
+    return url ? [{ url, label: champ.label || champ.titre || "" }] : [];
+  }
   if (Array.isArray(champ)) {
     return champ.map((x) => {
-      if (typeof x === "string") return { url: x, label: "" };
-      return { url: (x && x.url) || "", label: (x && x.label) || "" };
-    });
+      if (typeof x === "string") {
+        const trimmed = x.trim();
+        return trimmed ? { url: trimmed, label: "" } : null;
+      }
+      if (typeof x === "object" && x) {
+        const url = (x.url || x.video || x.videoUrl || x.video_url || x.replayUrl || x.support || x.pdf || x.lien || x.link || x.href || "").trim();
+        return url ? { url, label: x.label || x.titre || "" } : null;
+      }
+      return null;
+    }).filter(Boolean);
   }
   return [];
 }
@@ -330,21 +344,66 @@ function FicheCard({ fiche, chapTitre, onOpenPdf }) {
 }
 
 function SessionVideoCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo }) {
-  const titre = seance.titre || `Séance ${index + 1}`;
-  const videoLinks = normalizeLinks(seance.video);
-  const premierLienVideo = videoLinks.length > 0 ? videoLinks[0].url : "";
-  const supportLinks = normalizeLinks(seance.support);
-  const premierLienSupport = supportLinks.length > 0 ? supportLinks[0].url : "";
-  const sous = seance.sous || (premierLienVideo ? "Théorie & Replay interactif" : "Support de cours & TD");
+  const titre = seance.titre || seance.title || seance.name || `Séance ${index + 1}`;
 
-  const thumbUrl = getYoutubeThumbnail(premierLienVideo) || "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop&q=80";
+  const rawVideo =
+    seance.video ||
+    seance.videoUrl ||
+    seance.video_url ||
+    seance.replayUrl ||
+    seance.replay_url ||
+    seance.youtube ||
+    seance.youtubeId ||
+    seance.youtube_id ||
+    seance.v ||
+    seance.vid ||
+    null;
+
+  const rawSupport =
+    seance.support ||
+    seance.supportUrl ||
+    seance.support_url ||
+    seance.pdf ||
+    seance.pdfUrl ||
+    seance.pdf_url ||
+    seance.fiche ||
+    seance.u ||
+    null;
+
+  const rawThumb =
+    seance.thumbnail ||
+    seance.thumbnailUrl ||
+    seance.thumbnail_url ||
+    seance.cover ||
+    seance.thumb ||
+    null;
+
+  const videoLinks = normalizeLinks(rawVideo);
+  const premierLienVideo = videoLinks.length > 0 ? videoLinks[0].url : "";
+  const supportLinks = normalizeLinks(rawSupport);
+  const premierLienSupport = supportLinks.length > 0 ? supportLinks[0].url : "";
+
+  const hasVideo = isUrlActive(premierLienVideo);
+  const hasSupport = isUrlActive(premierLienSupport);
+
+  const sous =
+    seance.sous ||
+    seance.description ||
+    seance.desc ||
+    (hasVideo ? "Théorie & Replay interactif" : "Support de cours & TD");
+
+  const thumbUrl =
+    rawThumb ||
+    getYoutubeThumbnail(premierLienVideo || seance) ||
+    "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop&q=80";
 
   return (
     <article className="session-card">
-      {premierLienVideo ? (
+      {hasVideo ? (
         <div
           className="session-thumb-wrap"
           onClick={() => onOpenVideo(premierLienVideo, `${titre} — ${chapTitre}`)}
+          style={{ cursor: "pointer" }}
         >
           <img className="session-thumb-img" src={thumbUrl} alt={titre} loading="lazy" />
           <div className="session-lock-ov">
@@ -352,7 +411,7 @@ function SessionVideoCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo }) 
             <div className="session-play-btn">▶</div>
           </div>
         </div>
-      ) : isUrlActive(premierLienSupport) ? (
+      ) : hasSupport ? (
         <div
           className="session-thumb-wrap"
           style={{
@@ -378,21 +437,21 @@ function SessionVideoCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo }) 
         <span className="session-t">{titre}</span>
         {sous && <span className="session-d">{sous}</span>}
         <div className="session-actions">
-          {isUrlActive(premierLienSupport) && (
+          {hasSupport && (
             <button
               type="button"
               className="btn btn-secondary btn-sm"
               onClick={() => onOpenPdf(premierLienSupport, `Support : ${titre} — ${chapTitre}`)}
               style={{
-                background: "var(--tss-btn-fiche-bg)",
-                color: "var(--tss-btn-fiche-color)",
-                borderColor: "var(--tss-btn-fiche-border)",
+                background: "var(--tss-btn-fiche-bg, #eef5ff)",
+                color: "var(--tss-btn-fiche-color, #1a4f8c)",
+                borderColor: "var(--tss-btn-fiche-border, rgba(26,79,140,.2))",
               }}
             >
               📄 Support PDF
             </button>
           )}
-          {isUrlActive(premierLienVideo) && (
+          {hasVideo && (
             <button
               type="button"
               className="btn btn-primary btn-sm"
