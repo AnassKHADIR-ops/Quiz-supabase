@@ -6,9 +6,31 @@ const CACHE_TIMESTAMP_KEY = "courses_last_synced";
 /**
  * Safely evaluates a JS object/array literal extracted from a script tag.
  */
+/**
+ * Decodes common HTML entities before parsing extracted JS blocks.
+ */
+function decodeHtmlEntities(str) {
+  if (!str || typeof str !== "string") return "";
+  return str
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#8216;/g, "'")
+    .replace(/&#8217;/g, "'")
+    .replace(/&#8220;/g, '"')
+    .replace(/&#8221;/g, '"');
+}
+
+/**
+ * Safely evaluates a JS object/array literal extracted from a script tag.
+ */
 function safeEvalLiteral(codeStr) {
   if (!codeStr || typeof codeStr !== "string") return null;
-  const trimmed = codeStr.trim().replace(/;$/, "");
+  const decoded = decodeHtmlEntities(codeStr);
+  const trimmed = decoded.trim().replace(/;$/, "");
   try {
     // Try strict JSON parse first
     return JSON.parse(trimmed);
@@ -292,11 +314,11 @@ export function parseWordPressCurriculum(pages) {
   let updatedAny = false;
 
   for (const page of pages) {
-    const content = page.content?.rendered || "";
-    if (!content) continue;
+    const content = page.content?.rendered || page.content || "";
+    if (!content && !page.meta?._elementor_data) continue;
 
     const slug = page.slug || "";
-    const title = page.title?.rendered || "";
+    const title = page.title?.rendered || page.title || "";
     const mapping = mapPageToBranch(slug, title);
     if (!mapping) continue;
 
@@ -381,6 +403,16 @@ function setStorageItem(key, val) {
   }
 }
 
+function removeStorageItem(key) {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.removeItem(key);
+    }
+  } catch (e) {
+    // Ignore
+  }
+}
+
 /**
  * Returns initial cached curriculum or bundled fallback.
  */
@@ -410,29 +442,70 @@ export function getInitialCurriculumData() {
 
 /**
  * Fetches the latest live courses data from the WordPress REST API.
+ * Bypasses client-side and HTTP caching with aggressive anti-cache headers & query params.
  */
-export async function syncCoursesFromWordPress(customUrl = null) {
+export async function syncCoursesFromWordPress(customUrl = null, force = true) {
+  if (force) {
+    // Invalidate local cache immediately on manual refresh
+    removeStorageItem(CACHE_KEY);
+    removeStorageItem(CACHE_TIMESTAMP_KEY);
+  }
+
   const baseUrl =
     customUrl ||
     (typeof import.meta !== "undefined" && import.meta.env?.VITE_WP_API_URL) ||
     (typeof window !== "undefined" && window.__WP_API_URL__) ||
-    "https://anasskhadir.com/wp-json/wp/v2";
+    "https://anasskhadir.com/wp-json";
 
-  const fetchUrl = `${baseUrl}/pages?per_page=50&_fields=id,slug,title,content.rendered&_t=${Date.now()}`;
+  const cleanBaseUrl = baseUrl.replace(/\/wp\/v2\/?$/, ""); // Normalize base URL
+  const nonce = Math.random().toString(36).substring(2, 9);
+  const timestamp = Date.now();
+
+  const antiCacheHeaders = {
+    Accept: "application/json",
+    "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+    Pragma: "no-cache",
+    Expires: "0",
+  };
+
+  // 1. Try dedicated fast educational JSON endpoint if registered on WordPress
+  try {
+    const customEndpointUrl = `${cleanBaseUrl}/edu/v1/curriculum?_t=${timestamp}&_nonce=${nonce}`;
+    const customResp = await fetch(customEndpointUrl, {
+      method: "GET",
+      headers: antiCacheHeaders,
+      cache: "no-store",
+    });
+
+    if (customResp.ok) {
+      const customData = await customResp.json();
+      if (customData && (customData.annee1 || customData.annee2)) {
+        const now = new Date().toISOString();
+        setStorageItem(CACHE_KEY, JSON.stringify(customData));
+        setStorageItem(CACHE_TIMESTAMP_KEY, now);
+        return {
+          success: true,
+          curriculum: customData,
+          lastSynced: now,
+        };
+      }
+    }
+  } catch (e) {
+    // Fall back to standard WP REST API pages endpoint
+  }
+
+  // 2. Fetch via standard WordPress pages REST API with status=publish & orderby=modified
+  const fetchUrl = `${cleanBaseUrl}/wp/v2/pages?status=publish&orderby=modified&order=desc&per_page=100&_fields=id,slug,title,content.rendered,modified&_t=${timestamp}&_nocache=${nonce}`;
 
   try {
     const response = await fetch(fetchUrl, {
       method: "GET",
-      headers: {
-        Accept: "application/json",
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-      },
+      headers: antiCacheHeaders,
       cache: "no-store",
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`);
+      throw new Error(`HTTP error ${response.status} (${response.statusText})`);
     }
 
     const pages = await response.json();
@@ -464,3 +537,4 @@ export async function syncCoursesFromWordPress(customUrl = null) {
     };
   }
 }
+

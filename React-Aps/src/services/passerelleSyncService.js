@@ -6,6 +6,27 @@ const CACHE_TIMESTAMP_KEY = "passerelle_last_synced";
 /**
  * Normalizes live JSON filières array into the format expected by the React app.
  */
+/**
+ * Decodes common HTML entities before parsing extracted JS blocks.
+ */
+function decodeHtmlEntities(str) {
+  if (!str || typeof str !== "string") return "";
+  return str
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#8216;/g, "'")
+    .replace(/&#8217;/g, "'")
+    .replace(/&#8220;/g, '"')
+    .replace(/&#8221;/g, '"');
+}
+
+/**
+ * Normalizes live JSON filières array into the format expected by the React app.
+ */
 export function normalizeLiveFilieres(filieres) {
   if (!Array.isArray(filieres)) return [];
 
@@ -62,7 +83,8 @@ export function normalizeLiveFilieres(filieres) {
 export function parsePasserellePayload(payloadText) {
   if (!payloadText || typeof payloadText !== "string") return null;
 
-  const trimmed = payloadText.trim();
+  const decoded = decodeHtmlEntities(payloadText);
+  const trimmed = decoded.trim();
 
   // If payload is already a JSON array or object
   if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
@@ -87,7 +109,7 @@ export function parsePasserellePayload(payloadText) {
 
   // Check for JavaScript variables in Elementor (var DATA = ... or var PASSERELLE_DATA = ...)
   try {
-    const varMatch = payloadText.match(/(?:var|let|const)\s+(?:DATA|PASSERELLE_DATA)\s*=\s*([\s\S]*?);/i);
+    const varMatch = decoded.match(/(?:var|let|const|window\.)\s*(?:DATA|PASSERELLE_DATA)\s*=\s*([\s\S]*?);/i);
     if (varMatch && varMatch[1]) {
       const fn = new Function(`return (${varMatch[1].trim()});`);
       const evaluated = fn();
@@ -100,23 +122,25 @@ export function parsePasserellePayload(payloadText) {
   }
 
   // Parse HTML for <script id="passerelle-data" ...>
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(payloadText, "text/html");
-    const scriptTag = doc.getElementById("passerelle-data");
+  if (typeof DOMParser !== "undefined") {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(decoded, "text/html");
+      const scriptTag = doc.getElementById("passerelle-data");
 
-    if (scriptTag && scriptTag.textContent) {
-      const parsed = JSON.parse(scriptTag.textContent.trim());
-      if (Array.isArray(parsed)) return parsed;
-      if (parsed && Array.isArray(parsed.filieres)) return parsed.filieres;
+      if (scriptTag && scriptTag.textContent) {
+        const parsed = JSON.parse(scriptTag.textContent.trim());
+        if (Array.isArray(parsed)) return parsed;
+        if (parsed && Array.isArray(parsed.filieres)) return parsed.filieres;
+      }
+    } catch (e) {
+      // Fallback to regex extraction
     }
-  } catch (e) {
-    // Fallback to regex extraction
   }
 
   // Fallback regex match for <script id="passerelle-data"...>...</script>
   try {
-    const match = payloadText.match(/<script[^>]*id=["']passerelle-data["'][^>]*>([\s\S]*?)<\/script>/i);
+    const match = decoded.match(/<script[^>]*id=["']passerelle-data["'][^>]*>([\s\S]*?)<\/script>/i);
     if (match && match[1]) {
       const parsed = JSON.parse(match[1].trim());
       if (Array.isArray(parsed)) return parsed;
@@ -159,60 +183,86 @@ export function getInitialPasserelleData() {
 
 /**
  * Fetches the latest live data from the WordPress/Elementor URL.
+ * Uses aggressive anti-cache headers & multi-endpoint fallback.
  */
-export async function syncPasserelleFromWordPress(customUrl = null) {
-  const wpUrl =
-    customUrl ||
-    import.meta.env.VITE_WP_PASSERELLE_URL ||
-    (typeof window !== "undefined" && window.__WP_PASSERELLE_URL__) ||
-    null;
-
-  if (!wpUrl) {
-    return { success: false, reason: "NO_WP_URL" };
+export async function syncPasserelleFromWordPress(customUrl = null, force = true) {
+  if (force) {
+    try {
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+    } catch (e) {}
   }
 
-  try {
-    const response = await fetch(wpUrl, {
-      method: "GET",
-      headers: {
-        Accept: "application/json, text/html, */*",
-      },
-      cache: "no-cache",
-    });
+  const baseWp =
+    (typeof import.meta !== "undefined" && import.meta.env?.VITE_WP_API_URL) ||
+    "https://anasskhadir.com/wp-json";
+  const cleanBaseUrl = baseWp.replace(/\/wp\/v2\/?$/, "");
 
-    if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`);
-    }
+  const timestamp = Date.now();
+  const nonce = Math.random().toString(36).substring(2, 9);
 
-    const text = await response.text();
-    const rawFilieres = parsePasserellePayload(text);
+  const antiCacheHeaders = {
+    Accept: "application/json, text/html, */*",
+    "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+    Pragma: "no-cache",
+    Expires: "0",
+  };
 
-    if (rawFilieres && Array.isArray(rawFilieres) && rawFilieres.length > 0) {
-      const normalizedFilieres = normalizeLiveFilieres(rawFilieres);
-      const now = new Date().toISOString();
+  // List of candidate endpoints to probe in sequence
+  const candidateUrls = customUrl
+    ? [customUrl]
+    : [
+        // 1. Dedicated custom REST endpoint if plugin/snippet installed
+        `${cleanBaseUrl}/edu/v1/passerelle?_t=${timestamp}&_nonce=${nonce}`,
+        // 2. Standard WordPress REST API page with slug transition-sup-spe
+        `${cleanBaseUrl}/wp/v2/pages?slug=transition-sup-spe&status=publish&_fields=id,slug,title,content.rendered&_t=${timestamp}&_nocache=${nonce}`,
+        // 3. Fallback direct page HTML
+        `https://anasskhadir.com/transition-sup-spe/?_t=${timestamp}`,
+      ];
 
-      localStorage.setItem(
-        CACHE_KEY,
-        JSON.stringify({
+  for (const url of candidateUrls) {
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: antiCacheHeaders,
+        cache: "no-store",
+      });
+
+      if (!response.ok) continue;
+
+      const text = await response.text();
+      const rawFilieres = parsePasserellePayload(text);
+
+      if (rawFilieres && Array.isArray(rawFilieres) && rawFilieres.length > 0) {
+        const normalizedFilieres = normalizeLiveFilieres(rawFilieres);
+        const now = new Date().toISOString();
+
+        try {
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({
+              filieres: normalizedFilieres,
+              updatedAt: now,
+            })
+          );
+          localStorage.setItem(CACHE_TIMESTAMP_KEY, now);
+        } catch (e) {}
+
+        return {
+          success: true,
           filieres: normalizedFilieres,
-          updatedAt: now,
-        })
-      );
-      localStorage.setItem(CACHE_TIMESTAMP_KEY, now);
-
-      return {
-        success: true,
-        filieres: normalizedFilieres,
-        lastSynced: now,
-      };
-    } else {
-      throw new Error("No valid passerelle-data payload found in WordPress response");
+          lastSynced: now,
+        };
+      }
+    } catch (err) {
+      // Continue to next candidate URL
     }
-  } catch (err) {
-    console.warn("[PasserelleSync] Could not sync live data from WordPress:", err.message);
-    return {
-      success: false,
-      error: err.message,
-    };
   }
+
+  return {
+    success: false,
+    reason: "NO_PASSERELLE_PAYLOAD_FOUND",
+    filieres: PASSERELLE_DATA.filieres,
+  };
 }
+
