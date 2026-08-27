@@ -337,9 +337,9 @@ function CourseFicheCard({ fiche, chapTitre, onOpenPdf }) {
 
 function CourseSessionCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo }) {
   const titre = seance.titre || seance.t || `Séance ${index + 1}`;
-  const sous = seance.sous || "Théorie & Replay interactif";
   const videoUrl = seance.video || seance.v || seance.vid || "";
   const supportUrl = seance.support || seance.u || seance.pdf || "";
+  const sous = seance.sous || (videoUrl ? "Théorie & Replay interactif" : "Support de cours & TD");
 
   const thumbUrl = getYoutubeThumbnail(videoUrl) || "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop&q=80";
 
@@ -354,6 +354,27 @@ function CourseSessionCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo })
           <div className="session-lock-ov">
             <span className="session-lock-badge">▶️ Replay Vidéo</span>
             <div className="session-play-btn">▶</div>
+          </div>
+        </div>
+      ) : isUrlActive(supportUrl) ? (
+        <div
+          className="session-thumb-wrap"
+          style={{
+            background: "linear-gradient(135deg, #152238 0%, #1c335a 100%)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            cursor: "pointer",
+          }}
+          onClick={() => onOpenPdf(supportUrl, `Support : ${titre} — ${chapTitre}`)}
+        >
+          <div style={{ textAlign: "center", color: "#93c5fd" }}>
+            <FileText size={34} style={{ margin: "0 auto 6px", opacity: 0.95 }} />
+            <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", display: "block" }}>
+              Support de Cours PDF
+            </span>
           </div>
         </div>
       ) : null}

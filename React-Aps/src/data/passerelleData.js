@@ -638,6 +638,12 @@ export const PASSERELLE_DATA = {
               titre: "Séance 1",
               video: "https://youtu.be/CU7rXoNvIL0",
               support: "https://drive.google.com/file/d/1maeKWNDY08Zl3x4VkvHQIhNgvo9SZeWg/view?usp=sharing"
+            },
+            {
+              id: "tsi-int-s2",
+              titre: "Séance 2",
+              video: null,
+              support: "https://drive.google.com/file/d/14lx99cLOjm1At902iiO9CDcHjLpPLFxW/view?usp=sharing"
             }
           ]
         }

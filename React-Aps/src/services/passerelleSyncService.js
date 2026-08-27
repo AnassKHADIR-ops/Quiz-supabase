@@ -4,9 +4,6 @@ const CACHE_KEY = "passerelle_live_data";
 const CACHE_TIMESTAMP_KEY = "passerelle_last_synced";
 
 /**
- * Normalizes live JSON filières array into the format expected by the React app.
- */
-/**
  * Decodes common HTML entities before parsing extracted JS blocks.
  */
 function decodeHtmlEntities(str) {
@@ -25,7 +22,102 @@ function decodeHtmlEntities(str) {
 }
 
 /**
+ * Safely evaluates a JS object/array literal extracted from a script tag.
+ */
+function safeEvalLiteral(codeStr) {
+  if (!codeStr || typeof codeStr !== "string") return null;
+  const decoded = decodeHtmlEntities(codeStr);
+  const trimmed = decoded.trim().replace(/;$/, "");
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    try {
+      const fn = new Function(`return (${trimmed});`);
+      return fn();
+    } catch (e) {
+      console.warn("[PasserelleSync] Failed to evaluate JS literal:", e);
+      return null;
+    }
+  }
+}
+
+/**
+ * Extracts a JavaScript variable (e.g. var FILIERES = [...]; or var DATA = {...};)
+ * from HTML content using bracket matching.
+ */
+export function extractJsVariable(htmlContent, varName) {
+  if (!htmlContent || typeof htmlContent !== "string") return null;
+
+  const regex = new RegExp(`(?:var|let|const|window\\.)\\s*\\b${varName}\\b\\s*=\\s*`, "i");
+  const match = regex.exec(htmlContent);
+  if (!match) return null;
+
+  const openPos = match.index + match[0].length;
+  const startChar = htmlContent.slice(openPos).search(/[\[{]/);
+  if (startChar === -1) return null;
+
+  const actualOpenPos = openPos + startChar;
+  const openChar = htmlContent[actualOpenPos];
+  const closeChar = openChar === "[" ? "]" : "}";
+
+  let depth = 0;
+  let inString = null;
+  let inComment = false;
+  let inSingleLineComment = false;
+
+  for (let i = actualOpenPos; i < htmlContent.length; i++) {
+    const ch = htmlContent[i];
+    const prev = htmlContent[i - 1];
+
+    if (inSingleLineComment) {
+      if (ch === "\n" || ch === "\r") inSingleLineComment = false;
+      continue;
+    }
+
+    if (inComment) {
+      if (prev === "*" && ch === "/") inComment = false;
+      continue;
+    }
+
+    if (inString) {
+      if (ch === inString && prev !== "\\") inString = null;
+      continue;
+    }
+
+    if (ch === '"' || ch === "'" || ch === "`") {
+      inString = ch;
+      continue;
+    }
+
+    if (ch === "/" && htmlContent[i + 1] === "*") {
+      inComment = true;
+      i++;
+      continue;
+    }
+
+    if (ch === "/" && htmlContent[i + 1] === "/") {
+      inSingleLineComment = true;
+      i++;
+      continue;
+    }
+
+    if (ch === openChar) {
+      depth++;
+    } else if (ch === closeChar) {
+      depth--;
+      if (depth === 0) {
+        const rawBlock = htmlContent.slice(actualOpenPos, i + 1);
+        return safeEvalLiteral(rawBlock);
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
  * Normalizes live JSON filières array into the format expected by the React app.
+ * Preserves partial items (e.g. séances with only PDF, or only video).
  */
 export function normalizeLiveFilieres(filieres) {
   if (!Array.isArray(filieres)) return [];
@@ -53,14 +145,16 @@ export function normalizeLiveFilieres(filieres) {
                   enonce: it.enonce || null,
                   correction: it.correction || null,
                   video: it.video || null,
+                  sous: it.sous || null,
                 }))
               : [],
             seances: Array.isArray(c.seances)
               ? c.seances.map((s, sIdx) => ({
                   id: s.id || `${id}-seance-${cIdx + 1}-${sIdx + 1}`,
                   titre: s.titre || `Séance ${sIdx + 1}`,
-                  video: s.video || null,
-                  support: s.support || null,
+                  video: s.video || s.v || null,
+                  support: s.support || s.pdf || s.u || null,
+                  sous: s.sous || (s.video ? "Théorie & Replay interactif" : "Support de cours PDF"),
                 }))
               : [],
           }))
@@ -78,7 +172,7 @@ export function normalizeLiveFilieres(filieres) {
 }
 
 /**
- * Parses <script id="passerelle-data" type="application/json"> from an HTML string or parses raw JSON.
+ * Parses Passerelle payload from raw JSON, extracted JS variables, or <script> tags.
  */
 export function parsePasserellePayload(payloadText) {
   if (!payloadText || typeof payloadText !== "string") return null;
@@ -86,12 +180,11 @@ export function parsePasserellePayload(payloadText) {
   const decoded = decodeHtmlEntities(payloadText);
   const trimmed = decoded.trim();
 
-  // If payload is already a JSON array or object
+  // 1. Direct JSON array / object
   if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
     try {
       const parsed = JSON.parse(trimmed);
       if (Array.isArray(parsed)) {
-        // If it's a list of WP pages, look for passerelle content
         if (parsed.length > 0 && parsed[0].content?.rendered) {
           return parsePasserellePayload(parsed[0].content.rendered);
         }
@@ -102,26 +195,29 @@ export function parsePasserellePayload(payloadText) {
       if (parsed && parsed.content?.rendered) {
         return parsePasserellePayload(parsed.content.rendered);
       }
-    } catch (e) {
-      // Continue to HTML parsing
-    }
+    } catch (e) {}
   }
 
-  // Check for JavaScript variables in Elementor (var DATA = ... or var PASSERELLE_DATA = ...)
-  try {
-    const varMatch = decoded.match(/(?:var|let|const|window\.)\s*(?:DATA|PASSERELLE_DATA)\s*=\s*([\s\S]*?);/i);
-    if (varMatch && varMatch[1]) {
-      const fn = new Function(`return (${varMatch[1].trim()});`);
-      const evaluated = fn();
-      if (Array.isArray(evaluated)) return evaluated;
-      if (evaluated && Array.isArray(evaluated.filieres)) return evaluated.filieres;
-      if (evaluated && Array.isArray(evaluated.chapitres)) return evaluated.chapitres;
-    }
-  } catch (e) {
-    // Continue to DOM parsing
+  // 2. Extract `FILIERES` JavaScript variable (Primary WordPress Elementor format)
+  const rawFILIERES = extractJsVariable(decoded, "FILIERES");
+  if (rawFILIERES && Array.isArray(rawFILIERES) && rawFILIERES.length > 0) {
+    return rawFILIERES;
   }
 
-  // Parse HTML for <script id="passerelle-data" ...>
+  // 3. Extract `DATA` or `PASSERELLE_DATA`
+  const rawDATA = extractJsVariable(decoded, "DATA");
+  if (rawDATA) {
+    if (Array.isArray(rawDATA)) return rawDATA;
+    if (Array.isArray(rawDATA.filieres)) return rawDATA.filieres;
+  }
+
+  const rawPASSERELLE = extractJsVariable(decoded, "PASSERELLE_DATA");
+  if (rawPASSERELLE) {
+    if (Array.isArray(rawPASSERELLE)) return rawPASSERELLE;
+    if (Array.isArray(rawPASSERELLE.filieres)) return rawPASSERELLE.filieres;
+  }
+
+  // 4. Extract <script id="passerelle-data" type="application/json">
   if (typeof DOMParser !== "undefined") {
     try {
       const parser = new DOMParser();
@@ -133,12 +229,10 @@ export function parsePasserellePayload(payloadText) {
         if (Array.isArray(parsed)) return parsed;
         if (parsed && Array.isArray(parsed.filieres)) return parsed.filieres;
       }
-    } catch (e) {
-      // Fallback to regex extraction
-    }
+    } catch (e) {}
   }
 
-  // Fallback regex match for <script id="passerelle-data"...>...</script>
+  // 5. Fallback regex match for <script id="passerelle-data"...>
   try {
     const match = decoded.match(/<script[^>]*id=["']passerelle-data["'][^>]*>([\s\S]*?)<\/script>/i);
     if (match && match[1]) {
@@ -147,7 +241,7 @@ export function parsePasserellePayload(payloadText) {
       if (parsed && Array.isArray(parsed.filieres)) return parsed.filieres;
     }
   } catch (e) {
-    console.warn("[PasserelleSync] Failed to parse script payload:", e);
+    console.warn("[PasserelleSync] Script tag regex parse failed:", e);
   }
 
   return null;
@@ -182,8 +276,7 @@ export function getInitialPasserelleData() {
 }
 
 /**
- * Fetches the latest live data from the WordPress/Elementor URL.
- * Uses aggressive anti-cache headers & multi-endpoint fallback.
+ * Fetches the latest live data from WordPress with aggressive anti-cache headers.
  */
 export async function syncPasserelleFromWordPress(customUrl = null, force = true) {
   if (force) {
@@ -208,17 +301,15 @@ export async function syncPasserelleFromWordPress(customUrl = null, force = true
     Expires: "0",
   };
 
-  // List of candidate endpoints to probe in sequence
   const candidateUrls = customUrl
     ? [customUrl]
     : [
-        // 1. Dedicated custom REST endpoint if plugin/snippet installed
         `${cleanBaseUrl}/edu/v1/passerelle?_t=${timestamp}&_nonce=${nonce}`,
-        // 2. Standard WordPress REST API page with slug transition-sup-spe
         `${cleanBaseUrl}/wp/v2/pages?slug=transition-sup-spe&status=publish&_fields=id,slug,title,content.rendered&_t=${timestamp}&_nocache=${nonce}`,
-        // 3. Fallback direct page HTML
         `https://anasskhadir.com/transition-sup-spe/?_t=${timestamp}`,
       ];
+
+  console.info(`[PasserelleSync] 🔄 Starting live sync (force=${force})...`);
 
   for (const url of candidateUrls) {
     try {
@@ -248,6 +339,16 @@ export async function syncPasserelleFromWordPress(customUrl = null, force = true
           localStorage.setItem(CACHE_TIMESTAMP_KEY, now);
         } catch (e) {}
 
+        const totalChapitres = normalizedFilieres.reduce((acc, f) => acc + (f.chapitres?.length || 0), 0);
+        const totalSeances = normalizedFilieres.reduce(
+          (acc, f) => acc + (f.chapitres || []).reduce((sAcc, c) => sAcc + (c.seances?.length || 0), 0),
+          0
+        );
+
+        console.info(
+          `[PasserelleSync] ✅ Live WordPress data successfully parsed from ${url} (${normalizedFilieres.length} filières, ${totalChapitres} chapitres, ${totalSeances} séances).`
+        );
+
         return {
           success: true,
           filieres: normalizedFilieres,
@@ -255,10 +356,11 @@ export async function syncPasserelleFromWordPress(customUrl = null, force = true
         };
       }
     } catch (err) {
-      // Continue to next candidate URL
+      console.warn(`[PasserelleSync] Error fetching from ${url}:`, err.message);
     }
   }
 
+  console.warn("[PasserelleSync] ⚠️ Live parse failed across all candidate endpoints. Falling back to local bundled data.");
   return {
     success: false,
     reason: "NO_PASSERELLE_PAYLOAD_FOUND",
