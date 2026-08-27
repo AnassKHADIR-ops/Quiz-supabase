@@ -35,10 +35,16 @@ function ResultDetail() {
   if (error) return (
     <div className="center-msg">
       <p className="error-msg" style={{ fontSize: "1rem", justifyContent: "center" }}>{error}</p>
-      <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => navigate(-1)}>Retour</button>
+      <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => navigate("/")}>Retour à l'accueil</button>
     </div>
   );
-  if (!result) return null;
+  if (!result) return (
+    <div className="center-msg">
+      <h3>Résultat introuvable</h3>
+      <p style={{ color: "var(--text-muted)", marginTop: 6 }}>Cette soumission n'existe pas ou a été supprimée.</p>
+      <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => navigate("/")}>Retour à l'accueil</button>
+    </div>
+  );
 
   return (
     <Results

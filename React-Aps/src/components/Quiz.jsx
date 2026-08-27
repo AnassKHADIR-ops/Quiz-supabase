@@ -338,10 +338,11 @@ function ExamStartScreen({ exam, mode, setMode, onStart, onBack, onOpenPrint }) 
    Quiz principal
 ───────────────────────────────────────── */
 function Quiz() {
-  const { examId } = useParams();
-  const navigate   = useNavigate();
-  const { user }   = useAuth();
-  const storageKey = `quiz_progress:${user?.id || "anon"}:${examId}`;
+  const params = useParams();
+  const examId = params.examId || params.id || params.quizId;
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const storageKey = `quiz_progress:${user?.id || "anon"}:${examId || "unknown"}`;
 
   const [exam,        setExam]        = useState(null);
   const [loading,     setLoading]     = useState(true);
@@ -373,12 +374,29 @@ function Quiz() {
 
   useEffect(() => {
     let cancelled = false;
+
+    if (!examId) {
+      setError("Identifiant d'examen ou quiz manquant dans l'adresse URL.");
+      setLoading(false);
+      return;
+    }
+
     (async () => {
       try {
+        setLoading(true);
+        setError("");
         const data = await examsApi.get(examId);
         if (cancelled) return;
-        setExam(data);
-        examRef.current = data;
+
+        if (!data) {
+          throw new Error("L'examen ou le quiz demandé est introuvable ou n'est plus disponible.");
+        }
+
+        const questionsList = Array.isArray(data.questions) ? data.questions : [];
+        const safeData = { ...data, questions: questionsList };
+
+        setExam(safeData);
+        examRef.current = safeData;
 
         const saved = loadProgress(storageKey);
 
@@ -386,7 +404,7 @@ function Quiz() {
           try {
             const details = await resultsApi.details(saved.submittedResultId);
             if (cancelled) return;
-            setAnswers(Array(data.questions.length).fill(null));
+            setAnswers(Array(questionsList.length).fill(null));
             setResult(details);
             setSubmitted(true);
             setStarted(true);
@@ -396,26 +414,26 @@ function Quiz() {
           }
         }
 
-        if (saved?.started && Array.isArray(saved.answers) && saved.answers.length === data.questions.length) {
+        if (saved?.started && Array.isArray(saved.answers) && saved.answers.length === questionsList.length) {
           const el = Math.max(0, Math.floor((Date.now() - new Date(saved.startedAt).getTime()) / 1000));
           answersRef.current = saved.answers;
           setAnswers(saved.answers);
           setFlagged(saved.flagged || {});
           setMode(saved.mode || "exam");
-          setCurrent(Math.min(saved.current || 0, data.questions.length - 1));
+          setCurrent(Math.min(saved.current || 0, Math.max(0, questionsList.length - 1)));
           startedAt.current = saved.startedAt;
-          setTimeLeft(Math.max(0, examTotalSeconds(data) - el));
+          setTimeLeft(Math.max(0, examTotalSeconds(safeData) - el));
           setElapsed(el);
           setStarted(true);
         } else {
-          const fresh = Array(data.questions.length).fill(null);
+          const fresh = Array(questionsList.length).fill(null);
           answersRef.current = fresh;
           setAnswers(fresh);
-          setTimeLeft(examTotalSeconds(data));
+          setTimeLeft(examTotalSeconds(safeData));
           setElapsed(0);
         }
       } catch (err) {
-        if (!cancelled) setError(err.message);
+        if (!cancelled) setError(err.message || "Impossible de charger le quiz.");
       } finally {
         if (!cancelled) setLoading(false);
       }

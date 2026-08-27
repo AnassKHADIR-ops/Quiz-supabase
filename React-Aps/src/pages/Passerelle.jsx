@@ -395,19 +395,23 @@ function ExerciseDocLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) {
   const enonces = normalizeLinks(item.enonce);
   const corrections = normalizeLinks(item.correction);
   const videos = normalizeLinks(item.video);
+  const titre = item.titre || `Exercice ${index + 1}`;
 
   return (
     <div className="doc-line">
+      {/* Card Header: Icon + Title */}
       <div className="doc-line-head">
         <span className="doc-line-ic" aria-hidden="true">📝</span>
         <div className="doc-line-txt">
           <span className="doc-line-t">
             <span className="doc-line-num">#{index + 1}</span>
-            {item.titre}
+            {titre}
           </span>
           {item.sous && <span className="doc-line-d">{item.sous}</span>}
         </div>
       </div>
+
+      {/* Actions / Buttons Container */}
       <div className="doc-line-b">
         {/* Énoncés */}
         {enonces.map((en, enIdx) =>
@@ -415,12 +419,12 @@ function ExerciseDocLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) {
             <button
               key={enIdx}
               type="button"
-              onClick={() => onOpenPdf(en.url, `Énoncé : ${item.titre}`)}
+              onClick={() => onOpenPdf(en.url, `Énoncé : ${titre} — ${chapTitre || ""}`)}
               className="btn btn-secondary btn-sm btn-doc-action"
               style={{
-                background: "var(--tss-btn-enonce-bg)",
-                color: "var(--tss-btn-enonce-color)",
-                borderColor: "var(--tss-btn-enonce-border)",
+                background: "var(--tss-btn-enonce-bg, #f4efff)",
+                color: "var(--tss-btn-enonce-color, #5b3ca8)",
+                borderColor: "var(--tss-btn-enonce-border, rgba(91,60,168,.25))",
               }}
             >
               <FileText size={15} />
@@ -435,12 +439,12 @@ function ExerciseDocLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) {
             <button
               key={coIdx}
               type="button"
-              onClick={() => onOpenPdf(co.url, `Correction : ${item.titre}`)}
+              onClick={() => onOpenPdf(co.url, `Correction : ${co.label || titre} — ${chapTitre || ""}`)}
               className="btn btn-secondary btn-sm btn-doc-action"
               style={{
-                background: "var(--tss-btn-corr-bg)",
-                color: "var(--tss-btn-corr-color)",
-                borderColor: "var(--tss-btn-corr-border)",
+                background: "var(--tss-btn-corr-bg, #ebfaf5)",
+                color: "var(--tss-btn-corr-color, #0f7a56)",
+                borderColor: "var(--tss-btn-corr-border, rgba(15,122,86,.25))",
                 fontWeight: 700,
               }}
             >
@@ -456,7 +460,7 @@ function ExerciseDocLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) {
             <button
               key={viIdx}
               type="button"
-              onClick={() => onOpenVideo(vi.url, `${item.titre} ${vi.label ? `(${vi.label})` : ""}`)}
+              onClick={() => onOpenVideo(vi.url, `${titre} ${vi.label ? `(${vi.label})` : ""} — ${chapTitre || ""}`)}
               className="btn btn-primary btn-sm btn-doc-action"
               style={{
                 background: "linear-gradient(135deg, #c4302b, #9e201b)",
@@ -728,25 +732,12 @@ function Passerelle() {
 
   return (
     <div id="tss" className="passerelle-container page" style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 18px 80px" }}>
-      {/* ── Breadcrumb & Back & Sync Status ── */}
+      {/* ── Back Button & Sync Status (No Breadcrumbs) ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div>
           <button className="btn btn-secondary" onClick={() => navigate("/")} style={{ borderRadius: 12 }}>
             <ArrowLeft size={16} /> Retour au portail
           </button>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.88rem", color: "var(--tss-encre-douce)" }}>
-            <Link to="/" style={{ color: "var(--tss-or)", fontWeight: 600, textDecoration: "none" }}>
-              Accueil
-            </Link>
-            <ChevronRight size={14} />
-            <span style={{ fontWeight: 600, color: "var(--tss-encre)" }}>
-              CPGE Passerelles
-            </span>
-            <ChevronRight size={14} />
-            <span style={{ fontWeight: 700, color: "var(--tss-or)" }}>
-              La Passerelle Sup → Spé ({filiere?.nom})
-            </span>
-          </div>
         </div>
 
         {/* Live Sync Status Pill */}

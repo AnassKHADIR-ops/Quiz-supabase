@@ -373,81 +373,12 @@ function Home() {
       {/* ── Hierarchical Card Navigation ── */}
       {!loading && !search.trim() && (
         <>
-          {/* Breadcrumb + Back Button */}
+          {/* Back Button (Clean, minimal, no breadcrumb trail) */}
           {(mainCategory || school || subject) && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 24,
-                flexWrap: "wrap",
-              }}
-            >
+            <div style={{ marginBottom: 20 }}>
               <button className="btn btn-secondary" onClick={handleBack} style={{ borderRadius: 12 }}>
                 <ArrowLeft size={16} /> Retour
               </button>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.88rem", color: "var(--text-muted)" }}>
-                <span
-                  style={{ cursor: "pointer", color: "var(--primary)", fontWeight: 600 }}
-                  onClick={() => selectCategory(null)}
-                >
-                  Accueil
-                </span>
-                <ChevronRight size={14} />
-                {mainCategory === "cpge" && (
-                  <span
-                    style={{
-                      cursor: school || subject ? "pointer" : "default",
-                      color: school || subject ? "var(--primary)" : "var(--text)",
-                      fontWeight: 600,
-                    }}
-                    onClick={() => selectCategory("cpge")}
-                  >
-                    CPGE
-                  </span>
-                )}
-                {mainCategory === "concours" && (
-                  <span
-                    style={{
-                      cursor: school || subject ? "pointer" : "default",
-                      color: school || subject ? "var(--primary)" : "var(--text)",
-                      fontWeight: 600,
-                    }}
-                    onClick={() => selectCategory("concours")}
-                  >
-                    Concours L2 / L3 & Recrutement
-                  </span>
-                )}
-                {school && (
-                  <>
-                    <ChevronRight size={14} />
-                    <span
-                      style={{
-                        cursor: subject || year ? "pointer" : "default",
-                        color: subject || year ? "var(--primary)" : "var(--text)",
-                        fontWeight: 700,
-                      }}
-                      onClick={() => (subject || year) && selectSchool(school)}
-                    >
-                      {school.name}
-                    </span>
-                  </>
-                )}
-                {year && (
-                  <>
-                    <ChevronRight size={14} />
-                    <span style={{ fontWeight: 700, color: "var(--text)" }}>Session {year}</span>
-                  </>
-                )}
-                {subject && (
-                  <>
-                    <ChevronRight size={14} />
-                    <span style={{ fontWeight: 700, color: "var(--text)" }}>{subject.name}</span>
-                  </>
-                )}
-              </div>
             </div>
           )}
 

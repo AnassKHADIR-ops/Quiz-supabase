@@ -56,9 +56,21 @@ function StudentProfile() {
     }
   };
 
-  if (loading) return <div className="center-msg">Chargement du profil…</div>;
-  if (error)   return <div className="center-msg error-msg">{error}</div>;
-  if (!data)   return null;
+  if (loading) return <div className="center-msg"><span className="spinner" /></div>;
+  if (error) return (
+    <div className="center-msg">
+      <p className="error-msg" style={{ fontSize: "1rem", justifyContent: "center" }}>{error}</p>
+      <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => navigate("/")}>Retour à l'accueil</button>
+    </div>
+  );
+  if (!data || !data.stats) return (
+    <div className="center-msg">
+      <Inbox size={40} style={{ color: "var(--text-faint)", marginBottom: 14 }} />
+      <h3>Profil étudiant introuvable</h3>
+      <p style={{ color: "var(--text-muted)", marginTop: 6 }}>Aucune donnée disponible pour cet étudiant.</p>
+      <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => navigate("/")}>Retour à l'accueil</button>
+    </div>
+  );
 
   const { stats, history, bySchool } = data;
 

@@ -636,24 +636,11 @@ function Courses() {
 
   return (
     <div className="page" style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 18px 80px" }}>
-      {/* ── Breadcrumb & Back ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+      {/* ── Back button (clean & minimal, no breadcrumbs) ── */}
+      <div style={{ marginBottom: 20 }}>
         <button className="btn btn-secondary" onClick={() => navigate("/")} style={{ borderRadius: 12 }}>
           <ArrowLeft size={16} /> Retour au portail
         </button>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.88rem", color: "var(--text-muted)" }}>
-          <Link to="/" style={{ color: "var(--primary)", fontWeight: 600, textDecoration: "none" }}>
-            Accueil
-          </Link>
-          <ChevronRight size={14} />
-          <span style={{ fontWeight: 600, color: "var(--text)" }}>
-            CPGE {selectedYear === "annee1" ? "1ère Année (Sup)" : "2ème Année (Spé)"}
-          </span>
-          <ChevronRight size={14} />
-          <span style={{ fontWeight: 700, color: "var(--primary)" }}>
-            {currentBranch.nom}
-          </span>
-        </div>
       </div>
 
       {/* ── Main Banner ── */}
