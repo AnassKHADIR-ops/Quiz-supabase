@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { X, PlayCircle, Download, FileText, CheckCircle, Zap, ShieldCheck } from "./Icon.jsx";
+import MathVideoPlayer from "./MathVideoPlayer.jsx";
 import { getEmbedUrl, extractDriveFileId, extractYouTubeId } from "../utils/driveUtils.js";
 
 function SecureVideoModal({ chapter, videoUrl, title, onClose }) {
@@ -133,67 +134,11 @@ function SecureVideoModal({ chapter, videoUrl, title, onClose }) {
         </div>
 
         {/* Video Player Container */}
-        <div
-          style={{
-            position: "relative",
-            width: "100%",
-            paddingTop: "56.25%", // 16:9 Aspect Ratio
-            background: "#0a0f1d",
-            overflow: "hidden",
-          }}
-        >
-          {hasEmbed ? (
-            <iframe
-              title={`Vidéo — ${displayTitle}`}
-              src={embedUrl}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                border: 0,
-              }}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
-          ) : (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#94a3b8",
-                padding: 24,
-                textAlign: "center",
-              }}
-            >
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  background: "rgba(255, 255, 255, 0.08)",
-                  display: "grid",
-                  placeItems: "center",
-                  marginBottom: 12,
-                  color: "#e2e8f0",
-                }}
-              >
-                <PlayCircle size={32} />
-              </div>
-              <h4 style={{ color: "#f8fafc", margin: "0 0 6px 0", fontSize: "1.05rem" }}>
-                Vidéo en cours de préparation
-              </h4>
-              <p style={{ margin: 0, fontSize: "0.88rem", maxWidth: 420 }}>
-                La vidéo d'explication de ce chapitre sera disponible très prochainement sur votre espace membre.
-              </p>
-            </div>
-          )}
-        </div>
+        <MathVideoPlayer
+          videoUrl={rawUrl}
+          title={displayTitle}
+          autoPlay={true}
+        />
 
         {/* Modal Footer / Quick Actions */}
         <div

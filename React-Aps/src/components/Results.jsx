@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MathText from "./MathText.jsx";
 import PrintExamModal from "./PrintExamModal.jsx";
+import MathVideoPlayer from "./MathVideoPlayer.jsx";
 import { triggerConfetti } from "../lib/confetti.js";
 import {
   AlertTriangle,
@@ -20,36 +21,44 @@ import {
   FileText
 } from "./Icon.jsx";
 
-function youtubeEmbedUrl(url) {
-  const match = (url || "").match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{6,})/);
-  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
-}
-
 function VideoModal({ url, onClose }) {
-  const embedUrl = youtubeEmbedUrl(url);
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
-      <div className="video-modal" onMouseDown={(e) => e.stopPropagation()}>
+      <div
+        className="video-modal"
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: 860,
+          width: "92vw",
+          borderRadius: 16,
+          overflow: "hidden",
+          position: "relative",
+          background: "var(--card-bg, #0f172a)",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.4)",
+        }}
+      >
         <button
           className="management-modal-close"
           onClick={onClose}
-          style={{ position: "absolute", right: 12, top: 12, zIndex: 1 }}
+          style={{
+            position: "absolute",
+            right: 12,
+            top: 12,
+            zIndex: 10,
+            background: "rgba(0, 0, 0, 0.6)",
+            color: "white",
+            border: "none",
+            borderRadius: "50%",
+            width: 32,
+            height: 32,
+            display: "grid",
+            placeItems: "center",
+            cursor: "pointer",
+          }}
         >
           <X size={16} />
         </button>
-        {embedUrl ? (
-          <iframe
-            className="video-modal-frame"
-            src={embedUrl}
-            title="Vidéo explicative"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        ) : (
-          <p className="error-msg" style={{ padding: 24 }}>
-            Lien vidéo invalide.
-          </p>
-        )}
+        <MathVideoPlayer videoUrl={url} title="Explication Vidéo" autoPlay={true} />
       </div>
     </div>
   );
