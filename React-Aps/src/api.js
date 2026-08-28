@@ -22,6 +22,9 @@ async function rpc(name, args = {}) {
   return data;
 }
 
+// In-flight profile request cache to deduplicate concurrent calls
+let inFlightMePromise = null;
+
 // Auth
 export const authApi = {
   async register(name, email, password) {
@@ -40,34 +43,67 @@ export const authApi = {
   },
   async login(email, password) {
     const cleanEmail = email.trim().toLowerCase();
-    const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
     if (error) throw new Error(message(error));
-    return authApi.me();
+    return authApi.fetchProfileForUser(data.user);
   },
-  async me() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) throw new Error("Session expirée. Connectez-vous de nouveau.");
+  async fetchProfileForUser(supabaseUser) {
+    if (!supabaseUser) throw new Error("Session expirée. Connectez-vous de nouveau.");
+
+    // Query profiles with maybeSingle() to prevent unhandled rejection on race conditions
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id, full_name, email, role, status, approved_at, revoked_at, created_at, updated_at")
-      .eq("id", user.id)
-      .single();
-    if (profileError) throw new Error(message(profileError));
-    return {
-      user: {
-        id: profile.id,
-        name: profile.full_name,
-        email: profile.email,
-        role: profile.role,
-        status: profile.status || "pending",
-        approved_at: profile.approved_at,
-        revoked_at: profile.revoked_at,
-        created_at: profile.created_at,
-        updated_at: profile.updated_at,
-      },
+      .eq("id", supabaseUser.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.warn("Profiles fetch warning:", profileError.message);
+    }
+
+    const resolvedUser = {
+      id: supabaseUser.id,
+      name: profile?.full_name || supabaseUser.user_metadata?.full_name || supabaseUser.email?.split("@")[0] || "Étudiant",
+      email: profile?.email || supabaseUser.email,
+      role: profile?.role || "student",
+      status: profile?.status || "pending",
+      approved_at: profile?.approved_at || null,
+      revoked_at: profile?.revoked_at || null,
+      created_at: profile?.created_at || supabaseUser.created_at,
+      updated_at: profile?.updated_at || supabaseUser.updated_at,
     };
+
+    return { user: resolvedUser };
   },
-  logout: () => supabase.auth.signOut(),
+  async me() {
+    if (inFlightMePromise) {
+      return inFlightMePromise;
+    }
+
+    inFlightMePromise = (async () => {
+      try {
+        // Fast local session check first (reads local JWT without extra network round-trip)
+        const { data: { session } } = await supabase.auth.getSession();
+        let targetUser = session?.user;
+
+        if (!targetUser) {
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+          if (userError || !user) throw new Error("Session expirée. Connectez-vous de nouveau.");
+          targetUser = user;
+        }
+
+        return await authApi.fetchProfileForUser(targetUser);
+      } finally {
+        inFlightMePromise = null;
+      }
+    })();
+
+    return inFlightMePromise;
+  },
+  logout: () => {
+    inFlightMePromise = null;
+    return supabase.auth.signOut();
+  },
 };
 
 // Users & Access Management (Admin/Teacher)

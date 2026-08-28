@@ -1,21 +1,18 @@
-import React, { useState } from "react";
-import ReactPlayer from "react-player";
+import React, { useState, useEffect } from "react";
 import { extractYouTubeId, extractDriveFileId } from "../utils/driveUtils.js";
-import { PlayCircle, ShieldCheck } from "./Icon.jsx";
+import { PlayCircle } from "./Icon.jsx";
 
 /**
  * MathVideoPlayer
- * Distraction-free, responsive YouTube video player for online math courses.
+ * High-performance, distraction-free YouTube & Drive video player for online math courses.
+ * Includes guaranteed 1.5s loading timeout fallback and non-blocking pointer events.
  */
 export default function MathVideoPlayer({
   videoUrl,
   title = "Séance Vidéo",
   onEnded,
-  onProgress,
-  onPlay,
-  onPause,
   className = "",
-  autoPlay = false,
+  autoPlay = true,
   aspectRatio = "16/9",
 }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -25,8 +22,17 @@ export default function MathVideoPlayer({
   const ytId = extractYouTubeId(rawUrl);
   const driveId = !ytId ? extractDriveFileId(rawUrl) : null;
 
-  // Normalized YouTube playback URL
-  const normalizedYtUrl = ytId ? `https://www.youtube.com/watch?v=${ytId}` : null;
+  // Safety fallback: Dismiss loading spinner after 1.5s max to prevent stuck overlay
+  useEffect(() => {
+    setIsLoading(true);
+    setHasError(false);
+
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [videoUrl]);
 
   // Fallback if no valid video source is provided
   if (!rawUrl || (!ytId && !driveId) || hasError) {
@@ -85,6 +91,11 @@ export default function MathVideoPlayer({
     );
   }
 
+  // Construct privacy-enhanced, distraction-free embed URL
+  const embedSrc = ytId
+    ? `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=${autoPlay ? 1 : 0}&rel=0&modestbranding=1&playsinline=1&controls=1&iv_load_policy=3&enablejsapi=1`
+    : `https://drive.google.com/file/d/${driveId}/preview`;
+
   return (
     <div
       className={`math-video-container ${className}`}
@@ -100,7 +111,7 @@ export default function MathVideoPlayer({
       role="region"
       aria-label={title}
     >
-      {/* Loading Skeleton Indicator */}
+      {/* Loading Skeleton Indicator (non-blocking pointer-events & auto-fades) */}
       {isLoading && (
         <div
           className="math-video-skeleton"
@@ -115,7 +126,9 @@ export default function MathVideoPlayer({
             color: "#94a3b8",
             gap: 14,
             zIndex: 2,
-            transition: "opacity 0.3s ease",
+            pointerEvents: "none", // Crucial: Never intercept user clicks or trap the iframe
+            transition: "opacity 0.35s ease",
+            opacity: isLoading ? 1 : 0,
           }}
           aria-hidden="true"
         >
@@ -141,61 +154,27 @@ export default function MathVideoPlayer({
         </div>
       )}
 
-      {/* YouTube Player via ReactPlayer */}
-      {normalizedYtUrl ? (
-        <ReactPlayer
-          url={normalizedYtUrl}
-          width="100%"
-          height="100%"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-          }}
-          controls={true}
-          playing={autoPlay}
-          onReady={() => setIsLoading(false)}
-          onEnded={onEnded}
-          onProgress={onProgress}
-          onPlay={onPlay}
-          onPause={onPause}
-          onError={(err) => {
-            console.error("MathVideoPlayer Error:", err);
-            setIsLoading(false);
-            setHasError(true);
-          }}
-          config={{
-            youtube: {
-              playerVars: {
-                rel: 0, // Prevent recommendations from other channels
-                modestbranding: 1, // Minimize YouTube logo
-                fs: 1, // Fullscreen button enabled
-                playsinline: 1, // Mobile inline playback
-                controls: 1, // Player controls visible
-                iv_load_policy: 3, // Disable annotations/popups
-                origin: typeof window !== "undefined" ? window.location.origin : undefined,
-              },
-            },
-          }}
-        />
-      ) : driveId ? (
-        /* Fallback for Google Drive videos */
-        <iframe
-          title={title}
-          src={`https://drive.google.com/file/d/${driveId}/preview`}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            border: 0,
-          }}
-          onLoad={() => setIsLoading(false)}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      ) : null}
+      {/* Resilient iframe embed */}
+      <iframe
+        key={embedSrc}
+        title={title}
+        src={embedSrc}
+        onLoad={() => setIsLoading(false)}
+        onError={() => {
+          setIsLoading(false);
+          setHasError(true);
+        }}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          border: 0,
+        }}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+      />
     </div>
   );
 }
