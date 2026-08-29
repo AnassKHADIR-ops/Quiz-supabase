@@ -47,46 +47,12 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/cours"
-            element={
-              <ProtectedRoute>
-                <Courses />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/courses"
-            element={
-              <ProtectedRoute>
-                <Courses />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/cpge"
-            element={
-              <ProtectedRoute>
-                <Courses />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/passerelle"
-            element={
-              <ProtectedRoute>
-                <Passerelle />
-              </ProtectedRoute>
-            }
-          />
+          {/* Public Catalog Routes (No login required) */}
+          <Route path="/" element={<Home />} />
+          <Route path="/cours" element={<Courses />} />
+          <Route path="/courses" element={<Courses />} />
+          <Route path="/cpge" element={<Courses />} />
+          <Route path="/passerelle" element={<Passerelle />} />
           <Route
             path="/exam/:examId"
             element={

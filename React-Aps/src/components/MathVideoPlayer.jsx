@@ -5,7 +5,8 @@ import { PlayCircle } from "./Icon.jsx";
 /**
  * MathVideoPlayer
  * High-performance, distraction-free YouTube & Drive video player for online math courses.
- * Includes guaranteed 1.5s loading timeout fallback and non-blocking pointer events.
+ * Includes Click-Shield Security Overlays to prevent opening YouTube channel/unlisted URLs,
+ * disables right-click context menu, and incorporates a 1.5s loading timeout fallback.
  */
 export default function MathVideoPlayer({
   videoUrl,
@@ -91,14 +92,15 @@ export default function MathVideoPlayer({
     );
   }
 
-  // Construct privacy-enhanced, distraction-free embed URL
+  // Construct privacy-enhanced, distraction-free embed URL with all required parameters
   const embedSrc = ytId
-    ? `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=${autoPlay ? 1 : 0}&rel=0&modestbranding=1&playsinline=1&controls=1&iv_load_policy=3&enablejsapi=1`
+    ? `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=${autoPlay ? 1 : 0}&rel=0&modestbranding=1&controls=1&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=0`
     : `https://drive.google.com/file/d/${driveId}/preview`;
 
   return (
     <div
       className={`math-video-container ${className}`}
+      onContextMenu={(e) => e.preventDefault()}
       style={{
         position: "relative",
         width: "100%",
@@ -107,6 +109,7 @@ export default function MathVideoPlayer({
         borderRadius: 14,
         overflow: "hidden",
         boxShadow: "0 20px 40px -15px rgba(0, 0, 0, 0.5)",
+        userSelect: "none",
       }}
       role="region"
       aria-label={title}
@@ -175,6 +178,54 @@ export default function MathVideoPlayer({
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
       />
+
+      {/* 🛡️ 1. Top Header Click Shield (Blocks Channel Avatar, Title, Share, Watch Later) */}
+      {ytId && (
+        <div
+          className="math-video-shield-top"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 55,
+            zIndex: 5,
+            background: "transparent",
+            cursor: "default",
+            userSelect: "none",
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onContextMenu={(e) => e.preventDefault()}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* 🛡️ 2. Bottom-Right Logo Shield (Blocks YouTube Watermark & "Plus de vidéos" popout) */}
+      {ytId && (
+        <div
+          className="math-video-shield-bottom-right"
+          style={{
+            position: "absolute",
+            bottom: 0,
+            right: 0,
+            width: 90,
+            height: 48,
+            zIndex: 5,
+            background: "transparent",
+            cursor: "default",
+            userSelect: "none",
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onContextMenu={(e) => e.preventDefault()}
+          aria-hidden="true"
+        />
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useCoursesSync } from "../hooks/useCoursesSync.js";
 import SecureVideoModal from "../components/SecureVideoModal.jsx";
+import AuthGateModal from "../components/AuthGateModal.jsx";
 import {
   getDriveImageUrls,
   extractDriveFileId,
@@ -458,7 +459,7 @@ function CourseSessionCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo })
   );
 }
 
-function CourseExerciseLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) {
+function CourseExerciseLine({ item, index, chapTitre, onOpenPdf, onOpenCorrection, onOpenVideo }) {
   const titre = item.titre || item.t || `Exercice ${index + 1}`;
   const sous = item.sous || "";
   const enonceUrl = item.enonce || item.exo || item.u || "";
@@ -496,7 +497,7 @@ function CourseExerciseLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) 
         {isUrlActive(corrUrl) && (
           <button
             type="button"
-            onClick={() => onOpenPdf(corrUrl, `Correction : ${titre} — ${chapTitre}`)}
+            onClick={() => onOpenCorrection(corrUrl, `Correction : ${titre} — ${chapTitre}`)}
             className="btn btn-secondary btn-sm btn-doc-action"
             style={{
               background: "var(--tss-btn-corr-bg, #ebfaf5)",
@@ -553,6 +554,7 @@ function Courses() {
   const [openChapterIds, setOpenChapterIds] = useState(new Set(["mp-4", "mpsi-1", "tsi1-1"]));
   const [selectedVideoModal, setSelectedVideoModal] = useState(null);
   const [pdfModalData, setPdfModalData] = useState(null);
+  const [authGateData, setAuthGateData] = useState(null);
 
   // Deep linking & popstate handling from URL
   useEffect(() => {
@@ -575,27 +577,47 @@ function Courses() {
     }
 
     const videoUrlParam = searchParams.get("video");
-    const pdfUrlParam = searchParams.get("pdf") || searchParams.get("corr");
+    const corrUrlParam = searchParams.get("corr");
+    const pdfUrlParam = searchParams.get("pdf");
     const titleParam = searchParams.get("title");
 
     if (videoUrlParam) {
-      setSelectedVideoModal({
-        titre: titleParam || "Séance de cours (Replay)",
-        video_url: videoUrlParam,
-      });
+      if (!user) {
+        setAuthGateData({
+          contentType: "video",
+          title: titleParam || "Séance de cours (Replay)",
+        });
+      } else {
+        setSelectedVideoModal({
+          titre: titleParam || "Séance de cours (Replay)",
+          video_url: videoUrlParam,
+        });
+      }
     } else {
       setSelectedVideoModal(null);
     }
 
-    if (pdfUrlParam) {
+    if (corrUrlParam) {
+      if (!user) {
+        setAuthGateData({
+          contentType: "correction",
+          title: titleParam || "Correction détaillée PDF",
+        });
+      } else {
+        setPdfModalData({
+          title: titleParam || "Correction détaillée",
+          url: corrUrlParam,
+        });
+      }
+    } else if (pdfUrlParam) {
       setPdfModalData({
-        title: titleParam || "Document / Correction",
+        title: titleParam || "Document pédagogique",
         url: pdfUrlParam,
       });
     } else {
       setPdfModalData(null);
     }
-  }, [searchParams, curriculum, selectedYear]);
+  }, [searchParams, curriculum, selectedYear, user]);
 
   // If year changes, ensure valid branch
   useEffect(() => {
@@ -661,6 +683,13 @@ function Courses() {
 
   const openVideo = (url, titre) => {
     if (!url) return;
+    if (!user) {
+      setAuthGateData({
+        contentType: "video",
+        title: titre || "Séance de cours (Replay)",
+      });
+      return;
+    }
     const newParams = new URLSearchParams(searchParams);
     newParams.set("video", url);
     if (titre) newParams.set("title", titre);
@@ -677,6 +706,22 @@ function Courses() {
     newParams.delete("video");
     newParams.delete("title");
     setSearchParams(newParams, { replace: true });
+  };
+
+  const openCorrection = (url, title) => {
+    if (!url) return;
+    if (!user) {
+      setAuthGateData({
+        contentType: "correction",
+        title: title || "Correction détaillée PDF",
+      });
+      return;
+    }
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("corr", url);
+    if (title) newParams.set("title", title);
+    setSearchParams(newParams, { replace: false });
+    setPdfModalData({ url, title: title || "Correction détaillée" });
   };
 
   const openPdf = (url, title) => {
@@ -1063,7 +1108,7 @@ function Courses() {
                     {hasCorrection && (
                       <button
                         className="btn btn-secondary btn-sm"
-                        onClick={() => openPdf(chapter.correction_url, `Correction : ${chapter.titre}`)}
+                        onClick={() => openCorrection(chapter.correction_url, `Correction : ${chapter.titre}`)}
                         style={{ borderRadius: 10, background: "#ebfaf5", color: "#0f7a56", borderColor: "rgba(15,122,86,.25)", fontWeight: 700 }}
                       >
                         <CheckCircle size={14} /> Correction PDF
@@ -1172,6 +1217,7 @@ function Courses() {
                                       index={tIdx}
                                       chapTitre={chapter.titre}
                                       onOpenPdf={openPdf}
+                                      onOpenCorrection={openCorrection}
                                       onOpenVideo={openVideo}
                                     />
                                   ))}
@@ -1355,6 +1401,16 @@ function Courses() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Auth Gate Modal (Espace Membre Requis) ── */}
+      {authGateData && (
+        <AuthGateModal
+          isOpen={!!authGateData}
+          contentType={authGateData.contentType || "member"}
+          title={authGateData.title}
+          onClose={() => setAuthGateData(null)}
+        />
       )}
     </div>
   );

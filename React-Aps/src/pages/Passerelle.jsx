@@ -3,6 +3,7 @@ import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { usePasserelleSync } from "../hooks/usePasserelleSync.js";
 import SecureVideoModal from "../components/SecureVideoModal.jsx";
+import AuthGateModal from "../components/AuthGateModal.jsx";
 import {
   getDriveImageUrls,
   extractDriveFileId,
@@ -471,7 +472,7 @@ function SessionVideoCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo }) 
   );
 }
 
-function ExerciseDocLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) {
+function ExerciseDocLine({ item, index, chapTitre, onOpenPdf, onOpenCorrection, onOpenVideo }) {
   const enonces = normalizeLinks(item.enonce);
   const corrections = normalizeLinks(item.correction);
   const videos = normalizeLinks(item.video);
@@ -519,7 +520,7 @@ function ExerciseDocLine({ item, index, chapTitre, onOpenPdf, onOpenVideo }) {
             <button
               key={coIdx}
               type="button"
-              onClick={() => onOpenPdf(co.url, `Correction : ${co.label || titre} — ${chapTitre || ""}`)}
+              onClick={() => (onOpenCorrection || onOpenPdf)(co.url, `Correction : ${co.label || titre} — ${chapTitre || ""}`)}
               className="btn btn-secondary btn-sm btn-doc-action"
               style={{
                 background: "var(--tss-btn-corr-bg, #ebfaf5)",
@@ -654,6 +655,7 @@ function Passerelle() {
 
   const [videoModalData, setVideoModalData] = useState(null);
   const [pdfModalData, setPdfModalData] = useState(null);
+  const [authGateData, setAuthGateData] = useState(null);
 
   const filiere = useMemo(() => {
     return (
@@ -679,23 +681,43 @@ function Passerelle() {
     }
 
     const videoUrlParam = searchParams.get("video");
-    const pdfUrlParam = searchParams.get("pdf") || searchParams.get("corr");
+    const corrUrlParam = searchParams.get("corr");
+    const pdfUrlParam = searchParams.get("pdf");
     const titleParam = searchParams.get("title");
     const chapParam = searchParams.get("chap") || searchParams.get("chapitre");
     const viewParam = searchParams.get("view");
 
     if (videoUrlParam) {
-      setVideoModalData({
-        titre: titleParam || "Vidéo d'explication",
-        video_url: videoUrlParam,
-      });
+      if (!user) {
+        setAuthGateData({
+          contentType: "video",
+          title: titleParam || "Vidéo d'explication",
+        });
+      } else {
+        setVideoModalData({
+          titre: titleParam || "Vidéo d'explication",
+          video_url: videoUrlParam,
+        });
+      }
     } else {
       setVideoModalData(null);
     }
 
-    if (pdfUrlParam) {
+    if (corrUrlParam) {
+      if (!user) {
+        setAuthGateData({
+          contentType: "correction",
+          title: titleParam || "Correction détaillée PDF",
+        });
+      } else {
+        setPdfModalData({
+          title: titleParam || "Correction détaillée",
+          url: corrUrlParam,
+        });
+      }
+    } else if (pdfUrlParam) {
       setPdfModalData({
-        title: titleParam || "Correction détaillée",
+        title: titleParam || "Document pédagogique",
         url: pdfUrlParam,
       });
     } else {
@@ -731,15 +753,22 @@ function Passerelle() {
             }
           }
           if (targetVideo) {
-            setVideoModalData({
-              titre: targetTitle,
-              video_url: targetVideo,
-            });
+            if (!user) {
+              setAuthGateData({
+                contentType: "video",
+                title: targetTitle || "Vidéo d'explication",
+              });
+            } else {
+              setVideoModalData({
+                titre: targetTitle,
+                video_url: targetVideo,
+              });
+            }
           }
         }
       }
     }
-  }, [searchParams, passerelleData, filiere]);
+  }, [searchParams, passerelleData, filiere, user]);
 
   const handleSelectFiliere = (fId) => {
     setActiveFiliereId(fId);
@@ -759,6 +788,13 @@ function Passerelle() {
 
   const openVideo = (url, titre) => {
     if (!url) return;
+    if (!user) {
+      setAuthGateData({
+        contentType: "video",
+        title: titre || "Vidéo d'explication",
+      });
+      return;
+    }
     const newParams = new URLSearchParams(searchParams);
     newParams.set("video", url);
     if (titre) newParams.set("title", titre);
@@ -776,6 +812,22 @@ function Passerelle() {
     newParams.delete("title");
     newParams.delete("view");
     setSearchParams(newParams, { replace: true });
+  };
+
+  const openCorrection = (url, title) => {
+    if (!url) return;
+    if (!user) {
+      setAuthGateData({
+        contentType: "correction",
+        title: title || "Correction détaillée PDF",
+      });
+      return;
+    }
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("corr", url);
+    if (title) newParams.set("title", title);
+    setSearchParams(newParams, { replace: false });
+    setPdfModalData({ title, url });
   };
 
   const openPdf = (url, title) => {
@@ -1300,6 +1352,7 @@ function Passerelle() {
                                       index={itIdx}
                                       chapTitre={chap.titre}
                                       onOpenPdf={openPdf}
+                                      onOpenCorrection={openCorrection}
                                       onOpenVideo={openVideo}
                                     />
                                   ))}
@@ -1468,6 +1521,16 @@ function Passerelle() {
           title={pdfModalData.title}
           url={pdfModalData.url}
           onClose={closePdf}
+        />
+      )}
+
+      {/* ── Auth Gate Modal (Espace Membre Requis) ── */}
+      {authGateData && (
+        <AuthGateModal
+          isOpen={!!authGateData}
+          contentType={authGateData.contentType || "member"}
+          title={authGateData.title}
+          onClose={() => setAuthGateData(null)}
         />
       )}
     </div>

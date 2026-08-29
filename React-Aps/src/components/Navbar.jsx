@@ -111,23 +111,17 @@ function Navbar() {
           </div>
         </Link>
 
-        {/* Desktop Links */}
+        {/* Desktop Links (Accessible to all visitors) */}
         <div className="nav-links desktop-nav-links">
-          {user && (
-            <Link to="/" className={`nav-link ${isActive("/") ? "active" : ""}`}>
-              Portail & Concours
-            </Link>
-          )}
-          {user && (
-            <Link to="/passerelle" className={`nav-link ${isActive("/passerelle") ? "active" : ""}`}>
-              Passerelle Sup→Spé
-            </Link>
-          )}
-          {user && (
-            <Link to="/cours" className={`nav-link ${isActive("/cours") || isActive("/courses") ? "active" : ""}`}>
-              Espace Cours
-            </Link>
-          )}
+          <Link to="/" className={`nav-link ${isActive("/") ? "active" : ""}`}>
+            Portail & Concours
+          </Link>
+          <Link to="/passerelle" className={`nav-link ${isActive("/passerelle") ? "active" : ""}`}>
+            Passerelle Sup→Spé
+          </Link>
+          <Link to="/cours" className={`nav-link ${isActive("/cours") || isActive("/courses") || isActive("/cpge") ? "active" : ""}`}>
+            Espace Cours
+          </Link>
           {isStaff && (
             <Link to="/dashboard" className={`nav-link ${isActive("/dashboard") ? "active" : ""}`}>
               Tableau de bord
@@ -206,34 +200,30 @@ function Navbar() {
             boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
           }}
         >
-          {user && (
-            <>
-              <Link
-                to="/"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`nav-link ${isActive("/") ? "active" : ""}`}
-                style={{ padding: "10px 14px", borderRadius: 10, fontSize: "0.95rem" }}
-              >
-                🏛️ Portail & Concours
-              </Link>
-              <Link
-                to="/passerelle"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`nav-link ${isActive("/passerelle") ? "active" : ""}`}
-                style={{ padding: "10px 14px", borderRadius: 10, fontSize: "0.95rem" }}
-              >
-                🌉 Passerelle Sup → Spé
-              </Link>
-              <Link
-                to="/cours"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`nav-link ${isActive("/cours") || isActive("/courses") ? "active" : ""}`}
-                style={{ padding: "10px 14px", borderRadius: 10, fontSize: "0.95rem" }}
-              >
-                📚 Espace Cours CPGE
-              </Link>
-            </>
-          )}
+          <Link
+            to="/"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`nav-link ${isActive("/") ? "active" : ""}`}
+            style={{ padding: "10px 14px", borderRadius: 10, fontSize: "0.95rem" }}
+          >
+            🏛️ Portail & Concours
+          </Link>
+          <Link
+            to="/passerelle"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`nav-link ${isActive("/passerelle") ? "active" : ""}`}
+            style={{ padding: "10px 14px", borderRadius: 10, fontSize: "0.95rem" }}
+          >
+            🌉 Passerelle Sup → Spé
+          </Link>
+          <Link
+            to="/cours"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`nav-link ${isActive("/cours") || isActive("/courses") || isActive("/cpge") ? "active" : ""}`}
+            style={{ padding: "10px 14px", borderRadius: 10, fontSize: "0.95rem" }}
+          >
+            📚 Espace Cours CPGE
+          </Link>
 
           {isStaff && (
             <>
