@@ -13,6 +13,9 @@ function message(error) {
   if (msg.includes("Password should be at least")) {
     return "Le mot de passe doit comporter au moins 6 caractères.";
   }
+  if (msg.includes("permission denied") || msg.includes("42501")) {
+    return "Erreur de permission de la base de données. Veuillez vérifier les privilèges d'accès.";
+  }
   return msg;
 }
 
@@ -149,6 +152,20 @@ export const programmesApi = {
   create: (payload) => rpc("create_school_programme", { p_payload: payload }),
   update: (id, payload) => rpc("update_school_programme", { p_id: id, p_payload: payload }),
   delete: (id) => rpc("delete_school_programme", { p_id: id }),
+};
+
+// CPGE Courses
+export const coursesApi = {
+  getCurriculum: () => rpc("get_cpge_curriculum"),
+  saveBranch: (yearId, branchId, payload) => rpc("save_cpge_branch", { p_year_id: yearId, p_branch_id: branchId, p_payload: payload }),
+  deleteBranch: (yearId, branchId) => rpc("delete_cpge_branch", { p_year_id: yearId, p_branch_id: branchId }),
+};
+
+// Passerelle Sup -> Spé
+export const passerelleApi = {
+  getData: () => rpc("get_passerelle_data"),
+  saveFiliere: (id, payload) => rpc("save_passerelle_filiere", { p_id: id, p_payload: payload }),
+  deleteFiliere: (id) => rpc("delete_passerelle_filiere", { p_id: id }),
 };
 
 // Results

@@ -32,7 +32,7 @@ export function useCoursesSync(customWpUrl = null) {
     [customWpUrl]
   );
 
-  // Background auto-sync on mount (non-forced, uses smart TTL)
+  // Background auto-sync on mount
   useEffect(() => {
     refreshSync(null, false);
   }, [refreshSync]);
