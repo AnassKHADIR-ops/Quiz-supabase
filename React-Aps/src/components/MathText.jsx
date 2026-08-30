@@ -1,50 +1,58 @@
-import { InlineMath, BlockMath } from "react-katex";
+import React from "react";
+import katex from "katex";
+import "katex/dist/katex.min.css";
 
 /**
  * Renders a string that may contain a mix of plain text and LaTeX.
  * Use $$...$$ for block (display) math and $...$ for inline math.
+ * Uses native katex.renderToString directly without fragile React wrappers.
  */
-function MathText({ text }) {
+export function MathText({ text }) {
   if (text == null) return null;
   const str = typeof text === "string" ? text : String(text);
   if (!str.trim()) return null;
 
-  try {
-    // Split on $$...$$ first, then handle $...$ within remaining text segments
-    const blockParts = str.split(/\$\$(.+?)\$\$/gs);
+  const renderKatex = (math, displayMode) => {
+    try {
+      const html = katex.renderToString(math, {
+        displayMode,
+        throwOnError: false,
+      });
+      return <span dangerouslySetInnerHTML={{ __html: html }} />;
+    } catch (err) {
+      return <code>{displayMode ? `$$${math}$$` : `$${math}$`}</code>;
+    }
+  };
 
+  try {
+    const blocks = str.split(/\$\$(.+?)\$\$/gs);
     return (
-      <>
-        {blockParts.map((part, i) => {
+      <span>
+        {blocks.map((block, i) => {
           if (i % 2 === 1) {
-            // Odd indices are block math
             return (
-              <BlockMath
-                key={i}
-                math={part}
-                renderError={() => <code className="katex-fallback">$${part}$$</code>}
-              />
+              <div key={i} className="math-block" style={{ margin: "8px 0", textAlign: "center" }}>
+                {renderKatex(block, true)}
+              </div>
             );
           }
-          // Even indices: plain text possibly containing inline math $...$
-          const inlineParts = part.split(/\$(.+?)\$/g);
+          const inlines = block.split(/\$(.+?)\$/g);
           return (
             <span key={i}>
-              {inlineParts.map((sub, j) =>
-                j % 2 === 1 ? (
-                  <InlineMath
-                    key={j}
-                    math={sub}
-                    renderError={() => <code className="katex-fallback">${sub}$</code>}
-                  />
-                ) : (
-                  sub
-                )
-              )}
+              {inlines.map((segment, j) => {
+                if (j % 2 === 1) {
+                  return (
+                    <span key={j} className="math-inline">
+                      {renderKatex(segment, false)}
+                    </span>
+                  );
+                }
+                return segment;
+              })}
             </span>
           );
         })}
-      </>
+      </span>
     );
   } catch {
     return <span>{str}</span>;
@@ -52,4 +60,3 @@ function MathText({ text }) {
 }
 
 export default MathText;
-
