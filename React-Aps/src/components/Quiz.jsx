@@ -600,15 +600,32 @@ function Quiz() {
     </div>
   );
 
-  if (error) return (
-    <div className="center-msg">
-      <AlertTriangle size={40} style={{ color: "var(--danger)", marginBottom: 14 }} />
-      <p className="error-msg" style={{ fontSize: "1rem" }}>{error}</p>
-      <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => navigate("/")}>
-        <ArrowLeft size={16} /> Retour aux examens
-      </button>
-    </div>
-  );
+  if (error) {
+    const isApprovalError = error.includes("attente d'approbation") || error.includes("compte");
+    return (
+      <div className="center-msg" style={{ maxWidth: 520, margin: "0 auto", padding: "40px 20px", textAlign: "center" }}>
+        {isApprovalError ? (
+          <Clock size={46} style={{ color: "var(--warning, #eab308)", marginBottom: 16 }} />
+        ) : (
+          <AlertTriangle size={46} style={{ color: "var(--danger)", marginBottom: 16 }} />
+        )}
+        <h3 style={{ marginBottom: 10, fontSize: "1.2rem" }}>
+          {isApprovalError ? "Validation du compte requise" : "Accès au quiz"}
+        </h3>
+        <p className="error-msg" style={{ fontSize: "0.95rem", lineHeight: 1.6, marginBottom: 20 }}>
+          {error}
+        </p>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+          <button className="btn btn-primary" onClick={() => navigate("/login")}>
+            Se connecter / Changer de compte
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate("/")}>
+            <ArrowLeft size={16} /> Retour à l'accueil
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (exam && exam.questions.length === 0) return (
     <div className="center-msg">

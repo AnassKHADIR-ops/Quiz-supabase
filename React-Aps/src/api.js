@@ -4,6 +4,9 @@ function message(error) {
   if (!error) return "Une erreur est survenue. Réessayez.";
   const msg = error.message || error.error_description || String(error);
   
+  if (msg.includes("attente d'approbation") || msg.includes("en attente d'approbation") || msg.includes("P0001")) {
+    return "Votre compte est en attente d'approbation par l'administrateur. Veuillez patienter ou vous connecter avec un compte validé.";
+  }
   if (msg.includes("User already registered") || msg.includes("already exists")) {
     return "Cette adresse e-mail est déjà associée à un compte.";
   }

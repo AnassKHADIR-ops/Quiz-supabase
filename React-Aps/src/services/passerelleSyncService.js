@@ -1,5 +1,5 @@
 import { PASSERELLE_DATA } from "../data/passerelleData.js";
-import { extractYouTubeId, getYoutubeThumbnail } from "../utils/driveUtils.js";
+import { extractYouTubeId } from "../utils/driveUtils.js";
 
 const CACHE_KEY = "passerelle_live_data";
 const CACHE_TIMESTAMP_KEY = "passerelle_last_synced";
@@ -12,14 +12,21 @@ function decodeHtmlEntities(str) {
   return str
     .replace(/&quot;/g, '"')
     .replace(/&#039;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&#34;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
+    .replace(/&rsquo;/g, "'")
+    .replace(/&lsquo;/g, "'")
+    .replace(/&rdquo;/g, '"')
+    .replace(/&ldquo;/g, '"')
     .replace(/&#8216;/g, "'")
     .replace(/&#8217;/g, "'")
     .replace(/&#8220;/g, '"')
-    .replace(/&#8221;/g, '"');
+    .replace(/&#8221;/g, '"')
+    .replace(/&nbsp;/g, " ");
 }
 
 /**
@@ -118,24 +125,63 @@ export function extractJsVariable(htmlContent, varName) {
 
 /**
  * Normalizes live JSON filières array into the format expected by the React app.
- * Preserves partial items (e.g. séances with only PDF, or only video).
+ * Preserves partial items (e.g. séances with only PDF, or only video, or multi-part corrections).
  */
 export function normalizeLiveFilieres(filieres) {
   if (!Array.isArray(filieres)) return [];
 
   return filieres.map((f) => {
     const nom = f.nom || f.id || "Filière";
-    const id = (f.id || f.nom || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const cleanId = (f.id || f.nom || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    const defaultDe =
+      cleanId === "mp"
+        ? "MPSI"
+        : cleanId === "psi"
+        ? "PCSI / MPSI"
+        : cleanId === "tsi"
+        ? "TSI 1"
+        : cleanId === "ecs"
+        ? "ECS 1"
+        : cleanId === "ect"
+        ? "ECT 1"
+        : nom;
+
+    const defaultVers =
+      cleanId === "mp"
+        ? "MP"
+        : cleanId === "psi"
+        ? "PSI"
+        : cleanId === "tsi"
+        ? "TSI 2"
+        : cleanId === "ecs"
+        ? "ECS 2"
+        : cleanId === "ect"
+        ? "ECT 2"
+        : nom;
+
+    const defaultIcon =
+      cleanId === "mp"
+        ? "∑"
+        : cleanId === "psi"
+        ? "∫"
+        : cleanId === "tsi"
+        ? "T"
+        : cleanId === "ecs"
+        ? "E"
+        : cleanId === "ect"
+        ? "€"
+        : f.icon || "∑";
 
     return {
-      id: id || "filiere",
+      id: cleanId || "filiere",
       nom: nom,
-      de: f.de || nom,
-      vers: f.vers || nom,
-      icon: f.icon || "∑",
+      de: f.de || defaultDe,
+      vers: f.vers || defaultVers,
+      icon: f.icon || defaultIcon,
       chapitres: Array.isArray(f.chapitres)
         ? f.chapitres.map((c, cIdx) => ({
-            id: c.id || `${id}-chap-${cIdx + 1}`,
+            id: c.id || `${cleanId}-chap-${cIdx + 1}`,
             titre: c.titre || `Chapitre ${cIdx + 1}`,
             why: c.why || "",
             fiche: c.fiche || c.ficheUrl || c.fiche_url || null,
@@ -155,11 +201,11 @@ export function normalizeLiveFilieres(filieres) {
                   const enonceUrl = it.enonce || it.enonceUrl || it.enonce_url || it.sujet || null;
                   const corrUrl = it.correction || it.correctionUrl || it.correction_url || it.corr || null;
                   const thumb = it.thumbnail || it.thumbnailUrl || it.thumbnail_url || it.cover || it.thumb || null;
-                  const ytId = extractYouTubeId(videoUrl);
+                  const ytId = extractYouTubeId(typeof videoUrl === "string" ? videoUrl : null);
                   const finalThumb = thumb || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null);
 
                   return {
-                    id: it.id || `${id}-item-${cIdx + 1}-${itIdx + 1}`,
+                    id: it.id || `${cleanId}-item-${cIdx + 1}-${itIdx + 1}`,
                     titre: it.titre || it.title || `Fiche ${itIdx + 1}`,
                     enonce: enonceUrl,
                     enonce_url: enonceUrl,
@@ -207,12 +253,12 @@ export function normalizeLiveFilieres(filieres) {
                     s.cover ||
                     s.thumb ||
                     null;
-                  const ytId = extractYouTubeId(videoUrl);
+                  const ytId = extractYouTubeId(typeof videoUrl === "string" ? videoUrl : null);
                   const finalThumb =
                     thumb || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null);
 
                   return {
-                    id: s.id || `${id}-seance-${cIdx + 1}-${sIdx + 1}`,
+                    id: s.id || `${cleanId}-seance-${cIdx + 1}-${sIdx + 1}`,
                     titre: s.titre || s.title || `Séance ${sIdx + 1}`,
                     video: videoUrl,
                     video_url: videoUrl,
@@ -376,7 +422,8 @@ export async function syncPasserelleFromWordPress(customUrl = null, force = true
     : [
         `${cleanBaseUrl}/edu/v1/passerelle?_t=${timestamp}&_nonce=${nonce}`,
         `${cleanBaseUrl}/wp/v2/pages?slug=transition-sup-spe&status=publish&_fields=id,slug,title,content.rendered&_t=${timestamp}&_nocache=${nonce}`,
-        `https://anasskhadir.com/transition-sup-spe/?_t=${timestamp}`,
+        `${cleanBaseUrl}/wp/v2/pages/4368?_fields=id,slug,title,content.rendered&_t=${timestamp}&_nocache=${nonce}`,
+        `https://anasskhadir.com/transition-sup-spe/?_t=${timestamp}&_nocache=${nonce}`,
       ];
 
   console.info(`[PasserelleSync] 🔄 Starting live sync (force=${force})...`);
@@ -410,13 +457,17 @@ export async function syncPasserelleFromWordPress(customUrl = null, force = true
         } catch (e) {}
 
         const totalChapitres = normalizedFilieres.reduce((acc, f) => acc + (f.chapitres?.length || 0), 0);
+        const totalItems = normalizedFilieres.reduce(
+          (acc, f) => acc + (f.chapitres || []).reduce((iAcc, c) => iAcc + (c.items?.length || 0), 0),
+          0
+        );
         const totalSeances = normalizedFilieres.reduce(
           (acc, f) => acc + (f.chapitres || []).reduce((sAcc, c) => sAcc + (c.seances?.length || 0), 0),
           0
         );
 
         console.info(
-          `[PasserelleSync] ✅ Live WordPress data successfully parsed from ${url} (${normalizedFilieres.length} filières, ${totalChapitres} chapitres, ${totalSeances} séances).`
+          `[PasserelleSync] ✅ Live WordPress data successfully parsed from ${url} (${normalizedFilieres.length} filières, ${totalChapitres} chapitres, ${totalItems} fiches/exercices, ${totalSeances} séances).`
         );
 
         return {
@@ -437,4 +488,3 @@ export async function syncPasserelleFromWordPress(customUrl = null, force = true
     filieres: PASSERELLE_DATA.filieres,
   };
 }
-
