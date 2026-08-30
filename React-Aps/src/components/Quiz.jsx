@@ -16,7 +16,7 @@ import {
   HelpCircle,
   Hourglass,
   Inbox,
-  ListIcon,
+  List as ListIcon,
   PlayCircle,
   X,
   Zap,
@@ -25,8 +25,15 @@ import {
   Sparkles,
   Trophy,
   FileText,
-  Printer
-} from "./Icon.jsx";
+  Printer,
+  RotateCcw,
+  BookOpen,
+  Bookmark,
+  ShieldCheck,
+  CheckCircle2,
+  XCircle,
+  Share2
+} from "lucide-react";
 
 // Durée totale de l'examen
 const examTotalSeconds = (exam) => (exam.duration_minutes ? exam.duration_minutes * 60 : exam.questions.length * 90);

@@ -19,7 +19,7 @@ import {
   Video,
   X,
   FileText
-} from "./Icon.jsx";
+} from "lucide-react";
 
 function VideoModal({ url, onClose }) {
   return (

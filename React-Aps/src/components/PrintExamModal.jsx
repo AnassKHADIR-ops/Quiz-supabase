@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import MathText from "./MathText.jsx";
 import { examsApi } from "../api.js";
-import { CheckCircle, FileText, Printer, Sparkles, X } from "./Icon.jsx";
+import { CheckCircle, FileText, Printer, Sparkles, X } from "lucide-react";
 
 export default function PrintExamModal({ exam, initialMode = "statement", onClose }) {
   const [mode, setMode] = useState(initialMode); // "statement" | "solution"
