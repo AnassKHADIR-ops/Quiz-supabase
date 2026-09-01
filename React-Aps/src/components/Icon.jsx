@@ -52,5 +52,16 @@ export {
   Briefcase,
   ChevronDown,
   ChevronRight,
-  Share2
+  Share2,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Volume1,
+  Maximize,
+  Minimize,
+  RotateCw,
+  FastForward,
+  Rewind,
+  Loader2
 } from "lucide-react";
