@@ -68,8 +68,8 @@ function loadYouTubeIframeApi() {
 
 /**
  * MathVideoPlayer
- * High-performance, 100% distraction-free video player for higher math courses.
- * Completely eliminates YouTube channel avatar, titles, share buttons, and recommendations.
+ * High-performance, distraction-free video player in 100% original video form.
+ * Completely un-zoomed, uncropped mathematical chalkboard view with custom React controls.
  */
 export default function MathVideoPlayer({
   videoUrl,
@@ -469,17 +469,16 @@ export default function MathVideoPlayer({
       role="region"
       aria-label={title}
     >
-      {/* 🛡️ VIEWPORT CROP CONTAINER: Crops out YouTube's Top Title Bar, Avatar & Popouts */}
+      {/* 🛡️ 100% ORIGINAL FORM VIDEO CONTAINER (Zero Zoom, Full Blackboard View) */}
       <div
         className="math-video-crop-wrapper"
         style={{
           position: "absolute",
-          top: "50%",
-          left: "50%",
+          inset: 0,
+          top: 0,
+          left: 0,
           width: "100%",
           height: "100%",
-          transform: "translate(-50%, -50%) scale(1.36)",
-          transformOrigin: "center center",
           pointerEvents: "none",
           overflow: "hidden",
         }}
@@ -609,8 +608,8 @@ export default function MathVideoPlayer({
           top: 0,
           left: 0,
           right: 0,
-          padding: "16px 20px 28px",
-          background: "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)",
+          padding: "14px 18px 24px",
+          background: "linear-gradient(to bottom, rgba(5, 8, 17, 0.96) 0%, rgba(5, 8, 17, 0.75) 60%, transparent 100%)",
           zIndex: 8,
           display: "flex",
           alignItems: "center",
@@ -663,7 +662,7 @@ export default function MathVideoPlayer({
           left: 0,
           right: 0,
           padding: "24px 18px 12px",
-          background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 65%, transparent 100%)",
+          background: "linear-gradient(to top, rgba(5, 8, 17, 0.96) 0%, rgba(5, 8, 17, 0.85) 65%, transparent 100%)",
           zIndex: 8,
           display: "flex",
           flexDirection: "column",
