@@ -193,18 +193,22 @@ export default function MathVideoPlayer({
 
         // Create new div for YT.Player replacement
         const placeholderDiv = document.createElement("div");
+        placeholderDiv.style.width = "100%";
+        placeholderDiv.style.height = "100%";
         ytPlayerContainerRef.current.innerHTML = "";
         ytPlayerContainerRef.current.appendChild(placeholderDiv);
 
         createdPlayer = new YT.Player(placeholderDiv, {
+          width: "100%",
+          height: "100%",
           videoId: ytId,
           playerVars: {
             autoplay: autoPlay ? 1 : 0,
-            controls: 0, // Disable YouTube's native bottom bar, watermark & recommendations
+            controls: 0, // Disable YouTube native bottom bar, watermark & recommendations
             modestbranding: 1,
             rel: 0,
             iv_load_policy: 3, // Disable annotations
-            disablekb: 1, // Disable YouTube's internal keyboard handlers
+            disablekb: 1, // Disable YouTube internal keyboard handlers
             fs: 0, // Disable YouTube native fullscreen button
             playsinline: 1,
             origin: window.location.origin,
@@ -465,22 +469,28 @@ export default function MathVideoPlayer({
       role="region"
       aria-label={title}
     >
-      {/* 🛡️ VIEWPORT CROP CONTAINER: Crops out YouTube's Top Title Bar & Channel Avatar */}
+      {/* 🛡️ VIEWPORT CROP CONTAINER: Crops out YouTube's Top Title Bar, Avatar & Popouts */}
       <div
+        className="math-video-crop-wrapper"
         style={{
           position: "absolute",
-          top: "-12.5%", // Push top title bar out of viewport
-          left: 0,
-          right: 0,
-          bottom: "-12.5%", // Balance vertical alignment
+          top: "50%",
+          left: "50%",
           width: "100%",
-          height: "125%",
+          height: "100%",
+          transform: "translate(-50%, -50%) scale(1.36)",
+          transformOrigin: "center center",
           pointerEvents: "none",
+          overflow: "hidden",
         }}
       >
         <div
           ref={ytPlayerContainerRef}
+          className="math-video-yt-frame"
           style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
             width: "100%",
             height: "100%",
             pointerEvents: "none",
@@ -534,6 +544,32 @@ export default function MathVideoPlayer({
               Initialisation du lecteur sécurisé...
             </span>
           )}
+        </div>
+      )}
+
+      {/* Center Play Button on Pause */}
+      {!isPlaying && !isLoading && !isBuffering && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 5,
+            width: 72,
+            height: 72,
+            borderRadius: "50%",
+            background: "rgba(67, 97, 238, 0.9)",
+            boxShadow: "0 8px 30px rgba(67, 97, 238, 0.5)",
+            display: "grid",
+            placeItems: "center",
+            color: "#ffffff",
+            cursor: "pointer",
+            pointerEvents: "none",
+            transition: "transform 0.2s ease, background 0.2s ease",
+          }}
+        >
+          <Play size={34} style={{ marginLeft: 4 }} />
         </div>
       )}
 
@@ -899,18 +935,6 @@ export default function MathVideoPlayer({
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes mathVideoSplash {
-          0% { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
-          40% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-          100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
-        }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

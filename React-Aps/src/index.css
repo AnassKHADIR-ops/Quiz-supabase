@@ -2335,3 +2335,41 @@ a:hover { text-decoration: underline; }
   animation: spin 1s linear infinite;
 }
 
+/* ════════════════════════════════════════
+   SECURE MATH VIDEO PLAYER
+   ════════════════════════════════════════ */
+.math-video-container {
+  position: relative;
+  width: 100%;
+  background: #000000;
+  overflow: hidden;
+  user-select: none;
+}
+
+.math-video-crop-wrapper {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 100% !important;
+  height: 100% !important;
+  transform: translate(-50%, -50%) scale(1.36) !important;
+  transform-origin: center center !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+}
+
+.math-video-crop-wrapper iframe,
+.math-video-yt-frame iframe,
+.math-video-container iframe,
+iframe[id^="widget"] {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  border: 0 !important;
+  pointer-events: none !important;
+}
+
