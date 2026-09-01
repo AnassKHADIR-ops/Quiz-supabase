@@ -208,6 +208,7 @@ export default function MathVideoPlayer({
             modestbranding: 1,
             rel: 0,
             iv_load_policy: 3, // Disable annotations
+            cc_load_policy: 0, // Force subtitles / captions OFF
             disablekb: 1, // Disable YouTube internal keyboard handlers
             fs: 0, // Disable YouTube native fullscreen button
             playsinline: 1,
@@ -221,6 +222,21 @@ export default function MathVideoPlayer({
               const dur = event.target.getDuration();
               if (dur) setDuration(dur);
 
+              // Explicitly disable subtitles / captions track
+              try {
+                if (typeof event.target.unloadModule === "function") {
+                  event.target.unloadModule("captions");
+                  event.target.unloadModule("cc");
+                }
+                if (typeof event.target.setOption === "function") {
+                  event.target.setOption("captions", "track", {});
+                  event.target.setOption("cc", "track", {});
+                  event.target.setOption("captions", "reload", false);
+                }
+              } catch {
+                // ignore
+              }
+
               if (autoPlay) {
                 try {
                   event.target.playVideo();
@@ -233,6 +249,17 @@ export default function MathVideoPlayer({
               if (!isMounted) return;
               const state = event.data;
               if (state === YT.PlayerState.PLAYING) {
+                // Ensure captions stay off once playback starts
+                try {
+                  if (typeof event.target.unloadModule === "function") {
+                    event.target.unloadModule("captions");
+                    event.target.unloadModule("cc");
+                  }
+                  if (typeof event.target.setOption === "function") {
+                    event.target.setOption("captions", "track", {});
+                    event.target.setOption("cc", "track", {});
+                  }
+                } catch {}
                 setIsPlaying(true);
                 setIsBuffering(false);
                 setIsLoading(false);

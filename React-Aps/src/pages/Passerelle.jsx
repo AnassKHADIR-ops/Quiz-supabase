@@ -875,7 +875,7 @@ function Passerelle() {
         {/* Live Sync Status Pill */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
-            onClick={() => refreshSync()}
+            onClick={() => refreshSync(null, true)}
             disabled={isSyncing}
             className="btn btn-secondary btn-sm"
             style={{

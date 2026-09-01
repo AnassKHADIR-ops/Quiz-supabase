@@ -105,7 +105,7 @@ export function getEmbedUrl(url, type = "pdf") {
   // 1. YouTube to Embed URL
   const ytId = extractYouTubeId(str);
   if (ytId) {
-    return `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&controls=1&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=0`;
+    return `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&controls=1&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=0&cc_load_policy=0`;
   }
 
   // 2. Google Drive to Preview URL

@@ -10,11 +10,11 @@ export function usePasserelleSync(wpUrl = null) {
   const [syncError, setSyncError] = useState(null);
 
   const refreshSync = useCallback(
-    async (customUrl = null) => {
+    async (customUrl = null, force = true) => {
       setIsSyncing(true);
       setSyncError(null);
 
-      const result = await syncPasserelleFromWordPress(customUrl || wpUrl);
+      const result = await syncPasserelleFromWordPress(customUrl || wpUrl, force);
 
       if (result.success && result.filieres) {
         setData((prev) => ({
@@ -35,7 +35,7 @@ export function usePasserelleSync(wpUrl = null) {
 
   // Background auto-sync on mount
   useEffect(() => {
-    refreshSync();
+    refreshSync(null, false);
   }, [refreshSync]);
 
   return {

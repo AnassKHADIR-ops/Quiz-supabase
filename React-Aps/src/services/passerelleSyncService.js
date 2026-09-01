@@ -293,51 +293,55 @@ export function normalizeLiveFilieres(filieres) {
 export function parsePasserellePayload(payloadText) {
   if (!payloadText || typeof payloadText !== "string") return null;
 
-  const decoded = decodeHtmlEntities(payloadText);
-  const trimmed = decoded.trim();
+  const trimmed = payloadText.trim();
 
-  // 1. Direct JSON array / object
+  // 1. Direct JSON array / object (Parse WITHOUT pre-decoding HTML entities on raw JSON)
   if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
     try {
       const parsed = JSON.parse(trimmed);
       if (Array.isArray(parsed)) {
-        if (parsed.length > 0 && parsed[0].content?.rendered) {
+        if (parsed.length > 0 && parsed[0]?.content?.rendered) {
           return parsePasserellePayload(parsed[0].content.rendered);
         }
-        return parsed;
+        // Direct array of filières
+        if (parsed.length > 0 && (parsed[0].nom || parsed[0].chapitres || parsed[0].id)) {
+          return parsed;
+        }
       }
       if (parsed && Array.isArray(parsed.filieres)) return parsed.filieres;
       if (parsed && Array.isArray(parsed.data)) return parsed.data;
       if (parsed && parsed.content?.rendered) {
         return parsePasserellePayload(parsed.content.rendered);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn("[PasserelleSync] Direct JSON parse attempt failed, trying extraction:", e.message);
+    }
   }
 
   // 2. Extract `FILIERES` JavaScript variable (Primary WordPress Elementor format)
-  const rawFILIERES = extractJsVariable(decoded, "FILIERES");
+  const rawFILIERES = extractJsVariable(payloadText, "FILIERES");
   if (rawFILIERES && Array.isArray(rawFILIERES) && rawFILIERES.length > 0) {
     return rawFILIERES;
   }
 
   // 3. Extract `DATA` or `PASSERELLE_DATA`
-  const rawDATA = extractJsVariable(decoded, "DATA");
+  const rawDATA = extractJsVariable(payloadText, "DATA");
   if (rawDATA) {
     if (Array.isArray(rawDATA)) return rawDATA;
     if (Array.isArray(rawDATA.filieres)) return rawDATA.filieres;
   }
 
-  const rawPASSERELLE = extractJsVariable(decoded, "PASSERELLE_DATA");
+  const rawPASSERELLE = extractJsVariable(payloadText, "PASSERELLE_DATA");
   if (rawPASSERELLE) {
     if (Array.isArray(rawPASSERELLE)) return rawPASSERELLE;
     if (Array.isArray(rawPASSERELLE.filieres)) return rawPASSERELLE.filieres;
   }
 
-  // 4. Extract <script id="passerelle-data" type="application/json">
+  // 4. Extract <script id="passerelle-data" type="application/json"> via DOMParser
   if (typeof DOMParser !== "undefined") {
     try {
       const parser = new DOMParser();
-      const doc = parser.parseFromString(decoded, "text/html");
+      const doc = parser.parseFromString(payloadText, "text/html");
       const scriptTag = doc.getElementById("passerelle-data");
 
       if (scriptTag && scriptTag.textContent) {
@@ -350,7 +354,7 @@ export function parsePasserellePayload(payloadText) {
 
   // 5. Fallback regex match for <script id="passerelle-data"...>
   try {
-    const match = decoded.match(/<script[^>]*id=["']passerelle-data["'][^>]*>([\s\S]*?)<\/script>/i);
+    const match = payloadText.match(/<script[^>]*id=["']passerelle-data["'][^>]*>([\s\S]*?)<\/script>/i);
     if (match && match[1]) {
       const parsed = JSON.parse(match[1].trim());
       if (Array.isArray(parsed)) return parsed;
@@ -420,9 +424,9 @@ export async function syncPasserelleFromWordPress(customUrl = null, force = true
   const candidateUrls = customUrl
     ? [customUrl]
     : [
-        `${cleanBaseUrl}/edu/v1/passerelle?_t=${timestamp}&_nonce=${nonce}`,
         `${cleanBaseUrl}/wp/v2/pages?slug=transition-sup-spe&status=publish&_fields=id,slug,title,content.rendered&_t=${timestamp}&_nocache=${nonce}`,
         `${cleanBaseUrl}/wp/v2/pages/4368?_fields=id,slug,title,content.rendered&_t=${timestamp}&_nocache=${nonce}`,
+        `${cleanBaseUrl}/edu/v1/passerelle?_t=${timestamp}&_nonce=${nonce}`,
         `https://anasskhadir.com/transition-sup-spe/?_t=${timestamp}&_nocache=${nonce}`,
       ];
 
@@ -465,9 +469,10 @@ export async function syncPasserelleFromWordPress(customUrl = null, force = true
           (acc, f) => acc + (f.chapitres || []).reduce((sAcc, c) => sAcc + (c.seances?.length || 0), 0),
           0
         );
+        const totalLivres = normalizedFilieres.reduce((acc, f) => acc + (f.livres?.length || 0), 0);
 
         console.info(
-          `[PasserelleSync] ✅ Live WordPress data successfully parsed from ${url} (${normalizedFilieres.length} filières, ${totalChapitres} chapitres, ${totalItems} fiches/exercices, ${totalSeances} séances).`
+          `[PasserelleSync] ✅ Live WordPress data successfully parsed from ${url} (${normalizedFilieres.length} filières, ${totalChapitres} chapitres, ${totalItems} fiches/exercices, ${totalSeances} séances, ${totalLivres} livres).`
         );
 
         return {
