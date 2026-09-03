@@ -532,7 +532,7 @@ function CourseExerciseLine({ item, index, chapTitre, onOpenPdf, onOpenCorrectio
 }
 
 function Courses() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -782,48 +782,52 @@ function Courses() {
                 <Sparkles size={14} /> PROGRAMME MATHÉMATIQUES CPGE • ESPACE MEMBRE ACTIF
               </div>
 
-              {isLive && (
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    background: "rgba(16, 185, 129, 0.1)",
-                    color: "#059669",
-                    padding: "4px 12px",
-                    borderRadius: 99,
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    border: "1px solid rgba(16, 185, 129, 0.25)",
-                  }}
-                  title={lastSynced ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}` : "Données synchronisées"}
-                >
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981" }} />
-                  Synchronisé avec WordPress
-                </div>
-              )}
+              {isAdmin && (
+                <>
+                  {isLive && (
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        background: "rgba(16, 185, 129, 0.1)",
+                        color: "#059669",
+                        padding: "4px 12px",
+                        borderRadius: 99,
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        border: "1px solid rgba(16, 185, 129, 0.25)",
+                      }}
+                      title={lastSynced ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}` : "Données synchronisées"}
+                    >
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981" }} />
+                      Synchronisé avec WordPress
+                    </div>
+                  )}
 
-              <button
-                onClick={() => refreshSync()}
-                disabled={isSyncing}
-                title="Recharger les données depuis WordPress"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5,
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 99,
-                  padding: "4px 10px",
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  color: "var(--text-muted)",
-                  cursor: isSyncing ? "wait" : "pointer",
-                }}
-              >
-                <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
-                {isSyncing ? "Synchronisation..." : "Actualiser"}
-              </button>
+                  <button
+                    onClick={() => refreshSync()}
+                    disabled={isSyncing}
+                    title="Recharger les données depuis WordPress"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 99,
+                      padding: "4px 10px",
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      color: "var(--text-muted)",
+                      cursor: isSyncing ? "wait" : "pointer",
+                    }}
+                  >
+                    <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
+                    {isSyncing ? "Synchronisation..." : "Actualiser"}
+                  </button>
+                </>
+              )}
             </div>
             <h1 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.4rem)", fontWeight: 800, margin: "0 0 8px" }}>
               {yearData.titre}

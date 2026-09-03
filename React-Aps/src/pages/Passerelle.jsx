@@ -642,7 +642,7 @@ function PDFPreviewModal({ title, url, onClose }) {
 }
 
 function Passerelle() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -872,29 +872,31 @@ function Passerelle() {
           </button>
         </div>
 
-        {/* Live Sync Status Pill */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button
-            onClick={() => refreshSync(null, true)}
-            disabled={isSyncing}
-            className="btn btn-secondary btn-sm"
-            style={{
-              fontSize: "0.78rem",
-              borderRadius: 20,
-              padding: "4px 12px",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              background: "var(--tss-carte-subtle)",
-              borderColor: "var(--tss-bordure)",
-              color: "var(--tss-encre-douce)",
-            }}
-            title="Synchroniser les données avec le site WordPress"
-          >
-            <RefreshCw size={13} style={{ animation: isSyncing ? "spin 0.8s linear infinite" : "none" }} />
-            <span>{isSyncing ? "Synchronisation..." : isLive ? "🟢 En direct (WordPress)" : "Synchroniser"}</span>
-          </button>
-        </div>
+        {/* Live Sync Status Pill (Visible only for Administrator) */}
+        {isAdmin && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              onClick={() => refreshSync(null, true)}
+              disabled={isSyncing}
+              className="btn btn-secondary btn-sm"
+              style={{
+                fontSize: "0.78rem",
+                borderRadius: 20,
+                padding: "4px 12px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: "var(--tss-carte-subtle)",
+                borderColor: "var(--tss-bordure)",
+                color: "var(--tss-encre-douce)",
+              }}
+              title="Synchroniser les données avec le site WordPress"
+            >
+              <RefreshCw size={13} style={{ animation: isSyncing ? "spin 0.8s linear infinite" : "none" }} />
+              <span>{isSyncing ? "Synchronisation..." : isLive ? "🟢 En direct (WordPress)" : "Synchroniser"}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Hero Header ── */}
