@@ -532,7 +532,7 @@ function CourseExerciseLine({ item, index, chapTitre, onOpenPdf, onOpenCorrectio
 }
 
 function Courses() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isApproved } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -582,7 +582,7 @@ function Courses() {
     const titleParam = searchParams.get("title");
 
     if (videoUrlParam) {
-      if (!user) {
+      if (!isApproved) {
         setAuthGateData({
           contentType: "video",
           title: titleParam || "Séance de cours (Replay)",
@@ -598,7 +598,7 @@ function Courses() {
     }
 
     if (corrUrlParam) {
-      if (!user) {
+      if (!isApproved) {
         setAuthGateData({
           contentType: "correction",
           title: titleParam || "Correction détaillée PDF",
@@ -617,7 +617,15 @@ function Courses() {
     } else {
       setPdfModalData(null);
     }
-  }, [searchParams, curriculum, selectedYear, user]);
+  }, [searchParams, curriculum, selectedYear, isApproved]);
+
+  // Immediately close any open video or correction modal if access is revoked or unapproved
+  useEffect(() => {
+    if (!isApproved) {
+      setSelectedVideoModal(null);
+      setPdfModalData(null);
+    }
+  }, [isApproved]);
 
   // If year changes, ensure valid branch
   useEffect(() => {
@@ -683,7 +691,7 @@ function Courses() {
 
   const openVideo = (url, titre) => {
     if (!url) return;
-    if (!user) {
+    if (!isApproved) {
       setAuthGateData({
         contentType: "video",
         title: titre || "Séance de cours (Replay)",
@@ -710,7 +718,7 @@ function Courses() {
 
   const openCorrection = (url, title) => {
     if (!url) return;
-    if (!user) {
+    if (!isApproved) {
       setAuthGateData({
         contentType: "correction",
         title: title || "Correction détaillée PDF",

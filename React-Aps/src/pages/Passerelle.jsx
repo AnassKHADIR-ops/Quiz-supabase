@@ -642,7 +642,7 @@ function PDFPreviewModal({ title, url, onClose }) {
 }
 
 function Passerelle() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isApproved } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -688,7 +688,7 @@ function Passerelle() {
     const viewParam = searchParams.get("view");
 
     if (videoUrlParam) {
-      if (!user) {
+      if (!isApproved) {
         setAuthGateData({
           contentType: "video",
           title: titleParam || "Vidéo d'explication",
@@ -704,7 +704,7 @@ function Passerelle() {
     }
 
     if (corrUrlParam) {
-      if (!user) {
+      if (!isApproved) {
         setAuthGateData({
           contentType: "correction",
           title: titleParam || "Correction détaillée PDF",
@@ -753,7 +753,7 @@ function Passerelle() {
             }
           }
           if (targetVideo) {
-            if (!user) {
+            if (!isApproved) {
               setAuthGateData({
                 contentType: "video",
                 title: targetTitle || "Vidéo d'explication",
@@ -768,7 +768,15 @@ function Passerelle() {
         }
       }
     }
-  }, [searchParams, passerelleData, filiere, user]);
+  }, [searchParams, passerelleData, filiere, isApproved]);
+
+  // Immediately close any open video or correction modal if access is revoked or unapproved
+  useEffect(() => {
+    if (!isApproved) {
+      setVideoModalData(null);
+      setPdfModalData(null);
+    }
+  }, [isApproved]);
 
   const handleSelectFiliere = (fId) => {
     setActiveFiliereId(fId);
@@ -788,7 +796,7 @@ function Passerelle() {
 
   const openVideo = (url, titre) => {
     if (!url) return;
-    if (!user) {
+    if (!isApproved) {
       setAuthGateData({
         contentType: "video",
         title: titre || "Vidéo d'explication",
@@ -816,7 +824,7 @@ function Passerelle() {
 
   const openCorrection = (url, title) => {
     if (!url) return;
-    if (!user) {
+    if (!isApproved) {
       setAuthGateData({
         contentType: "correction",
         title: title || "Correction détaillée PDF",

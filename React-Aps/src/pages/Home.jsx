@@ -22,8 +22,10 @@ import {
   ArrowRight,
   ChevronRight,
   ShieldCheck,
+  ShieldAlert,
   Video
 } from "../components/Icon.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 function driveFileId(url) {
   if (!url) return null;
@@ -70,6 +72,7 @@ function DocumentPreview({ doc, onClose }) {
 }
 
 function Home() {
+  const { user, isRevoked, isPending, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -273,6 +276,116 @@ function Home() {
             : "Choisissez votre cursus pour accéder aux cours complets, fiches, vidéos et annales corrigées"}
         </p>
       </div>
+
+      {/* ── Status Alert Banner (Revoked or Pending) ── */}
+      {isRevoked && (
+        <div
+          className="fade-up"
+          style={{
+            background: "rgba(220, 38, 38, 0.08)",
+            border: "1px solid rgba(220, 38, 38, 0.25)",
+            borderRadius: 16,
+            padding: "16px 20px",
+            marginBottom: 24,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 14,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: "rgba(220, 38, 38, 0.15)",
+                color: "var(--danger)",
+                display: "grid",
+                placeItems: "center",
+                flexShrink: 0,
+              }}
+            >
+              <ShieldAlert size={24} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, color: "var(--danger)", fontSize: "0.95rem" }}>
+                Accès Révoqué par l'Administrateur
+              </div>
+              <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.4 }}>
+                Votre accès aux cours privés, vidéos et QCM est actuellement suspendu. Veuillez contacter l'administrateur.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={logout}
+            className="btn btn-secondary btn-sm"
+            style={{ borderRadius: 10, fontWeight: 700 }}
+          >
+            Se déconnecter
+          </button>
+        </div>
+      )}
+
+      {isPending && (
+        <div
+          className="fade-up"
+          style={{
+            background: "rgba(245, 158, 11, 0.08)",
+            border: "1px solid rgba(245, 158, 11, 0.25)",
+            borderRadius: 16,
+            padding: "16px 20px",
+            marginBottom: 24,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 14,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: "rgba(245, 158, 11, 0.15)",
+                color: "#d97706",
+                display: "grid",
+                placeItems: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Clock size={24} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, color: "#b45309", fontSize: "0.95rem" }}>
+                Inscription en Attente de Validation
+              </div>
+              <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.4 }}>
+                Votre demande est en cours d'examen par le professeur. L'accès complet sera débloqué dès approbation.
+              </p>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={refreshUser}
+              className="btn btn-primary btn-sm"
+              style={{ borderRadius: 10, fontWeight: 700 }}
+            >
+              Actualiser statut
+            </button>
+            <button
+              onClick={logout}
+              className="btn btn-secondary btn-sm"
+              style={{ borderRadius: 10 }}
+            >
+              Se déconnecter
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Search Bar ── */}
       <div

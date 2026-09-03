@@ -77,7 +77,7 @@ function AKLogo({ size = 40 }) {
 }
 
 function Navbar() {
-  const { user, isStaff, logout } = useAuth();
+  const { user, isStaff, isRevoked, isPending, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [dark, toggleTheme] = useTheme();
@@ -149,6 +149,16 @@ function Navbar() {
               <span className="nav-username" style={{ fontWeight: 500, color: "var(--text)", fontSize: "0.875rem" }}>
                 {user.name?.split(" ")[0] || user.email}
               </span>
+              {isRevoked && (
+                <span className="badge badge-danger" style={{ fontSize: "0.7rem", padding: "2px 8px" }}>
+                  Accès Révoqué
+                </span>
+              )}
+              {isPending && (
+                <span className="badge badge-warning" style={{ fontSize: "0.7rem", padding: "2px 8px" }}>
+                  En attente
+                </span>
+              )}
               <button
                 onClick={handleLogout}
                 className="btn btn-secondary btn-sm"
@@ -253,7 +263,11 @@ function Navbar() {
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div className="avatar" style={{ width: 34, height: 34, fontSize: "0.85rem" }}>{initials}</div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text)" }}>{user.name || "Étudiant"}</div>
+                  <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text)", display: "flex", alignItems: "center", gap: 6 }}>
+                    {user.name || "Étudiant"}
+                    {isRevoked && <span className="badge badge-danger" style={{ fontSize: "0.68rem" }}>Révoqué</span>}
+                    {isPending && <span className="badge badge-warning" style={{ fontSize: "0.68rem" }}>En attente</span>}
+                  </div>
                   <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{user.email}</div>
                 </div>
               </div>

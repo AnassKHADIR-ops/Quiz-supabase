@@ -103,6 +103,63 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  // Real-time synchronization of user status changes from database (e.g. administrator revoking/approving access)
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`profile-status-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new) {
+            setUser((prev) => {
+              if (!prev) return prev;
+              const updated = {
+                ...prev,
+                name: payload.new.full_name || prev.name,
+                email: payload.new.email || prev.email,
+                role: payload.new.role || prev.role,
+                status: payload.new.status || prev.status,
+                approved_at: payload.new.approved_at,
+                revoked_at: payload.new.revoked_at,
+              };
+              setCachedUser(updated);
+              return updated;
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // Revalidate whenever the user returns to the tab/window
+    const handleRevalidate = () => {
+      if (document.visibilityState === "visible" && user?.id) {
+        authApi.me().then((data) => {
+          if (data?.user) {
+            setUser(data.user);
+            setCachedUser(data.user);
+          }
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener("focus", handleRevalidate);
+    document.addEventListener("visibilitychange", handleRevalidate);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener("focus", handleRevalidate);
+      document.removeEventListener("visibilitychange", handleRevalidate);
+    };
+  }, [user?.id]);
+
   const refreshUser = async () => {
     try {
       const data = await authApi.me();
