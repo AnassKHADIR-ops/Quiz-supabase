@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { X, PlayCircle, Download, FileText, CheckCircle, Zap, ShieldCheck } from "./Icon.jsx";
 import MathVideoPlayer from "./MathVideoPlayer.jsx";
-import { getEmbedUrl, extractDriveFileId, extractYouTubeId } from "../utils/driveUtils.js";
+import { getEmbedUrl } from "../utils/driveUtils.js";
 
 function SecureVideoModal({ chapter, videoUrl, title, onClose }) {
+  const [isControlsVisible, setIsControlsVisible] = useState(true);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") onClose();
@@ -15,31 +17,30 @@ function SecureVideoModal({ chapter, videoUrl, title, onClose }) {
 
   const rawUrl = videoUrl || (chapter && (chapter.video_url || chapter.video || chapter.v || chapter.vid || chapter.video_id)) || "";
   const displayTitle = title || (chapter && (chapter.titre || chapter.t)) || "Séance & Replay Vidéo";
-  const embedUrl = getEmbedUrl(rawUrl, "video");
-  const hasEmbed = embedUrl && embedUrl !== "about:blank";
+  const hasResources = Boolean(chapter?.pdf || chapter?.exo || chapter?.corr || chapter?.qcm_id);
 
   return (
-    <div className="modal-backdrop" onMouseDown={onClose} style={{ zIndex: 1000 }}>
+    <div className="video-modal-backdrop" onMouseDown={onClose} style={{ zIndex: 1000 }}>
       <div
-        className="document-preview-modal video-player-modal"
+        className={`video-player-modal ${!isControlsVisible ? "controls-hidden" : ""}`}
         onMouseDown={(e) => e.stopPropagation()}
         style={{
-          maxWidth: 960,
-          width: "95vw",
-          maxHeight: "92vh",
+          width: "min(96vw, 980px)",
+          height: "auto",
+          maxHeight: "94vh",
           display: "flex",
           flexDirection: "column",
           borderRadius: 18,
           overflow: "hidden",
           background: "var(--card-bg, #ffffff)",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
+          boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.45)",
         }}
       >
         {/* Header */}
         <div
           className="document-preview-head"
           style={{
-            padding: "16px 22px",
+            padding: "14px 20px",
             borderBottom: "1px solid var(--border)",
             display: "flex",
             alignItems: "center",
@@ -47,27 +48,28 @@ function SecureVideoModal({ chapter, videoUrl, title, onClose }) {
             background: "var(--bg-subtle, #f8fafc)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
             <div
               style={{
-                width: 38,
-                height: 38,
+                width: 36,
+                height: 36,
                 borderRadius: 10,
                 background: "linear-gradient(135deg, #ef4444, #dc2626)",
                 display: "grid",
                 placeItems: "center",
                 color: "white",
                 boxShadow: "0 4px 10px rgba(239, 68, 68, 0.3)",
+                flexShrink: 0,
               }}
             >
-              <PlayCircle size={22} />
+              <PlayCircle size={20} />
             </div>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 2 }}>
                 {chapter?.n || chapter?.id ? (
                   <span
                     style={{
-                      fontSize: "0.75rem",
+                      fontSize: "0.72rem",
                       fontWeight: 700,
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
@@ -82,33 +84,45 @@ function SecureVideoModal({ chapter, videoUrl, title, onClose }) {
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 4,
-                    fontSize: "0.72rem",
+                    fontSize: "0.7rem",
                     fontWeight: 600,
-                    padding: "2px 8px",
+                    padding: "1px 7px",
                     borderRadius: 99,
                     background: "rgba(16, 185, 129, 0.12)",
                     color: "#059669",
                   }}
                 >
-                  <ShieldCheck size={12} /> Espace Membre
+                  <ShieldCheck size={11} /> Espace Membre
                 </span>
               </div>
-              <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "var(--text)" }}>
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: "1.02rem",
+                  fontWeight: 700,
+                  color: "var(--text)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+                title={displayTitle}
+              >
                 {displayTitle}
               </h3>
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginLeft: 10 }}>
             {chapter?.video_duration && (
               <span
                 style={{
-                  fontSize: "0.8rem",
+                  fontSize: "0.78rem",
                   fontWeight: 600,
                   color: "var(--text-muted)",
                   background: "var(--bg-tag, rgba(0,0,0,0.05))",
-                  padding: "4px 10px",
+                  padding: "3px 8px",
                   borderRadius: 6,
+                  whiteSpace: "nowrap",
                 }}
               >
                 ⏱️ {chapter.video_duration}
@@ -117,18 +131,21 @@ function SecureVideoModal({ chapter, videoUrl, title, onClose }) {
             <button
               className="management-modal-close"
               onClick={onClose}
+              aria-label="Fermer"
               style={{
-                background: "transparent",
+                background: "var(--surface-3, rgba(0,0,0,0.05))",
                 border: "none",
                 cursor: "pointer",
                 padding: 6,
                 borderRadius: 8,
                 display: "grid",
                 placeItems: "center",
-                color: "var(--text-muted)",
+                color: "var(--text)",
+                width: 32,
+                height: 32,
               }}
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
@@ -138,21 +155,11 @@ function SecureVideoModal({ chapter, videoUrl, title, onClose }) {
           videoUrl={rawUrl}
           title={displayTitle}
           autoPlay={true}
+          onControlsVisibilityChange={setIsControlsVisible}
         />
 
         {/* Modal Footer / Quick Actions */}
-        <div
-          style={{
-            padding: "16px 22px",
-            background: "var(--card-bg, #ffffff)",
-            borderTop: "1px solid var(--border)",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 12,
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
+        <div className="video-modal-footer">
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             {chapter?.pdf && (
               <a
@@ -186,6 +193,11 @@ function SecureVideoModal({ chapter, videoUrl, title, onClose }) {
               >
                 <CheckCircle size={14} /> Correction PDF
               </a>
+            )}
+            {!hasResources && (
+              <span style={{ fontSize: "0.82rem", color: "var(--text-muted)", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                🎓 Séance de cours & révision mathématique
+              </span>
             )}
           </div>
 

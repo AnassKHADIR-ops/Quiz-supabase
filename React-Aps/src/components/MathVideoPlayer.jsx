@@ -77,12 +77,15 @@ export default function MathVideoPlayer({
   onEnded,
   className = "",
   autoPlay = true,
+  onControlsVisibilityChange,
 }) {
   const containerRef = useRef(null);
   const ytPlayerContainerRef = useRef(null);
   const playerRef = useRef(null);
   const timeUpdateTimerRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
+  const lastTouchTimeRef = useRef(0);
+  const singleTouchTimerRef = useRef(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isBuffering, setIsBuffering] = useState(false);
@@ -98,6 +101,7 @@ export default function MathVideoPlayer({
   const [showControls, setShowControls] = useState(true);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [splashAction, setSplashAction] = useState(null); // 'play' | 'pause' | 'seek-forward' | 'seek-backward'
+  const [seekSplash, setSeekSplash] = useState(null); // 'left' | 'right' | null
 
   const rawUrl = (typeof videoUrl === "string" ? videoUrl : "")?.trim();
   const ytId = extractYouTubeId(rawUrl);
@@ -115,6 +119,7 @@ export default function MathVideoPlayer({
   // Activity handler for auto-hiding controls
   const handleUserActivity = useCallback(() => {
     setShowControls(true);
+    onControlsVisibilityChange?.(true);
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
@@ -122,9 +127,10 @@ export default function MathVideoPlayer({
       controlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
         setShowSpeedMenu(false);
+        onControlsVisibilityChange?.(false);
       }, 2800);
     }
-  }, [isPlaying]);
+  }, [isPlaying, onControlsVisibilityChange]);
 
   // Fullscreen change listener
   useEffect(() => {
@@ -324,7 +330,19 @@ export default function MathVideoPlayer({
   const handleSeek = (e) => {
     if (!playerRef.current || !duration) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const pos = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const targetTime = pos * duration;
+    playerRef.current.seekTo(targetTime, true);
+    setCurrentTime(targetTime);
+  };
+
+  const handleTouchSeek = (e) => {
+    if (!playerRef.current || !duration) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pos = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
     const targetTime = pos * duration;
     playerRef.current.seekTo(targetTime, true);
     setCurrentTime(targetTime);
@@ -335,7 +353,10 @@ export default function MathVideoPlayer({
     const newTime = Math.max(0, Math.min(duration || 0, currentTime + delta));
     playerRef.current.seekTo(newTime, true);
     setCurrentTime(newTime);
-    triggerSplash(delta > 0 ? "seek-forward" : "seek-backward");
+    setSeekSplash(delta > 0 ? "right" : "left");
+    setTimeout(() => {
+      setSeekSplash(null);
+    }, 650);
   };
 
   const toggleMute = () => {
@@ -372,12 +393,38 @@ export default function MathVideoPlayer({
     }
   };
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = async () => {
     if (!containerRef.current) return;
-    if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
+    try {
+      if (!document.fullscreenElement) {
+        if (containerRef.current.requestFullscreen) {
+          await containerRef.current.requestFullscreen();
+        } else if (containerRef.current.webkitRequestFullscreen) {
+          await containerRef.current.webkitRequestFullscreen();
+        }
+        if (window.screen?.orientation?.lock) {
+          try {
+            await window.screen.orientation.lock("landscape");
+          } catch {
+            // Orientation lock unsupported or blocked - normal behavior
+          }
+        }
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          await document.webkitExitFullscreen();
+        }
+        if (window.screen?.orientation?.unlock) {
+          try {
+            window.screen.orientation.unlock();
+          } catch {
+            // Ignore
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Fullscreen toggle:", err);
     }
   };
 
@@ -524,19 +571,51 @@ export default function MathVideoPlayer({
         />
       </div>
 
-      {/* 🛡️ FULL-CANVAS CLICK INTERCEPTOR */}
+      {/* 🛡️ FULL-CANVAS CLICK & TOUCH INTERCEPTOR */}
       <div
         style={{
           position: "absolute",
           inset: 0,
           zIndex: 4,
           cursor: "pointer",
+          touchAction: "manipulation",
         }}
-        onClick={togglePlay}
+        onClick={(e) => {
+          handleUserActivity();
+        }}
         onDoubleClick={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           const isRight = e.clientX - rect.left > rect.width / 2;
           seekRelative(isRight ? 10 : -10);
+        }}
+        onTouchStart={(e) => {
+          const now = Date.now();
+          const touch = e.touches[0];
+          if (!touch) return;
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = touch.clientX - rect.left;
+          const width = rect.width;
+
+          if (now - lastTouchTimeRef.current < 320) {
+            // Double-tap detected on phone
+            if (singleTouchTimerRef.current) {
+              clearTimeout(singleTouchTimerRef.current);
+              singleTouchTimerRef.current = null;
+            }
+            lastTouchTimeRef.current = 0;
+            if (x < width * 0.42) {
+              seekRelative(-10);
+            } else if (x > width * 0.58) {
+              seekRelative(10);
+            } else {
+              togglePlay();
+            }
+          } else {
+            lastTouchTimeRef.current = now;
+            singleTouchTimerRef.current = setTimeout(() => {
+              handleUserActivity();
+            }, 300);
+          }
         }}
       />
 
@@ -599,7 +678,7 @@ export default function MathVideoPlayer({
         </div>
       )}
 
-      {/* Splash Center Action Feedback (Play / Pause / Seek) */}
+      {/* Splash Center Action Feedback (Play / Pause) */}
       {splashAction && (
         <div
           style={{
@@ -623,8 +702,20 @@ export default function MathVideoPlayer({
         >
           {splashAction === "play" && <Play size={32} style={{ marginLeft: 3 }} />}
           {splashAction === "pause" && <Pause size={32} />}
-          {splashAction === "seek-forward" && <RotateCw size={30} />}
-          {splashAction === "seek-backward" && <RotateCcw size={30} />}
+        </div>
+      )}
+
+      {/* Directional Ripple Indicators for 10s Seek */}
+      {seekSplash === "left" && (
+        <div className="math-video-ripple-indicator left">
+          <RotateCcw size={20} />
+          <span>-10s</span>
+        </div>
+      )}
+      {seekSplash === "right" && (
+        <div className="math-video-ripple-indicator right">
+          <span>+10s</span>
+          <RotateCw size={20} />
         </div>
       )}
 
@@ -635,8 +726,8 @@ export default function MathVideoPlayer({
           top: 0,
           left: 0,
           right: 0,
-          padding: "14px 18px 24px",
-          background: "linear-gradient(to bottom, rgba(5, 8, 17, 0.96) 0%, rgba(5, 8, 17, 0.75) 60%, transparent 100%)",
+          padding: "12px 16px 20px",
+          background: "linear-gradient(to bottom, rgba(5, 8, 17, 0.95) 0%, rgba(5, 8, 17, 0.6) 65%, transparent 100%)",
           zIndex: 8,
           display: "flex",
           alignItems: "center",
@@ -646,30 +737,30 @@ export default function MathVideoPlayer({
           transition: "opacity 0.3s ease",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden", maxWidth: "90%" }}>
           <span
             style={{
               display: "inline-flex",
               alignItems: "center",
               gap: 5,
-              fontSize: "0.75rem",
+              fontSize: "0.72rem",
               fontWeight: 700,
-              padding: "3px 9px",
+              padding: "2px 8px",
               borderRadius: 6,
               background: "rgba(67, 97, 238, 0.25)",
-              border: "1px solid rgba(67, 97, 238, 0.5)",
+              border: "1px solid rgba(67, 97, 238, 0.4)",
               color: "#93c5fd",
               textTransform: "uppercase",
               letterSpacing: "0.04em",
               flexShrink: 0,
             }}
           >
-            <ShieldCheck size={13} /> AK-Math Player
+            <ShieldCheck size={12} /> AK-Math Player
           </span>
           <span
             style={{
               color: "#f8fafc",
-              fontSize: "0.95rem",
+              fontSize: "0.88rem",
               fontWeight: 600,
               whiteSpace: "nowrap",
               overflow: "hidden",
@@ -683,17 +774,18 @@ export default function MathVideoPlayer({
 
       {/* 🎛️ CUSTOM REACT CONTROLS BAR (100% Custom UI, Zero YouTube Elements) */}
       <div
+        className="math-video-controls-bar"
         style={{
           position: "absolute",
           bottom: 0,
           left: 0,
           right: 0,
-          padding: "24px 18px 12px",
+          padding: "20px 16px 12px",
           background: "linear-gradient(to top, rgba(5, 8, 17, 0.96) 0%, rgba(5, 8, 17, 0.85) 65%, transparent 100%)",
           zIndex: 8,
           display: "flex",
           flexDirection: "column",
-          gap: 8,
+          gap: 6,
           pointerEvents: showControls ? "auto" : "none",
           opacity: showControls ? 1 : 0,
           transition: "opacity 0.3s ease",
@@ -703,59 +795,69 @@ export default function MathVideoPlayer({
         {/* Timeline Scrubber / Progress Bar */}
         <div
           onClick={handleSeek}
+          onTouchStart={handleTouchSeek}
+          onTouchMove={handleTouchSeek}
           style={{
             position: "relative",
             width: "100%",
-            height: 6,
-            background: "rgba(255, 255, 255, 0.2)",
-            borderRadius: 99,
+            padding: "8px 0", // Generous touch target for fingers
             cursor: "pointer",
-            transition: "height 0.15s ease",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.height = "9px")}
-          onMouseLeave={(e) => (e.currentTarget.style.height = "6px")}
         >
-          {/* Buffered Progress */}
           <div
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              bottom: 0,
-              width: `${bufferedPercent}%`,
-              background: "rgba(255, 255, 255, 0.35)",
+              position: "relative",
+              width: "100%",
+              height: 6,
+              background: "rgba(255, 255, 255, 0.2)",
               borderRadius: 99,
-              pointerEvents: "none",
+              transition: "height 0.15s ease",
             }}
-          />
-          {/* Played Progress */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              bottom: 0,
-              width: `${progressPercent}%`,
-              background: "linear-gradient(90deg, #4361ee, #60a5fa)",
-              borderRadius: 99,
-              pointerEvents: "none",
-            }}
-          />
-          {/* Scrubber Handle */}
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: `${progressPercent}%`,
-              transform: "translate(-50%, -50%)",
-              width: 13,
-              height: 13,
-              borderRadius: "50%",
-              background: "#ffffff",
-              boxShadow: "0 0 8px rgba(0,0,0,0.5)",
-              pointerEvents: "none",
-            }}
-          />
+            onMouseEnter={(e) => (e.currentTarget.style.height = "8px")}
+            onMouseLeave={(e) => (e.currentTarget.style.height = "6px")}
+          >
+            {/* Buffered Progress */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                bottom: 0,
+                width: `${bufferedPercent}%`,
+                background: "rgba(255, 255, 255, 0.35)",
+                borderRadius: 99,
+                pointerEvents: "none",
+              }}
+            />
+            {/* Played Progress */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                bottom: 0,
+                width: `${progressPercent}%`,
+                background: "linear-gradient(90deg, #4361ee, #60a5fa)",
+                borderRadius: 99,
+                pointerEvents: "none",
+              }}
+            />
+            {/* Scrubber Handle */}
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: `${progressPercent}%`,
+                transform: "translate(-50%, -50%)",
+                width: 13,
+                height: 13,
+                borderRadius: "50%",
+                background: "#ffffff",
+                boxShadow: "0 0 8px rgba(0,0,0,0.5)",
+                pointerEvents: "none",
+              }}
+            />
+          </div>
         </div>
 
         {/* Buttons & Indicators */}
@@ -769,7 +871,7 @@ export default function MathVideoPlayer({
           }}
         >
           {/* Left Actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "nowrap" }}>
             {/* Play/Pause Button */}
             <button
               type="button"
@@ -784,6 +886,7 @@ export default function MathVideoPlayer({
                 display: "grid",
                 placeItems: "center",
                 borderRadius: 6,
+                flexShrink: 0,
               }}
             >
               {isPlaying ? <Pause size={20} /> : <Play size={20} style={{ marginLeft: 2 }} />}
@@ -792,6 +895,7 @@ export default function MathVideoPlayer({
             {/* Rewind 10s */}
             <button
               type="button"
+              className="math-video-seek-btn"
               onClick={() => seekRelative(-10)}
               title="Reculer de 10s"
               style={{
@@ -799,12 +903,13 @@ export default function MathVideoPlayer({
                 border: "none",
                 color: "#cbd5e1",
                 cursor: "pointer",
-                padding: 4,
+                padding: "4px 6px",
                 display: "flex",
                 alignItems: "center",
                 gap: 2,
                 fontSize: "0.75rem",
                 fontWeight: 600,
+                flexShrink: 0,
               }}
             >
               <RotateCcw size={16} /> 10s
@@ -813,6 +918,7 @@ export default function MathVideoPlayer({
             {/* Forward 10s */}
             <button
               type="button"
+              className="math-video-seek-btn"
               onClick={() => seekRelative(10)}
               title="Avancer de 10s"
               style={{
@@ -820,19 +926,20 @@ export default function MathVideoPlayer({
                 border: "none",
                 color: "#cbd5e1",
                 cursor: "pointer",
-                padding: 4,
+                padding: "4px 6px",
                 display: "flex",
                 alignItems: "center",
                 gap: 2,
                 fontSize: "0.75rem",
                 fontWeight: 600,
+                flexShrink: 0,
               }}
             >
               <RotateCw size={16} /> 10s
             </button>
 
             {/* Volume Control */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
               <button
                 type="button"
                 onClick={toggleMute}
@@ -855,29 +962,31 @@ export default function MathVideoPlayer({
                   <Volume2 size={18} />
                 )}
               </button>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={isMuted ? 0 : volume}
-                onChange={handleVolumeChange}
-                style={{
-                  width: 65,
-                  height: 4,
-                  accentColor: "var(--primary, #4361ee)",
-                  cursor: "pointer",
-                }}
-              />
+              <div className="math-video-volume-slider">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={isMuted ? 0 : volume}
+                  onChange={handleVolumeChange}
+                  style={{
+                    width: 60,
+                    height: 4,
+                    accentColor: "var(--primary, #4361ee)",
+                    cursor: "pointer",
+                  }}
+                />
+              </div>
             </div>
 
             {/* Time Stamp */}
-            <span style={{ color: "#94a3b8", fontSize: "0.8rem", fontWeight: 500, marginLeft: 4 }}>
+            <span className="math-video-time-stamp" style={{ color: "#94a3b8", fontSize: "0.8rem", fontWeight: 500, marginLeft: 2, whiteSpace: "nowrap" }}>
               <strong style={{ color: "#f8fafc" }}>{formatTime(currentTime)}</strong> / {formatTime(duration)}
             </span>
           </div>
 
           {/* Right Actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, position: "relative", flexShrink: 0 }}>
             {/* Speed Selector Dropup */}
             <div style={{ position: "relative" }}>
               <button
@@ -889,10 +998,11 @@ export default function MathVideoPlayer({
                   border: playbackRate !== 1 ? "1px solid #4361ee" : "1px solid rgba(255, 255, 255, 0.2)",
                   color: "#ffffff",
                   cursor: "pointer",
-                  padding: "3px 8px",
+                  padding: "3px 7px",
                   borderRadius: 6,
                   fontSize: "0.78rem",
                   fontWeight: 600,
+                  whiteSpace: "nowrap",
                 }}
               >
                 {playbackRate}x
@@ -954,9 +1064,12 @@ export default function MathVideoPlayer({
                 display: "grid",
                 placeItems: "center",
                 borderRadius: 6,
+                minWidth: 28,
+                minHeight: 28,
+                flexShrink: 0,
               }}
             >
-              {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+              {isFullscreen ? <Minimize size={19} /> : <Maximize size={19} />}
             </button>
           </div>
         </div>
