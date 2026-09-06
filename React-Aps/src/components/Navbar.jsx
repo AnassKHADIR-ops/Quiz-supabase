@@ -128,6 +128,12 @@ function Navbar() {
           <Link to="/cours" className={`nav-link ${isActive("/cours") || isActive("/courses") || isActive("/cpge") ? "active" : ""}`}>
             Espace Cours
           </Link>
+          <Link
+            to="/concours-cpge"
+            className={`nav-link ${isActive("/concours-cpge") || isActive("/concours") ? "active" : ""}`}
+          >
+            Concours CPGE
+          </Link>
           {isStaff && (
             <Link to="/dashboard" className={`nav-link ${isActive("/dashboard") ? "active" : ""}`}>
               Tableau de bord
@@ -247,6 +253,14 @@ function Navbar() {
             style={{ padding: "10px 14px", borderRadius: 10, fontSize: "0.95rem" }}
           >
             📚 Espace Cours CPGE
+          </Link>
+          <Link
+            to="/concours-cpge"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`nav-link ${isActive("/concours-cpge") || isActive("/concours") ? "active" : ""}`}
+            style={{ padding: "10px 14px", borderRadius: 10, fontSize: "0.95rem" }}
+          >
+            🏆 Concours CPGE
           </Link>
 
           {isStaff && (

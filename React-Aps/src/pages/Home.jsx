@@ -868,6 +868,48 @@ function Home() {
                   <span className="badge badge-success">Accès Direct Post-Bac</span>
                 </div>
               </div>
+
+              {/* 4ème Sous-Carte : Concours CPGE */}
+              <div
+                className="card exam-card"
+                onClick={() => navigate("/concours-cpge")}
+                style={{
+                  cursor: "pointer",
+                  padding: "26px 22px",
+                  borderRadius: 18,
+                  border: "2px solid rgba(217, 161, 58, 0.4)",
+                  background: "linear-gradient(145deg, var(--surface) 0%, rgba(217, 161, 58, 0.08) 100%)",
+                  boxShadow: "0 6px 20px rgba(217, 161, 58, 0.1)",
+                  transition: "all 0.25s ease",
+                }}
+              >
+                <div
+                  className="exam-card-icon"
+                  style={{
+                    background: "rgba(217, 161, 58, 0.18)",
+                    color: "#b57809",
+                  }}
+                >
+                  <Award size={24} />
+                </div>
+                <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "12px 0 6px", color: "var(--text)" }}>
+                  Concours CPGE
+                </h3>
+                <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
+                  Annales officielles et corrigés détaillés MP, PSI, TSI : CNC, CCINP, Mines-Ponts, Centrale-Supélec, X-ENS, E3A avec vidéos solutions privées.
+                </p>
+                <div className="exam-card-meta" style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  <span className="badge badge-warning" style={{ fontWeight: 800 }}>
+                    Grandes Écoles d'Ingénieurs ⚡
+                  </span>
+                  <span className="badge" style={{ background: "rgba(217, 161, 58, 0.15)", color: "#b57809", fontWeight: 800 }}>
+                    1 000+ Annales & Corrigés
+                  </span>
+                  <span className="badge" style={{ background: "rgba(99, 102, 241, 0.12)", color: "#6366f1", fontWeight: 800 }}>
+                    Vidéos Solution 🔒
+                  </span>
+                </div>
+              </div>
             </div>
           )}
 
