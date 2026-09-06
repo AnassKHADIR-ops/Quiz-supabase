@@ -234,6 +234,13 @@ export default function ConcoursCpge() {
     setPdfModalData({ url, title: `${type} · ${title}` });
   };
 
+  // Guard against invalid payload shapes
+  const validConcoursList = useMemo(() => {
+    return (concoursList || []).filter(
+      (c) => c && typeof c === "object" && c.id && (Array.isArray(c.sujets) || c.titre)
+    );
+  }, [concoursList]);
+
   // Calculate statistics across all concours
   const stats = useMemo(() => {
     let sujetsCount = 0;
@@ -241,7 +248,7 @@ export default function ConcoursCpge() {
     let videosCount = 0;
     const filieresSet = new Set();
 
-    concoursList.forEach((c) => {
+    validConcoursList.forEach((c) => {
       (c.sujets || []).forEach((s) => {
         if (s.filiere) filieresSet.add(s.filiere);
         if (s.enonce) sujetsCount++;
@@ -251,21 +258,22 @@ export default function ConcoursCpge() {
     });
 
     return {
-      concoursCount: concoursList.length,
+      concoursCount: validConcoursList.length,
       filieresCount: filieresSet.size,
       sujetsCount,
       corrigesCount,
       videosCount,
     };
-  }, [concoursList]);
+  }, [validConcoursList]);
 
   // Filter concours blocks according to active tag
   const filteredConcours = useMemo(() => {
-    return concoursList.filter((c) => {
-      if (activeConcoursTag !== "all" && c.id !== activeConcoursTag) return false;
+    return validConcoursList.filter((c) => {
+      const cId = String(c.id || "").toLowerCase();
+      if (activeConcoursTag !== "all" && cId !== activeConcoursTag.toLowerCase()) return false;
       return true;
     });
-  }, [concoursList, activeConcoursTag]);
+  }, [validConcoursList, activeConcoursTag]);
 
   return (
     <div
@@ -542,13 +550,14 @@ export default function ConcoursCpge() {
             Tous les concours
           </button>
 
-          {concoursList.map((c) => {
-            const isActive = activeConcoursTag === c.id;
+          {validConcoursList.map((c) => {
+            const cId = String(c.id || "");
+            const isActive = activeConcoursTag === cId;
             return (
               <button
-                key={c.id}
+                key={cId}
                 type="button"
-                onClick={() => setActiveConcoursTag(c.id)}
+                onClick={() => setActiveConcoursTag(cId)}
                 style={{
                   padding: "8px 16px",
                   borderRadius: 30,
@@ -565,7 +574,7 @@ export default function ConcoursCpge() {
                 }}
               >
                 <span>{c.icon || "📄"}</span>
-                <span>{c.id.toUpperCase()}</span>
+                <span>{cId.toUpperCase()}</span>
               </button>
             );
           })}

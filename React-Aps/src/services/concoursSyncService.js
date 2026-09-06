@@ -99,22 +99,39 @@ export function extractJsVariable(htmlContent, varName) {
 
 export function parseConcoursPayload(rawPayload) {
   if (!rawPayload) return null;
-  if (Array.isArray(rawPayload)) return rawPayload;
-  if (typeof rawPayload === "object" && Array.isArray(rawPayload.CONCOURS)) {
-    return rawPayload.CONCOURS;
+
+  if (Array.isArray(rawPayload)) {
+    // If it's a valid array of concours blocks
+    if (rawPayload.length > 0 && (rawPayload[0]?.sujets || rawPayload[0]?.titre)) {
+      return rawPayload;
+    }
+    // If it's a WordPress REST API response: [{ id: ..., content: { rendered: ... } }]
+    if (rawPayload.length > 0 && rawPayload[0]?.content?.rendered) {
+      return parseConcoursPayload(rawPayload[0].content.rendered);
+    }
+    return null;
+  }
+
+  if (typeof rawPayload === "object") {
+    if (Array.isArray(rawPayload.CONCOURS)) return rawPayload.CONCOURS;
+    if (rawPayload.content?.rendered) {
+      return parseConcoursPayload(rawPayload.content.rendered);
+    }
   }
 
   if (typeof rawPayload === "string") {
     try {
       const parsed = JSON.parse(rawPayload);
-      if (Array.isArray(parsed)) return parsed;
-      if (parsed?.content?.rendered) {
-        return parseConcoursPayload(parsed.content.rendered);
+      if (parsed) {
+        const result = parseConcoursPayload(parsed);
+        if (result) return result;
       }
     } catch {}
 
     const extracted = extractJsVariable(rawPayload, "CONCOURS");
-    if (Array.isArray(extracted)) return extracted;
+    if (Array.isArray(extracted) && extracted.length > 0 && (extracted[0]?.sujets || extracted[0]?.titre)) {
+      return extracted;
+    }
   }
   return null;
 }
@@ -194,7 +211,7 @@ export function useConcoursSync() {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed?.concours) && parsed.concours.length > 0) {
+        if (Array.isArray(parsed?.concours) && parsed.concours.length > 0 && (parsed.concours[0]?.sujets || parsed.concours[0]?.titre)) {
           return parsed.concours;
         }
       }
