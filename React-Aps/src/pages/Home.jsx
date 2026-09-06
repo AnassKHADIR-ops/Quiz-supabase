@@ -678,7 +678,7 @@ function Home() {
                 {/* 1. Passerelle Bac → Prépa */}
                 <div
                   className="card exam-card"
-                  onClick={() => navigate("/cours")}
+                  onClick={() => navigate("/passerelle-bac-prepa")}
                   style={{
                     cursor: "pointer",
                     padding: "26px 22px",
@@ -694,10 +694,10 @@ function Home() {
                     Passerelle Bac → Prépa
                   </h3>
                   <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
-                    Méthodologie, rappels fondamentaux et entraînement pour réussir la transition du lycée vers la prépa.
+                    Annales officielles des concours (Al Zahrawi, LYDEX, LYMED), devoirs d'entraînement et vidéos corrigées.
                   </p>
                   <div style={{ marginTop: 14, fontWeight: 700, fontSize: "0.85rem", color: "var(--primary)" }}>
-                    Découvrir les modules ➔
+                    Ouvrir la Passerelle Bac ➔
                   </div>
                 </div>
 

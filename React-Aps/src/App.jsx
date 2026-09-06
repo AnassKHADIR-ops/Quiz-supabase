@@ -17,6 +17,7 @@ const QcmEditor = lazy(() => import("./pages/QcmEditor.jsx"));
 const ResultDetail = lazy(() => import("./pages/ResultDetail.jsx"));
 const Courses = lazy(() => import("./pages/Courses.jsx"));
 const Passerelle = lazy(() => import("./pages/Passerelle.jsx"));
+const PasserelleBac = lazy(() => import("./pages/PasserelleBac.jsx"));
 
 function PageLoader() {
   return (
@@ -53,6 +54,8 @@ function App() {
           <Route path="/courses" element={<Courses />} />
           <Route path="/cpge" element={<Courses />} />
           <Route path="/passerelle" element={<Passerelle />} />
+          <Route path="/passerelle-bac-prepa" element={<PasserelleBac />} />
+          <Route path="/passerelle-bac" element={<PasserelleBac />} />
           <Route
             path="/exam/:examId"
             element={

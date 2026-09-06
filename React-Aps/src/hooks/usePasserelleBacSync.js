@@ -1,51 +1,54 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  getInitialPasserelleData,
-  syncPasserelleFromWordPress,
-} from "../services/passerelleSyncService.js";
+  getInitialPasserelleBacData,
+  syncPasserelleBacFromWordPress,
+} from "../services/passerelleBacSyncService.js";
 
-const CACHE_KEY = "passerelle_live_data";
+const CACHE_KEY = "passerelle_bac_live_data";
 
-export function usePasserelleSync(wpUrl = null, pollIntervalMs = 10000) {
-  const [data, setData] = useState(() => getInitialPasserelleData());
+export function usePasserelleBacSync(wpUrl = null, pollIntervalMs = 10000) {
+  const [data, setData] = useState(() => getInitialPasserelleBacData());
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState(null);
   const inFlightRef = useRef(false);
   const fingerprintRef = useRef("");
 
-  if (!fingerprintRef.current && data?.filieres) {
-    fingerprintRef.current = JSON.stringify(data.filieres);
+  // Initialize fingerprint from initial data
+  if (!fingerprintRef.current && data?.themes) {
+    fingerprintRef.current = JSON.stringify(data.themes);
   }
 
   const refreshSync = useCallback(
     async (customUrl = null, force = false) => {
+      // Avoid overlapping requests unless explicitly forced
       if (inFlightRef.current && !force) return null;
       inFlightRef.current = true;
       setIsSyncing(true);
       setSyncError(null);
 
       try {
-        const result = await syncPasserelleFromWordPress(customUrl || wpUrl, force);
+        const result = await syncPasserelleBacFromWordPress(customUrl || wpUrl, force);
 
-        if (result.success && result.filieres) {
-          const newFingerprint = JSON.stringify(result.filieres);
+        if (result.success && result.themes) {
+          const newFingerprint = JSON.stringify(result.themes);
           if (newFingerprint !== fingerprintRef.current || force) {
             fingerprintRef.current = newFingerprint;
             setData((prev) => ({
               ...prev,
-              filieres: result.filieres,
+              categories: result.categories || prev.categories,
+              themes: result.themes,
               _isLive: true,
               _lastSynced: result.lastSynced,
             }));
-            console.info("[usePasserelleSync] ⚡ Live WordPress change detected and applied!");
+            console.info("[usePasserelleBacSync] ⚡ Live WordPress change detected and applied!");
           } else {
             setData((prev) => ({
               ...prev,
               _lastSynced: result.lastSynced,
             }));
           }
-        } else if (result.error) {
-          setSyncError(result.error);
+        } else if (result.reason) {
+          setSyncError(result.reason);
         }
         return result;
       } catch (err) {
@@ -78,17 +81,18 @@ export function usePasserelleSync(wpUrl = null, pollIntervalMs = 10000) {
       if (e.key === CACHE_KEY && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
-          if (parsed && Array.isArray(parsed.filieres)) {
-            const newFingerprint = JSON.stringify(parsed.filieres);
+          if (parsed && Array.isArray(parsed.themes)) {
+            const newFingerprint = JSON.stringify(parsed.themes);
             if (newFingerprint !== fingerprintRef.current) {
               fingerprintRef.current = newFingerprint;
               setData((prev) => ({
                 ...prev,
-                filieres: parsed.filieres,
+                categories: parsed.categories || prev.categories,
+                themes: parsed.themes,
                 _isLive: true,
                 _lastSynced: parsed.updatedAt || new Date().toISOString(),
               }));
-              console.info("[usePasserelleSync] 🔄 Synchronized from another active browser tab.");
+              console.info("[usePasserelleBacSync] 🔄 Synchronized from another active browser tab.");
             }
           }
         } catch (err) {}
@@ -118,7 +122,7 @@ export function usePasserelleSync(wpUrl = null, pollIntervalMs = 10000) {
   }, [refreshSync, pollIntervalMs]);
 
   return {
-    passerelleData: data,
+    passerelleBacData: data,
     isSyncing,
     isLive: Boolean(data._isLive),
     lastSynced: data._lastSynced,

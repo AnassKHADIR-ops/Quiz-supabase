@@ -116,8 +116,14 @@ function Navbar() {
           <Link to="/" className={`nav-link ${isActive("/") ? "active" : ""}`}>
             Portail & Concours
           </Link>
+          <Link
+            to="/passerelle-bac-prepa"
+            className={`nav-link ${isActive("/passerelle-bac-prepa") || isActive("/passerelle-bac") ? "active" : ""}`}
+          >
+            Bac→Prépa
+          </Link>
           <Link to="/passerelle" className={`nav-link ${isActive("/passerelle") ? "active" : ""}`}>
-            Passerelle Sup→Spé
+            Sup→Spé
           </Link>
           <Link to="/cours" className={`nav-link ${isActive("/cours") || isActive("/courses") || isActive("/cpge") ? "active" : ""}`}>
             Espace Cours
@@ -217,6 +223,14 @@ function Navbar() {
             style={{ padding: "10px 14px", borderRadius: 10, fontSize: "0.95rem" }}
           >
             🏛️ Portail & Concours
+          </Link>
+          <Link
+            to="/passerelle-bac-prepa"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`nav-link ${isActive("/passerelle-bac-prepa") || isActive("/passerelle-bac") ? "active" : ""}`}
+            style={{ padding: "10px 14px", borderRadius: 10, fontSize: "0.95rem" }}
+          >
+            🎓 Passerelle Bac → Prépa
           </Link>
           <Link
             to="/passerelle"

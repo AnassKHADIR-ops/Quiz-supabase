@@ -796,6 +796,11 @@ function Passerelle() {
 
   const openVideo = (url, titre) => {
     if (!url) return;
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("video", url);
+    if (titre) newParams.set("title", titre);
+    setSearchParams(newParams, { replace: false });
+
     if (!isApproved) {
       setAuthGateData({
         contentType: "video",
@@ -803,10 +808,6 @@ function Passerelle() {
       });
       return;
     }
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set("video", url);
-    if (titre) newParams.set("title", titre);
-    setSearchParams(newParams, { replace: false });
     setVideoModalData({
       titre: titre || "Vidéo d'explication",
       video_url: url,
@@ -824,6 +825,11 @@ function Passerelle() {
 
   const openCorrection = (url, title) => {
     if (!url) return;
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("corr", url);
+    if (title) newParams.set("title", title);
+    setSearchParams(newParams, { replace: false });
+
     if (!isApproved) {
       setAuthGateData({
         contentType: "correction",
@@ -831,10 +837,6 @@ function Passerelle() {
       });
       return;
     }
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set("corr", url);
-    if (title) newParams.set("title", title);
-    setSearchParams(newParams, { replace: false });
     setPdfModalData({ title, url });
   };
 

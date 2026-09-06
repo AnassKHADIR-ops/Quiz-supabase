@@ -4,10 +4,22 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { Clock, RefreshCw, AlertTriangle, Lock, ShieldAlert, CheckCircle } from "./Icon.jsx";
 
 function ProtectedRoute({ children, teacherOnly = false, adminOnly = false }) {
-  const { user, loading, isStaff, isPending, isRejected, isRevoked, logout, refreshUser } = useAuth();
+  const { user, loading, isStaff, isPending, isRejected, isRevoked, logout, refreshUser, reapplyAccess } = useAuth();
   const [checking, setChecking] = useState(false);
+  const [reapplying, setReapplying] = useState(false);
   const [notice, setNotice] = useState("");
   const location = useLocation();
+
+  const handleReapply = async () => {
+    setReapplying(true);
+    try {
+      await reapplyAccess();
+    } catch (err) {
+      alert(err.message || "Erreur lors de la demande d'accès.");
+    } finally {
+      setReapplying(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -154,7 +166,14 @@ function ProtectedRoute({ children, teacherOnly = false, adminOnly = false }) {
             <span className="badge badge-danger">Refusé</span>
           </div>
 
-          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <button
+              className="btn btn-primary"
+              onClick={handleReapply}
+              disabled={reapplying}
+            >
+              {reapplying ? "Demande en cours…" : "Demander à nouveau l'accès"}
+            </button>
             <button className="btn btn-secondary" onClick={logout}>
               Se déconnecter
             </button>
@@ -191,7 +210,14 @@ function ProtectedRoute({ children, teacherOnly = false, adminOnly = false }) {
             <span className="badge badge-danger">Accès suspendu</span>
           </div>
 
-          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <button
+              className="btn btn-primary"
+              onClick={handleReapply}
+              disabled={reapplying}
+            >
+              {reapplying ? "Demande en cours…" : "Demander à nouveau l'accès"}
+            </button>
             <button className="btn btn-secondary" onClick={logout}>
               Se déconnecter
             </button>

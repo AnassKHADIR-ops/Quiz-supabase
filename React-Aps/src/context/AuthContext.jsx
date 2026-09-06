@@ -196,6 +196,16 @@ export function AuthProvider({ children }) {
     await authApi.logout();
   };
 
+  const reapplyAccess = async () => {
+    try {
+      await authApi.reapplyAccess();
+      return await refreshUser();
+    } catch (err) {
+      console.error("Reapply access error:", err);
+      throw err;
+    }
+  };
+
   const isStaff = useMemo(() => user?.role === "teacher" || user?.role === "admin", [user]);
   const isTeacher = isStaff;
   const isAdmin = isStaff;
@@ -220,6 +230,7 @@ export function AuthProvider({ children }) {
         register,
         logout,
         refreshUser,
+        reapplyAccess,
       }}
     >
       {children}

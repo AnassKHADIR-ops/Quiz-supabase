@@ -63,8 +63,14 @@ export const authApi = {
       .eq("id", supabaseUser.id)
       .maybeSingle();
 
-    if (profileError) {
-      console.warn("Profiles fetch warning:", profileError.message);
+    // If profile is missing in the database, automatically self-heal and register request via RPC
+    if (!profile) {
+      try {
+        const healed = await rpc("request_user_access");
+        if (healed) profile = healed;
+      } catch (err) {
+        console.warn("Could not auto-create profile row:", err.message);
+      }
     }
 
     const resolvedUser = {
@@ -81,6 +87,7 @@ export const authApi = {
 
     return { user: resolvedUser };
   },
+  reapplyAccess: () => rpc("request_user_access"),
   async me() {
     if (inFlightMePromise) {
       return inFlightMePromise;
