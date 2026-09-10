@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MathText from "./MathText.jsx";
 import Results from "./Results.jsx";
@@ -139,7 +139,49 @@ function QuestionNavigator({ open, onClose, questions, current, answers, flagged
 /* ─────────────────────────────────────────
    Minuterie globale (anneau SVG)
 ───────────────────────────────────────── */
-function GlobalTimer({ secondsLeft, totalSeconds, mode = "exam" }) {
+const GlobalTimer = React.memo(function GlobalTimer({
+  startedAt,
+  totalSeconds,
+  mode = "exam",
+  active = true,
+  onExpire,
+}) {
+  const computeInitial = useCallback(() => {
+    if (!startedAt) return mode === "exam" ? totalSeconds : 0;
+    const el = Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000));
+    return mode === "exam" ? Math.max(0, totalSeconds - el) : el;
+  }, [startedAt, totalSeconds, mode]);
+
+  const [seconds, setSeconds] = useState(computeInitial);
+  const onExpireRef = useRef(onExpire);
+  onExpireRef.current = onExpire;
+
+  useEffect(() => {
+    setSeconds(computeInitial());
+  }, [computeInitial]);
+
+  useEffect(() => {
+    if (!active) return;
+
+    const interval = setInterval(() => {
+      setSeconds((prev) => {
+        if (mode === "practice") {
+          return prev + 1;
+        }
+        if (prev <= 1) {
+          clearInterval(interval);
+          if (onExpireRef.current) onExpireRef.current();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [active, mode]);
+
+  const secondsLeft = seconds;
+
   if (mode === "practice") {
     const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
     const ss = String(secondsLeft % 60).padStart(2, "0");
@@ -188,7 +230,7 @@ function GlobalTimer({ secondsLeft, totalSeconds, mode = "exam" }) {
       </div>
     </div>
   );
-}
+});
 
 /* ─────────────────────────────────────────
    Écran de départ avec sélection de mode & Options d'Impression
@@ -368,9 +410,6 @@ function Quiz() {
   const [printModal,  setPrintModal]  = useState({ open: false, mode: "statement" });
 
   // Timer global
-  const [timeLeft,  setTimeLeft]  = useState(0);
-  const [elapsed,   setElapsed]   = useState(0);
-  const timerRef   = useRef(null);
   const startedAt  = useRef(null);
   const answersRef = useRef([]);
   const examRef    = useRef(null);
@@ -422,22 +461,17 @@ function Quiz() {
         }
 
         if (saved?.started && Array.isArray(saved.answers) && saved.answers.length === questionsList.length) {
-          const el = Math.max(0, Math.floor((Date.now() - new Date(saved.startedAt).getTime()) / 1000));
           answersRef.current = saved.answers;
           setAnswers(saved.answers);
           setFlagged(saved.flagged || {});
           setMode(saved.mode || "exam");
           setCurrent(Math.min(saved.current || 0, Math.max(0, questionsList.length - 1)));
           startedAt.current = saved.startedAt;
-          setTimeLeft(Math.max(0, examTotalSeconds(safeData) - el));
-          setElapsed(el);
           setStarted(true);
         } else {
           const fresh = Array(questionsList.length).fill(null);
           answersRef.current = fresh;
           setAnswers(fresh);
-          setTimeLeft(examTotalSeconds(safeData));
-          setElapsed(0);
         }
       } catch (err) {
         if (!cancelled) setError(err.message || "Impossible de charger le quiz.");
@@ -450,7 +484,6 @@ function Quiz() {
 
   /* ── Soumission ── */
   const doSubmit = useCallback(async () => {
-    clearInterval(timerRef.current);
     const finalAnswers = answersRef.current;
     const ex = examRef.current;
     if (!ex) return;
@@ -482,28 +515,6 @@ function Quiz() {
       setSaving(false);
     }
   }, [storageKey]);
-
-  /* ── Minuterie ── */
-  useEffect(() => {
-    if (!started || submitted) return;
-
-    timerRef.current = setInterval(() => {
-      if (mode === "practice") {
-        setElapsed((prev) => prev + 1);
-      } else {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current);
-            doSubmit();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }
-    }, 1000);
-
-    return () => clearInterval(timerRef.current);
-  }, [started, submitted, mode, doSubmit]);
 
   /* ── Handlers ── */
   const handleSelect = (choiceId) => {
@@ -546,7 +557,6 @@ function Quiz() {
   };
 
   const handleRetry = () => {
-    clearInterval(timerRef.current);
     const fresh = Array(exam.questions.length).fill(null);
     answersRef.current = fresh;
     setAnswers(fresh);
@@ -555,8 +565,7 @@ function Quiz() {
     setResult(null);
     setSaveError("");
     setCurrent(0);
-    setTimeLeft(examTotalSeconds(exam));
-    setElapsed(0);
+    startedAt.current = null;
     setStarted(false);
     clearProgress(storageKey);
   };
@@ -712,9 +721,11 @@ function Quiz() {
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
           <GlobalTimer
-            secondsLeft={mode === "exam" ? timeLeft : elapsed}
+            startedAt={startedAt.current}
             totalSeconds={totalSeconds}
             mode={mode}
+            active={started && !submitted}
+            onExpire={doSubmit}
           />
           <button className="btn btn-success btn-sm" onClick={handleManualSubmit} disabled={saving}>
             {saving

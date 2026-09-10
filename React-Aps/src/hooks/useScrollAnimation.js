@@ -76,10 +76,21 @@ export function initScrollAnimations() {
     });
   };
 
-  // Observer initial + MutationObserver pour les éléments ajoutés dynamiquement
+  // Observer initial
   observe();
-  const mutObs = new MutationObserver(observe);
+
+  let timer = null;
+  const debouncedObserve = () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(observe, 200);
+  };
+
+  const mutObs = new MutationObserver(debouncedObserve);
   mutObs.observe(document.body, { childList: true, subtree: true });
 
-  return () => { observer.disconnect(); mutObs.disconnect(); };
+  return () => {
+    if (timer) clearTimeout(timer);
+    observer.disconnect();
+    mutObs.disconnect();
+  };
 }

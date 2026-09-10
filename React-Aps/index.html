@@ -1,11 +1,38 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CPGE Maths & Informatique — Plateforme de Cours & Quiz</title>
+    <meta name="description" content="Plateforme d'excellence pour étudiants CPGE : cours complets, annales de concours corrigées, exercices d'entraînement et QCM interactifs en Mathématiques et Informatique." />
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="CPGE Maths & Informatique — Plateforme de Cours & Quiz" />
+    <meta property="og:description" content="Plateforme d'excellence pour étudiants CPGE : cours complets, annales corrigées et QCM interactifs." />
+    <meta property="og:type" content="website" />
+
+    <!-- Google Fonts Preconnect & Stylesheet (non-bloquant avec display=swap) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <title>CPGE Maths & Informatique — Plateforme de Cours & Quiz</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+
+    <!-- Prévention immédiate du flash blanc (FOUC) -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("theme");
+          var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (saved === "dark" || (!saved && prefersDark)) {
+            document.documentElement.setAttribute("data-theme", "dark");
+          } else {
+            document.documentElement.removeAttribute("data-theme");
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

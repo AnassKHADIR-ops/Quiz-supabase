@@ -1,1 +1,17 @@
-node_modules/ 
+# Dependencies
+node_modules/
+
+# Production build
+dist/
+
+# Environment variables & local secrets
+.env
+.env.*
+.env.local
+
+# Vercel deployment cache
+.vercel
+
+# Editor & OS files
+.DS_Store
+Thumbs.db

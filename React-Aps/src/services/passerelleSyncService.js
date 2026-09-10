@@ -4,124 +4,14 @@ import { extractYouTubeId } from "../utils/driveUtils.js";
 const CACHE_KEY = "passerelle_live_data";
 const CACHE_TIMESTAMP_KEY = "passerelle_last_synced";
 
-/**
- * Decodes common HTML entities before parsing extracted JS blocks.
- */
-function decodeHtmlEntities(str) {
-  if (!str || typeof str !== "string") return "";
-  return str
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&#39;/g, "'")
-    .replace(/&#34;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&rsquo;/g, "'")
-    .replace(/&lsquo;/g, "'")
-    .replace(/&rdquo;/g, '"')
-    .replace(/&ldquo;/g, '"')
-    .replace(/&#8216;/g, "'")
-    .replace(/&#8217;/g, "'")
-    .replace(/&#8220;/g, '"')
-    .replace(/&#8221;/g, '"')
-    .replace(/&nbsp;/g, " ");
-}
+import {
+  decodeHtmlEntities,
+  extractJsVariable,
+  safeParseJsLiteral,
+  safeEvalLiteral,
+} from "./wpSyncUtils.js";
 
-/**
- * Safely evaluates a JS object/array literal extracted from a script tag.
- */
-function safeEvalLiteral(codeStr) {
-  if (!codeStr || typeof codeStr !== "string") return null;
-  const decoded = decodeHtmlEntities(codeStr);
-  const trimmed = decoded.trim().replace(/;$/, "");
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    try {
-      const fn = new Function(`return (${trimmed});`);
-      return fn();
-    } catch (e) {
-      console.warn("[PasserelleSync] Failed to evaluate JS literal:", e);
-      return null;
-    }
-  }
-}
-
-/**
- * Extracts a JavaScript variable (e.g. var FILIERES = [...]; or var DATA = {...};)
- * from HTML content using bracket matching.
- */
-export function extractJsVariable(htmlContent, varName) {
-  if (!htmlContent || typeof htmlContent !== "string") return null;
-
-  const regex = new RegExp(`(?:var|let|const|window\\.)\\s*\\b${varName}\\b\\s*=\\s*`, "i");
-  const match = regex.exec(htmlContent);
-  if (!match) return null;
-
-  const openPos = match.index + match[0].length;
-  const startChar = htmlContent.slice(openPos).search(/[\[{]/);
-  if (startChar === -1) return null;
-
-  const actualOpenPos = openPos + startChar;
-  const openChar = htmlContent[actualOpenPos];
-  const closeChar = openChar === "[" ? "]" : "}";
-
-  let depth = 0;
-  let inString = null;
-  let inComment = false;
-  let inSingleLineComment = false;
-
-  for (let i = actualOpenPos; i < htmlContent.length; i++) {
-    const ch = htmlContent[i];
-    const prev = htmlContent[i - 1];
-
-    if (inSingleLineComment) {
-      if (ch === "\n" || ch === "\r") inSingleLineComment = false;
-      continue;
-    }
-
-    if (inComment) {
-      if (prev === "*" && ch === "/") inComment = false;
-      continue;
-    }
-
-    if (inString) {
-      if (ch === inString && prev !== "\\") inString = null;
-      continue;
-    }
-
-    if (ch === '"' || ch === "'" || ch === "`") {
-      inString = ch;
-      continue;
-    }
-
-    if (ch === "/" && htmlContent[i + 1] === "*") {
-      inComment = true;
-      i++;
-      continue;
-    }
-
-    if (ch === "/" && htmlContent[i + 1] === "/") {
-      inSingleLineComment = true;
-      i++;
-      continue;
-    }
-
-    if (ch === openChar) {
-      depth++;
-    } else if (ch === closeChar) {
-      depth--;
-      if (depth === 0) {
-        const rawBlock = htmlContent.slice(actualOpenPos, i + 1);
-        return safeEvalLiteral(rawBlock);
-      }
-    }
-  }
-
-  return null;
-}
+export { extractJsVariable };
 
 /**
  * Normalizes live JSON filières array into the format expected by the React app.

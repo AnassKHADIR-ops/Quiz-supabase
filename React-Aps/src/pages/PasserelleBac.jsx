@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { usePasserelleBacSync } from "../hooks/usePasserelleBacSync.js";
 import SecureVideoModal from "../components/SecureVideoModal.jsx";
 import AuthGateModal from "../components/AuthGateModal.jsx";
+import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 import {
   getEmbedUrl,
   getDownloadUrl,
@@ -28,101 +29,6 @@ import {
   GraduationCap,
   Award,
 } from "../components/Icon.jsx";
-
-function PDFPreviewModal({ title, url, onClose }) {
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
-  return (
-    <div className="modal-backdrop" onMouseDown={onClose} style={{ zIndex: 1000 }}>
-      <div
-        className="document-preview-modal"
-        onMouseDown={(e) => e.stopPropagation()}
-        style={{
-          maxWidth: 960,
-          width: "95vw",
-          height: "88vh",
-          display: "flex",
-          flexDirection: "column",
-          borderRadius: 18,
-          overflow: "hidden",
-          background: "var(--card-bg, #ffffff)",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
-        }}
-      >
-        <div
-          className="document-preview-head"
-          style={{
-            padding: "14px 20px",
-            borderBottom: "1px solid var(--border)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            background: "var(--bg-subtle, #f8fafc)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-            <FileText size={20} style={{ color: "var(--primary)", flexShrink: 0 }} />
-            <h3
-              style={{
-                margin: 0,
-                fontSize: "1.02rem",
-                fontWeight: 700,
-                color: "var(--text)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-              title={title}
-            >
-              {title}
-            </h3>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <a
-              className="btn btn-secondary btn-sm"
-              href={getDownloadUrl(url)}
-              target="_blank"
-              rel="noreferrer"
-              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-            >
-              <Download size={14} /> Télécharger
-            </a>
-            <button
-              className="management-modal-close"
-              onClick={onClose}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: 6,
-                borderRadius: 8,
-                display: "grid",
-                placeItems: "center",
-                color: "var(--text-muted)",
-              }}
-            >
-              <X size={20} />
-            </button>
-          </div>
-        </div>
-        <div style={{ flex: 1, position: "relative", background: "#f1f5f9" }}>
-          <iframe
-            title={title}
-            src={getEmbedUrl(url, "pdf")}
-            style={{ width: "100%", height: "100%", border: "none" }}
-            allow="fullscreen"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function PasserelleBac() {
   const { user, isApproved, isAdmin } = useAuth();
@@ -1041,7 +947,7 @@ export default function PasserelleBac() {
 
       {/* PDF Modal */}
       {pdfModalData && (
-        <PDFPreviewModal
+        <PdfPreviewModal
           title={pdfModalData.title}
           url={pdfModalData.url}
           onClose={handleClosePdf}

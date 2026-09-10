@@ -57,7 +57,7 @@ export const authApi = {
     if (!supabaseUser) throw new Error("Session expirée. Connectez-vous de nouveau.");
 
     // Query profiles with maybeSingle() to prevent unhandled rejection on race conditions
-    const { data: profile, error: profileError } = await supabase
+    let { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id, full_name, email, role, status, approved_at, revoked_at, created_at, updated_at")
       .eq("id", supabaseUser.id)

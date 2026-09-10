@@ -26,50 +26,7 @@ import {
   Video
 } from "../components/Icon.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-
-function driveFileId(url) {
-  if (!url) return null;
-  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  return match ? match[1] : null;
-}
-function drivePreviewUrl(url) {
-  const id = driveFileId(url);
-  return id ? `https://drive.google.com/file/d/${id}/preview` : url;
-}
-function driveDownloadUrl(url) {
-  const id = driveFileId(url);
-  return id ? `https://drive.google.com/uc?export=download&id=${id}` : url;
-}
-
-function DocumentPreview({ doc, onClose }) {
-  return (
-    <div className="modal-backdrop" onMouseDown={onClose}>
-      <div className="document-preview-modal" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="document-preview-head">
-          <h3>{doc.label || `Programme ${doc.year}`}</h3>
-          <div className="document-preview-actions">
-            <a
-              className="btn btn-secondary btn-sm"
-              href={driveDownloadUrl(doc.document_url)}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Download size={15} /> Télécharger
-            </a>
-            <button className="management-modal-close" onClick={onClose}>
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-        <iframe
-          title={doc.label || "Programme"}
-          src={drivePreviewUrl(doc.document_url)}
-          className="document-preview-frame"
-        />
-      </div>
-    </div>
-  );
-}
+import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 
 function Home() {
   const { user, isRevoked, isPending, logout, refreshUser } = useAuth();
@@ -1096,7 +1053,7 @@ function Home() {
       )}
 
       {previewDoc && (
-        <DocumentPreview doc={previewDoc} onClose={() => setPreviewDoc(null)} />
+        <PdfPreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />
       )}
     </div>
   );
