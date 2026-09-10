@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { extractYouTubeId, extractDriveFileId } from "../utils/driveUtils.js";
+import { useVideoSecurity } from "../hooks/useVideoSecurity.js";
 import {
   Play,
   Pause,
@@ -12,7 +13,8 @@ import {
   RotateCcw,
   RotateCw,
   ShieldCheck,
-  Loader2
+  Loader2,
+  Lock
 } from "./Icon.jsx";
 
 /**
@@ -315,6 +317,15 @@ export default function MathVideoPlayer({
     };
   }, [ytId, autoPlay, onEnded, startTimeTracking, stopTimeTracking]);
 
+  const pausePlayback = useCallback(() => {
+    if (playerRef.current && typeof playerRef.current.pauseVideo === "function") {
+      playerRef.current.pauseVideo();
+      setIsPlaying(false);
+    }
+  }, []);
+
+  const { isDevToolsOpen } = useVideoSecurity({ onDevToolsOpen: pausePlayback });
+
   // Playback Control Actions
   const togglePlay = () => {
     if (!playerRef.current) return;
@@ -543,6 +554,49 @@ export default function MathVideoPlayer({
       role="region"
       aria-label={title}
     >
+      {/* 🔒 SÉCURITÉ : BLOCAGE D'INSPECTION (DEVTOOLS) */}
+      {isDevToolsOpen && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 100,
+            background: "rgba(6, 10, 24, 0.97)",
+            backdropFilter: "blur(14px)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+            textAlign: "center",
+            color: "#ffffff",
+            userSelect: "none",
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              background: "rgba(239, 68, 68, 0.18)",
+              color: "#ef4444",
+              display: "grid",
+              placeItems: "center",
+              marginBottom: 16,
+              border: "1px solid rgba(239, 68, 68, 0.35)",
+            }}
+          >
+            <Lock size={26} />
+          </div>
+          <h3 style={{ fontSize: "1.15rem", fontWeight: 700, marginBottom: 8 }}>
+            Mode d'inspection non autorisé
+          </h3>
+          <p style={{ color: "#94a3b8", fontSize: "0.88rem", maxWidth: 440, lineHeight: 1.5, margin: 0 }}>
+            Les outils de développement et d'inspection sont désactivés sur cet espace de cours privé. Veuillez fermer la console ou le panneau d'inspection pour reprendre la lecture de votre séance.
+          </p>
+        </div>
+      )}
+
       {/* 🛡️ 100% ORIGINAL FORM VIDEO CONTAINER (Zero Zoom, Full Blackboard View) */}
       <div
         className="math-video-crop-wrapper"

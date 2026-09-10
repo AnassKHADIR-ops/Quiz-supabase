@@ -25,6 +25,19 @@ function setCachedUser(userData) {
   }
 }
 
+function getOrCreateSessionId() {
+  try {
+    let sId = sessionStorage.getItem("ak_tab_session_id");
+    if (!sId) {
+      sId = "s_" + Math.random().toString(36).substring(2, 11) + "_" + Date.now();
+      sessionStorage.setItem("ak_tab_session_id", sId);
+    }
+    return sId;
+  } catch {
+    return "s_anon_" + Date.now();
+  }
+}
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -107,8 +120,12 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!user?.id) return;
 
+    const currentSessionId = getOrCreateSessionId();
+
     const channel = supabase
-      .channel(`profile-status-${user.id}`)
+      .channel(`profile-status-${user.id}`, {
+        config: { broadcast: { self: false } },
+      })
       .on(
         "postgres_changes",
         {
@@ -136,7 +153,32 @@ export function AuthProvider({ children }) {
           }
         }
       )
-      .subscribe();
+      .on("broadcast", { event: "session_claim" }, (payload) => {
+        // Enforce single active session for students (exempt teachers/admins)
+        const isUserStaff = user.role === "teacher" || user.role === "admin";
+        if (isUserStaff) return;
+
+        const incomingSessionId = payload.payload?.sessionId;
+        if (incomingSessionId && incomingSessionId !== currentSessionId) {
+          alert(
+            "⚠️ Session fermée\n\nVotre compte a été connecté sur un autre appareil ou navigateur.\n\nPour des raisons de sécurité, une seule session active simultanée est autorisée."
+          );
+          setUser(null);
+          setCachedUser(null);
+          setLoading(false);
+          authApi.logout().catch(() => {});
+        }
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          // Claim active session across all devices
+          channel.send({
+            type: "broadcast",
+            event: "session_claim",
+            payload: { sessionId: currentSessionId },
+          });
+        }
+      });
 
     // Revalidate whenever the user returns to the tab/window
     const handleRevalidate = () => {
