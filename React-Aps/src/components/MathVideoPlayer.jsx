@@ -86,12 +86,14 @@ export default function MathVideoPlayer({
   const playerRef = useRef(null);
   const timeUpdateTimerRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
+  const clickTimeoutRef = useRef(null);
   const lastTouchTimeRef = useRef(0);
   const singleTouchTimerRef = useRef(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isBuffering, setIsBuffering] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isEnded, setIsEnded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -226,7 +228,6 @@ export default function MathVideoPlayer({
             onReady: (event) => {
               if (!isMounted) return;
               playerRef.current = event.target;
-              setIsLoading(false);
               const dur = event.target.getDuration();
               if (dur) setDuration(dur);
 
@@ -249,8 +250,14 @@ export default function MathVideoPlayer({
                 try {
                   event.target.playVideo();
                 } catch {
-                  // autoplay policy restriction
+                  setIsLoading(false);
                 }
+                // Safety fallback timeout: if browser policy blocks autoplay, dismiss loader within 2.2s
+                setTimeout(() => {
+                  if (isMounted) setIsLoading(false);
+                }, 2200);
+              } else {
+                setIsLoading(false);
               }
             },
             onStateChange: (event) => {
@@ -271,16 +278,19 @@ export default function MathVideoPlayer({
                 setIsPlaying(true);
                 setIsBuffering(false);
                 setIsLoading(false);
+                setIsEnded(false);
                 startTimeTracking();
               } else if (state === YT.PlayerState.PAUSED) {
                 setIsPlaying(false);
                 setIsBuffering(false);
+                setIsLoading(false);
                 stopTimeTracking();
               } else if (state === YT.PlayerState.BUFFERING) {
                 setIsBuffering(true);
               } else if (state === YT.PlayerState.ENDED) {
                 setIsPlaying(false);
                 setIsBuffering(false);
+                setIsEnded(true);
                 stopTimeTracking();
                 if (onEnded) onEnded();
               }
@@ -306,6 +316,8 @@ export default function MathVideoPlayer({
       isMounted = false;
       stopTimeTracking();
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+      if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+      if (singleTouchTimerRef.current) clearTimeout(singleTouchTimerRef.current);
       if (playerRef.current && typeof playerRef.current.destroy === "function") {
         try {
           playerRef.current.destroy();
@@ -327,16 +339,35 @@ export default function MathVideoPlayer({
   const { isDevToolsOpen } = useVideoSecurity({ onDevToolsOpen: pausePlayback });
 
   // Playback Control Actions
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     if (!playerRef.current) return;
-    if (isPlaying) {
-      playerRef.current.pauseVideo();
-      triggerSplash("pause");
-    } else {
-      playerRef.current.playVideo();
-      triggerSplash("play");
+    try {
+      let state = null;
+      if (typeof playerRef.current.getPlayerState === "function") {
+        state = playerRef.current.getPlayerState();
+      }
+
+      // YouTube player states: 1 = PLAYING, 3 = BUFFERING
+      const isCurrentlyPlaying = state === 1 || state === 3 || (state === null && isPlaying);
+
+      if (isCurrentlyPlaying) {
+        if (typeof playerRef.current.pauseVideo === "function") {
+          playerRef.current.pauseVideo();
+        }
+        setIsPlaying(false);
+        triggerSplash("pause");
+      } else {
+        if (typeof playerRef.current.playVideo === "function") {
+          playerRef.current.playVideo();
+        }
+        setIsPlaying(true);
+        setIsEnded(false);
+        triggerSplash("play");
+      }
+    } catch (err) {
+      console.warn("togglePlay error:", err);
     }
-  };
+  }, [isPlaying]);
 
   const handleSeek = (e) => {
     if (!playerRef.current || !duration) return;
@@ -346,6 +377,7 @@ export default function MathVideoPlayer({
     const targetTime = pos * duration;
     playerRef.current.seekTo(targetTime, true);
     setCurrentTime(targetTime);
+    setIsEnded(false);
   };
 
   const handleTouchSeek = (e) => {
@@ -357,20 +389,22 @@ export default function MathVideoPlayer({
     const targetTime = pos * duration;
     playerRef.current.seekTo(targetTime, true);
     setCurrentTime(targetTime);
+    setIsEnded(false);
   };
 
-  const seekRelative = (delta) => {
+  const seekRelative = useCallback((delta) => {
     if (!playerRef.current) return;
     const newTime = Math.max(0, Math.min(duration || 0, currentTime + delta));
     playerRef.current.seekTo(newTime, true);
     setCurrentTime(newTime);
+    setIsEnded(false);
     setSeekSplash(delta > 0 ? "right" : "left");
     setTimeout(() => {
       setSeekSplash(null);
     }, 650);
-  };
+  }, [currentTime, duration]);
 
-  const toggleMute = () => {
+  const toggleMute = useCallback(() => {
     if (!playerRef.current) return;
     if (isMuted) {
       playerRef.current.unMute();
@@ -380,7 +414,7 @@ export default function MathVideoPlayer({
       playerRef.current.mute();
       setIsMuted(true);
     }
-  };
+  }, [isMuted, volume]);
 
   const handleVolumeChange = (e) => {
     const val = Number(e.target.value);
@@ -404,7 +438,7 @@ export default function MathVideoPlayer({
     }
   };
 
-  const toggleFullscreen = async () => {
+  const toggleFullscreen = useCallback(async () => {
     if (!containerRef.current) return;
     try {
       if (!document.fullscreenElement) {
@@ -436,6 +470,94 @@ export default function MathVideoPlayer({
       }
     } catch (err) {
       console.warn("Fullscreen toggle:", err);
+    }
+  }, []);
+
+  // Keyboard Navigation & Shortcuts (Space, k, Arrows, m, f)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable) {
+        return;
+      }
+
+      if (e.code === "Space" || e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key === "ArrowLeft" || e.key === "j" || e.key === "J") {
+        e.preventDefault();
+        seekRelative(-10);
+      } else if (e.key === "ArrowRight" || e.key === "l" || e.key === "L") {
+        e.preventDefault();
+        seekRelative(10);
+      } else if (e.key === "m" || e.key === "M") {
+        e.preventDefault();
+        toggleMute();
+      } else if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [togglePlay, seekRelative, toggleMute, toggleFullscreen]);
+
+  // Canvas Click & Touch Handlers
+  const handleCanvasClick = (e) => {
+    e.stopPropagation();
+    handleUserActivity();
+
+    if (clickTimeoutRef.current) {
+      // Double click: seek relative
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const isRight = e.clientX - rect.left > rect.width / 2;
+      seekRelative(isRight ? 10 : -10);
+      return;
+    }
+
+    clickTimeoutRef.current = setTimeout(() => {
+      clickTimeoutRef.current = null;
+      togglePlay();
+    }, 220);
+  };
+
+  const handleTouchStart = (e) => {
+    const now = Date.now();
+    const touch = e.touches[0];
+    if (!touch) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const width = rect.width;
+
+    if (now - lastTouchTimeRef.current < 320) {
+      // Double-tap detected on mobile
+      if (singleTouchTimerRef.current) {
+        clearTimeout(singleTouchTimerRef.current);
+        singleTouchTimerRef.current = null;
+      }
+      lastTouchTimeRef.current = 0;
+      if (x < width * 0.42) {
+        seekRelative(-10);
+      } else if (x > width * 0.58) {
+        seekRelative(10);
+      } else {
+        togglePlay();
+      }
+    } else {
+      lastTouchTimeRef.current = now;
+      singleTouchTimerRef.current = setTimeout(() => {
+        singleTouchTimerRef.current = null;
+        if (showControls) {
+          togglePlay();
+        } else {
+          handleUserActivity();
+        }
+      }, 260);
     }
   };
 
@@ -634,43 +756,8 @@ export default function MathVideoPlayer({
           cursor: "pointer",
           touchAction: "manipulation",
         }}
-        onClick={(e) => {
-          handleUserActivity();
-        }}
-        onDoubleClick={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          const isRight = e.clientX - rect.left > rect.width / 2;
-          seekRelative(isRight ? 10 : -10);
-        }}
-        onTouchStart={(e) => {
-          const now = Date.now();
-          const touch = e.touches[0];
-          if (!touch) return;
-          const rect = e.currentTarget.getBoundingClientRect();
-          const x = touch.clientX - rect.left;
-          const width = rect.width;
-
-          if (now - lastTouchTimeRef.current < 320) {
-            // Double-tap detected on phone
-            if (singleTouchTimerRef.current) {
-              clearTimeout(singleTouchTimerRef.current);
-              singleTouchTimerRef.current = null;
-            }
-            lastTouchTimeRef.current = 0;
-            if (x < width * 0.42) {
-              seekRelative(-10);
-            } else if (x > width * 0.58) {
-              seekRelative(10);
-            } else {
-              togglePlay();
-            }
-          } else {
-            lastTouchTimeRef.current = now;
-            singleTouchTimerRef.current = setTimeout(() => {
-              handleUserActivity();
-            }, 300);
-          }
-        }}
+        onClick={handleCanvasClick}
+        onTouchStart={handleTouchStart}
       />
 
       {/* Loading & Buffering Spinner */}
@@ -683,10 +770,10 @@ export default function MathVideoPlayer({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            background: isLoading ? "linear-gradient(135deg, #090e1a 0%, #151e32 100%)" : "rgba(0,0,0,0.35)",
+            background: isLoading ? "#070b19" : "rgba(0,0,0,0.35)",
             color: "#ffffff",
             gap: 12,
-            zIndex: 6,
+            zIndex: 12,
             pointerEvents: "none",
             transition: "opacity 0.3s ease",
           }}
@@ -707,29 +794,44 @@ export default function MathVideoPlayer({
       )}
 
       {/* Center Play Button on Pause */}
-      {!isPlaying && !isLoading && !isBuffering && (
-        <div
+      {!isPlaying && !isLoading && !isBuffering && !isEnded && (
+        <button
+          type="button"
+          aria-label="Reprendre la lecture"
+          onClick={(e) => {
+            e.stopPropagation();
+            togglePlay();
+          }}
           style={{
             position: "absolute",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            zIndex: 5,
+            zIndex: 7,
             width: 72,
             height: 72,
             borderRadius: "50%",
-            background: "rgba(67, 97, 238, 0.9)",
-            boxShadow: "0 8px 30px rgba(67, 97, 238, 0.5)",
+            background: "rgba(67, 97, 238, 0.92)",
+            border: "2px solid rgba(255, 255, 255, 0.3)",
+            boxShadow: "0 8px 32px rgba(67, 97, 238, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.15)",
             display: "grid",
             placeItems: "center",
             color: "#ffffff",
             cursor: "pointer",
-            pointerEvents: "none",
-            transition: "transform 0.2s ease, background 0.2s ease",
+            pointerEvents: "auto",
+            transition: "transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translate(-50%, -50%) scale(1.1)";
+            e.currentTarget.style.background = "#4361ee";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translate(-50%, -50%) scale(1)";
+            e.currentTarget.style.background = "rgba(67, 97, 238, 0.92)";
           }}
         >
-          <Play size={34} style={{ marginLeft: 4 }} />
-        </div>
+          <Play size={34} style={{ marginLeft: 4, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))" }} />
+        </button>
       )}
 
       {/* Splash Center Action Feedback (Play / Pause) */}
@@ -773,6 +875,22 @@ export default function MathVideoPlayer({
         </div>
       )}
 
+      {/* 🛡️ PERMANENT SOLID TOP SHIELD (Physically blocks YouTube native title, channel avatar & name 100% of the time) */}
+      <div
+        className="math-video-top-shield"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 56,
+          background: "#070b19",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          zIndex: 8,
+          pointerEvents: "none",
+        }}
+      />
+
       {/* 🛡️ TOP BRANDED HEADER (Shields Top & Shows Clean Lesson Title) */}
       <div
         style={{
@@ -780,28 +898,30 @@ export default function MathVideoPlayer({
           top: 0,
           left: 0,
           right: 0,
-          padding: "12px 16px 20px",
-          background: "linear-gradient(to bottom, rgba(5, 8, 17, 0.95) 0%, rgba(5, 8, 17, 0.6) 65%, transparent 100%)",
-          zIndex: 8,
+          height: 56,
+          padding: "0 16px",
+          background: "#070b19",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          zIndex: 10,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           pointerEvents: showControls ? "auto" : "none",
-          opacity: showControls ? 1 : 0,
-          transition: "opacity 0.3s ease",
+          opacity: showControls ? 1 : 0.88,
+          transition: "opacity 0.25s ease",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden", maxWidth: "90%" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden", maxWidth: "80%" }}>
           <span
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: 5,
-              fontSize: "0.72rem",
+              gap: 6,
+              fontSize: "0.74rem",
               fontWeight: 700,
-              padding: "2px 8px",
+              padding: "3px 9px",
               borderRadius: 6,
-              background: "rgba(67, 97, 238, 0.25)",
+              background: "rgba(67, 97, 238, 0.22)",
               border: "1px solid rgba(67, 97, 238, 0.4)",
               color: "#93c5fd",
               textTransform: "uppercase",
@@ -809,7 +929,7 @@ export default function MathVideoPlayer({
               flexShrink: 0,
             }}
           >
-            <ShieldCheck size={12} /> AK-Math Player
+            <ShieldCheck size={13} /> AK-Math Player
           </span>
           <span
             style={{
@@ -820,11 +940,97 @@ export default function MathVideoPlayer({
               overflow: "hidden",
               textOverflow: "ellipsis",
             }}
+            title={title}
           >
-            {title}
+            {title || "Séance de Mathématiques"}
+          </span>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <span
+            style={{
+              fontSize: "0.72rem",
+              fontWeight: 600,
+              color: "#94a3b8",
+              background: "rgba(255, 255, 255, 0.06)",
+              padding: "3px 8px",
+              borderRadius: 4,
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+            }}
+          >
+            HD 1080p
           </span>
         </div>
       </div>
+
+      {/* End of Lesson Completion Overlay */}
+      {isEnded && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "rgba(7, 11, 25, 0.95)",
+            backdropFilter: "blur(6px)",
+            zIndex: 11,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 16,
+            color: "#ffffff",
+          }}
+        >
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              background: "rgba(34, 197, 94, 0.2)",
+              border: "2px solid #22c55e",
+              display: "grid",
+              placeItems: "center",
+              color: "#22c55e",
+            }}
+          >
+            <ShieldCheck size={36} />
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0, color: "#f8fafc" }}>
+              Séance terminée !
+            </h3>
+            <p style={{ fontSize: "0.85rem", color: "#94a3b8", marginTop: 4 }}>
+              Félicitations pour avoir suivi cette séance de mathématiques.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (playerRef.current) {
+                playerRef.current.seekTo(0, true);
+                playerRef.current.playVideo();
+                setIsEnded(false);
+                setIsPlaying(true);
+              }
+            }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 20px",
+              borderRadius: 8,
+              background: "#4361ee",
+              color: "#ffffff",
+              fontWeight: 600,
+              fontSize: "0.9rem",
+              border: "none",
+              cursor: "pointer",
+              boxShadow: "0 4px 15px rgba(67, 97, 238, 0.4)",
+            }}
+          >
+            <RotateCcw size={18} /> Revoir la vidéo
+          </button>
+        </div>
+      )}
 
       {/* 🎛️ CUSTOM REACT CONTROLS BAR (100% Custom UI, Zero YouTube Elements) */}
       <div
@@ -929,8 +1135,11 @@ export default function MathVideoPlayer({
             {/* Play/Pause Button */}
             <button
               type="button"
-              onClick={togglePlay}
-              aria-label={isPlaying ? "Pause" : "Lecture"}
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePlay();
+              }}
+              aria-label={isPlaying ? "Mettre en pause" : "Lancer la lecture"}
               style={{
                 background: "transparent",
                 border: "none",
