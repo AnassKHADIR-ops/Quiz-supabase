@@ -20,9 +20,12 @@ import {
   Search,
   Clock,
   RefreshCw,
-  RotateCcw
+  RotateCcw,
+  Mail
 } from "./Icon.jsx";
 import UserAccessManager from "./UserAccessManager.jsx";
+import AdminEmailModal from "./AdminEmailModal.jsx";
+import { openGmailDirectly, EMAIL_TEMPLATES } from "../utils/emailTemplates.js";
 
 function AnimatedStat({ label, value, sub, colorClass, suffix = "" }) {
   const [ref, visible] = useScrollAnimation();
@@ -205,7 +208,7 @@ function RankingTable({ ranked, onDeleteSingle }) {
 /* ─────────────────────────────────────────
    Gestionnaire des Soumissions (Admin Cleanup)
 ───────────────────────────────────────── */
-function SubmissionsManager({ results, examTitle, onDeleteSingle, onDeleteBulk, onResetExam, deleting }) {
+function SubmissionsManager({ results, examTitle, onDeleteSingle, onDeleteBulk, onResetExam, onEmailStudent, deleting }) {
   const [search, setSearch] = useState("");
   const [scoreFilter, setScoreFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState([]);
@@ -423,8 +426,35 @@ function SubmissionsManager({ results, examTitle, onDeleteSingle, onDeleteBulk, 
                           <span style={{ fontWeight: 600, color: "var(--primary)", display: "block" }}>
                             {r.student_name || "—"}
                           </span>
-                          <span style={{ color: "var(--text-muted)", fontSize: "0.76rem" }}>
+                          <span style={{ color: "var(--text-muted)", fontSize: "0.76rem", display: "inline-flex", alignItems: "center", gap: 5 }}>
                             {r.student_email}
+                            {r.student_email && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const tpl = EMAIL_TEMPLATES.quiz_submission;
+                                  openGmailDirectly({
+                                    to: r.student_email,
+                                    subject: tpl.getSubject(r.student_name),
+                                    body: tpl.getBody(r.student_name),
+                                  });
+                                }}
+                                title="1-clic direct : Rédiger un email d'adhésion Gmail"
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "#ea4335",
+                                  cursor: "pointer",
+                                  padding: 0,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Mail size={12} />
+                              </button>
+                            )}
                           </span>
                         </div>
                       </Link>
@@ -459,6 +489,16 @@ function SubmissionsManager({ results, examTitle, onDeleteSingle, onDeleteBulk, 
                     </td>
                     <td style={{ textAlign: "right" }}>
                       <div style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                        {r.student_email && onEmailStudent && (
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => onEmailStudent({ full_name: r.student_name, email: r.student_email })}
+                            title="Contacter par Gmail pour proposer l'adhésion (500 DH/an)"
+                            style={{ padding: "5px 8px", color: "#ea4335" }}
+                          >
+                            <Mail size={13} />
+                          </button>
+                        )}
                         <Link to={`/result/${r.id}`} className="btn btn-secondary btn-sm" title="Consulter la correction détaillée">
                           <Eye size={14} /> Voir
                         </Link>
@@ -679,6 +719,7 @@ function Dashboard() {
   const [activeTab,          setActiveTab]          = useState("utilisateurs");
   const [pendingCount,       setPendingCount]       = useState(0);
   const [printModalOpen,     setPrintModalOpen]     = useState(false);
+  const [emailModalStudent,  setEmailModalStudent]  = useState(null);
 
   // Modale & état de suppression
   const [deleteModal,        setDeleteModal]        = useState(null);
@@ -956,6 +997,7 @@ function Dashboard() {
                 onDeleteSingle={promptDeleteSingle}
                 onDeleteBulk={promptDeleteBulk}
                 onResetExam={promptResetExam}
+                onEmailStudent={(s) => setEmailModalStudent(s)}
                 deleting={deleting}
               />
             )}
@@ -974,6 +1016,14 @@ function Dashboard() {
             onClose={() => setDeleteModal(null)}
             onConfirm={confirmDelete}
             deleting={deleting}
+          />
+
+          {/* Modale d'envoi d'email Gmail pour une soumission */}
+          <AdminEmailModal
+            isOpen={Boolean(emailModalStudent)}
+            onClose={() => setEmailModalStudent(null)}
+            recipient={emailModalStudent}
+            initialTemplateId="quiz_submission"
           />
         </>
       )}

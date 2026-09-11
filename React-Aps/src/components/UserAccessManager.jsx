@@ -12,8 +12,11 @@ import {
   AlertTriangle,
   RefreshCw,
   Trash,
-  Inbox
+  Inbox,
+  Mail
 } from "./Icon.jsx";
+import AdminEmailModal from "./AdminEmailModal.jsx";
+import { openGmailDirectly, EMAIL_TEMPLATES } from "../utils/emailTemplates.js";
 
 export default function UserAccessManager({ onPendingCountChange }) {
   const [users, setUsers] = useState([]);
@@ -23,6 +26,23 @@ export default function UserAccessManager({ onPendingCountChange }) {
   const [filter, setFilter] = useState("all"); // "all" | "pending" | "approved" | "rejected" | "revoked"
   const [actionId, setActionId] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const [emailModalUser, setEmailModalUser] = useState(null);
+  const [emailTemplateId, setEmailTemplateId] = useState("adhesion");
+
+  const handleOpenEmailModal = (user, templateId = "adhesion") => {
+    setEmailTemplateId(templateId);
+    setEmailModalUser(user);
+  };
+
+  const handleDirectGmail = (user, templateId = "adhesion") => {
+    const tpl = EMAIL_TEMPLATES[templateId] || EMAIL_TEMPLATES.adhesion;
+    const name = user.full_name || "";
+    openGmailDirectly({
+      to: user.email,
+      subject: tpl.getSubject(name),
+      body: tpl.getBody(name),
+    });
+  };
 
   const fetchUsers = async () => {
     try {
@@ -433,7 +453,33 @@ export default function UserAccessManager({ onPendingCountChange }) {
                         </span>
                       )}
                     </div>
-                    <div className="user-item-email">{u.email}</div>
+                    <div className="user-item-email" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span>{u.email}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDirectGmail(u, isPending ? "adhesion" : isRevoked ? "reactivation" : "adhesion");
+                        }}
+                        title={`Ouvrir directement Gmail avec l'offre 500 DH/an pour ${u.email}`}
+                        style={{
+                          background: "rgba(234, 67, 53, 0.08)",
+                          color: "#ea4335",
+                          border: "1px solid rgba(234, 67, 53, 0.25)",
+                          borderRadius: "4px",
+                          padding: "2px 7px",
+                          fontSize: "0.72rem",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        <Mail size={11} /> 1-clic Gmail
+                      </button>
+                    </div>
                     <div className="user-item-date" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                       <span>Inscrit le {formatDate(u.created_at)}</span>
                       {u.approved_at && (
@@ -456,6 +502,23 @@ export default function UserAccessManager({ onPendingCountChange }) {
                   ) : isPending ? (
                     <>
                       <button
+                        className="btn btn-sm"
+                        onClick={() => handleOpenEmailModal(u, "adhesion")}
+                        title="Envoyer une proposition d'adhésion (500 DH/an) par Gmail"
+                        style={{
+                          background: "linear-gradient(135deg, #ea4335, #d93025)",
+                          color: "#fff",
+                          borderColor: "#d93025",
+                          fontWeight: 700,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          boxShadow: "0 2px 8px rgba(234, 67, 53, 0.25)",
+                        }}
+                      >
+                        <Mail size={14} /> Contacter (Gmail)
+                      </button>
+                      <button
                         className="btn btn-success btn-sm"
                         onClick={() => handleApprove(u)}
                         title="Accepter l'inscription et donner accès"
@@ -473,6 +536,14 @@ export default function UserAccessManager({ onPendingCountChange }) {
                   ) : isApproved ? (
                     <>
                       <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleOpenEmailModal(u, "adhesion")}
+                        title="Envoyer un email via Gmail"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+                      >
+                        <Mail size={13} /> Email
+                      </button>
+                      <button
                         className="btn btn-danger btn-sm"
                         onClick={() => handleRevoke(u)}
                         title="Révoquer immédiatement l'accès"
@@ -482,6 +553,14 @@ export default function UserAccessManager({ onPendingCountChange }) {
                     </>
                   ) : isRevoked ? (
                     <>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleOpenEmailModal(u, "reactivation")}
+                        title="Proposer la réactivation pour 500 DH/an via Gmail"
+                        style={{ borderColor: "#ea4335", color: "#ea4335", display: "inline-flex", alignItems: "center", gap: 5 }}
+                      >
+                        <Mail size={13} /> Relancer (Gmail)
+                      </button>
                       <button
                         className="btn btn-success btn-sm"
                         onClick={() => handleRestore(u)}
@@ -501,6 +580,14 @@ export default function UserAccessManager({ onPendingCountChange }) {
                   ) : (
                     /* isRejected */
                     <>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleOpenEmailModal(u, "adhesion")}
+                        title="Envoyer un email d'information ou d'adhésion"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+                      >
+                        <Mail size={13} /> Contacter
+                      </button>
                       <button
                         className="btn btn-success btn-sm"
                         onClick={() => handleApprove(u)}
@@ -524,6 +611,14 @@ export default function UserAccessManager({ onPendingCountChange }) {
           })}
         </div>
       )}
+
+      {/* Modale d'envoi d'email Gmail pour l'administrateur */}
+      <AdminEmailModal
+        isOpen={Boolean(emailModalUser)}
+        onClose={() => setEmailModalUser(null)}
+        recipient={emailModalUser}
+        initialTemplateId={emailTemplateId}
+      />
     </div>
   );
 }
