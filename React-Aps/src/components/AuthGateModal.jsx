@@ -14,6 +14,7 @@ import {
   RefreshCw,
   AlertTriangle
 } from "./Icon.jsx";
+import WhatsAppContactButton from "./WhatsAppContactButton.jsx";
 
 export default function AuthGateModal({
   isOpen = true,
@@ -231,11 +232,18 @@ export default function AuthGateModal({
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <WhatsAppContactButton
+                user={user}
+                type="revoked"
+                contentTitle={title}
+                variant="modal"
+                label="Demander le déblocage sur WhatsApp"
+              />
               <button
                 type="button"
                 onClick={handleLogoutAndClose}
-                className="btn btn-secondary btn-lg"
-                style={{ width: "100%", justifyContent: "center", fontWeight: 700, borderRadius: 12 }}
+                className="btn btn-secondary"
+                style={{ width: "100%", justifyContent: "center", fontWeight: 600, borderRadius: 12 }}
               >
                 Se déconnecter
               </button>
@@ -401,9 +409,16 @@ export default function AuthGateModal({
             )}
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <WhatsAppContactButton
+                user={user}
+                type="pending"
+                contentTitle={title}
+                variant="modal"
+                label="Demander la validation sur WhatsApp"
+              />
               <button
                 type="button"
-                className="btn btn-primary btn-lg"
+                className="btn btn-secondary btn-lg"
                 onClick={handleCheckStatus}
                 disabled={checking}
                 style={{ width: "100%", justifyContent: "center", fontWeight: 700, borderRadius: 12 }}

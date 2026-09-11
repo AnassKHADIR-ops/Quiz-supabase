@@ -14,6 +14,7 @@ import {
   Trophy,
   GraduationCap
 } from "./Icon.jsx";
+import WhatsAppContactButton from "./WhatsAppContactButton.jsx";
 
 // Logo hexagone premium avec gradient & reflet
 function AKLogoLarge() {
@@ -383,9 +384,19 @@ function Login() {
             </div>
 
             {error && (
-              <p className="error-msg" style={{ marginBottom: 16, fontSize: "0.85rem", display: "flex", alignItems: "center", gap: 6 }}>
-                <AlertTriangle size={15} /> {error}
-              </p>
+              <div style={{ marginBottom: 16 }}>
+                <p className="error-msg" style={{ marginBottom: (error.toLowerCase().includes("attente") || error.toLowerCase().includes("révoqué") || error.toLowerCase().includes("suspendu")) ? 10 : 0, fontSize: "0.85rem", display: "flex", alignItems: "center", gap: 6 }}>
+                  <AlertTriangle size={15} /> {error}
+                </p>
+                {(error.toLowerCase().includes("attente") || error.toLowerCase().includes("révoqué") || error.toLowerCase().includes("suspendu")) && (
+                  <WhatsAppContactButton
+                    user={{ email }}
+                    type={error.toLowerCase().includes("révoqué") || error.toLowerCase().includes("suspendu") ? "revoked" : "pending"}
+                    variant="modal"
+                    label={error.toLowerCase().includes("révoqué") ? "Demander le déblocage sur WhatsApp" : "Demander l'approbation sur WhatsApp"}
+                  />
+                )}
+              </div>
             )}
 
             {/* Bouton de Connexion */}

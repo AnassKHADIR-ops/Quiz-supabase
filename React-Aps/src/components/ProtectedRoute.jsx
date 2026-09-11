@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { Clock, RefreshCw, AlertTriangle, Lock, ShieldAlert, CheckCircle } from "./Icon.jsx";
+import WhatsAppContactButton from "./WhatsAppContactButton.jsx";
 
 function ProtectedRoute({ children, teacherOnly = false, adminOnly = false }) {
   const { user, loading, isStaff, isPending, isRejected, isRevoked, logout, refreshUser, reapplyAccess } = useAuth();
@@ -114,9 +115,14 @@ function ProtectedRoute({ children, teacherOnly = false, adminOnly = false }) {
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", alignItems: "center" }}>
+            <WhatsAppContactButton
+              user={user}
+              type="pending"
+              label="Demander l'approbation sur WhatsApp"
+            />
             <button
-              className="btn btn-primary"
+              className="btn btn-secondary"
               onClick={handleCheckStatus}
               disabled={checking}
               style={{ minWidth: 180 }}
@@ -166,9 +172,14 @@ function ProtectedRoute({ children, teacherOnly = false, adminOnly = false }) {
             <span className="badge badge-danger">Refusé</span>
           </div>
 
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", alignItems: "center" }}>
+            <WhatsAppContactButton
+              user={user}
+              type="rejected"
+              label="Contacter le professeur sur WhatsApp"
+            />
             <button
-              className="btn btn-primary"
+              className="btn btn-secondary"
               onClick={handleReapply}
               disabled={reapplying}
             >
@@ -210,9 +221,14 @@ function ProtectedRoute({ children, teacherOnly = false, adminOnly = false }) {
             <span className="badge badge-danger">Accès suspendu</span>
           </div>
 
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", alignItems: "center" }}>
+            <WhatsAppContactButton
+              user={user}
+              type="revoked"
+              label="Demander le déblocage sur WhatsApp"
+            />
             <button
-              className="btn btn-primary"
+              className="btn btn-secondary"
               onClick={handleReapply}
               disabled={reapplying}
             >

@@ -27,6 +27,7 @@ import {
 } from "../components/Icon.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
+import WhatsAppContactButton from "../components/WhatsAppContactButton.jsx";
 
 function Home() {
   const { user, isRevoked, isPending, logout, refreshUser } = useAuth();
@@ -275,13 +276,21 @@ function Home() {
               </p>
             </div>
           </div>
-          <button
-            onClick={logout}
-            className="btn btn-secondary btn-sm"
-            style={{ borderRadius: 10, fontWeight: 700 }}
-          >
-            Se déconnecter
-          </button>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <WhatsAppContactButton
+              user={user}
+              type="revoked"
+              variant="banner"
+              label="Contacter sur WhatsApp"
+            />
+            <button
+              onClick={logout}
+              className="btn btn-secondary btn-sm"
+              style={{ borderRadius: 10, fontWeight: 700 }}
+            >
+              Se déconnecter
+            </button>
+          </div>
         </div>
       )}
 
@@ -325,7 +334,13 @@ function Home() {
               </p>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <WhatsAppContactButton
+              user={user}
+              type="pending"
+              variant="banner"
+              label="Demander l'approbation sur WhatsApp"
+            />
             <button
               onClick={refreshUser}
               className="btn btn-primary btn-sm"

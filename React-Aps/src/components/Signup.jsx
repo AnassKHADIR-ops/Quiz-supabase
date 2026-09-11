@@ -15,8 +15,10 @@ import {
   Sparkles,
   Trophy,
   GraduationCap,
-  Users
+  Users,
+  Clock
 } from "./Icon.jsx";
+import WhatsAppContactButton from "./WhatsAppContactButton.jsx";
 
 function AKLogoLarge() {
   return (
@@ -384,9 +386,35 @@ function Signup() {
             </div>
 
             {error && (
-              <p className="error-msg" style={{ marginBottom: 16, fontSize: "0.85rem", display: "flex", alignItems: "center", gap: 6 }}>
-                <AlertTriangle size={15} /> {error}
-              </p>
+              error.toLowerCase().includes("attente d'approbation") || error.toLowerCase().includes("approbation") ? (
+                <div
+                  style={{
+                    marginBottom: 18,
+                    padding: "16px",
+                    borderRadius: 14,
+                    background: "rgba(245, 158, 11, 0.1)",
+                    border: "1px solid rgba(245, 158, 11, 0.35)",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "#b45309", fontWeight: 800, fontSize: "0.95rem", marginBottom: 6 }}>
+                    <Clock size={18} /> Inscription enregistrée !
+                  </div>
+                  <p style={{ margin: "0 0 14px", fontSize: "0.86rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                    Votre compte a bien été créé et est en attente d'approbation. Pour accélérer votre validation, contactez directement le professeur :
+                  </p>
+                  <WhatsAppContactButton
+                    user={{ name, email }}
+                    type="signup"
+                    variant="modal"
+                    label="Notifier le professeur sur WhatsApp"
+                  />
+                </div>
+              ) : (
+                <p className="error-msg" style={{ marginBottom: 16, fontSize: "0.85rem", display: "flex", alignItems: "center", gap: 6 }}>
+                  <AlertTriangle size={15} /> {error}
+                </p>
+              )
             )}
 
             <button
