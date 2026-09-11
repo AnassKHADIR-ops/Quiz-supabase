@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Utilitaires pour la génération de messages et d'emails d'adhésion (Gmail & Mailto)
  * Expéditeur : anass.khadir@usmba.ac.ma
  * WhatsApp : +212659041407
@@ -41,11 +41,11 @@ Pour vous accompagner efficacement vers la réussite de vos concours (CNC Maroc,
 L'accès illimité pour toute l'année scolaire est fixé au tarif préférentiel de ${PROF_INFO.annualPrice} (soit environ 41 DH/mois pour un accompagnement d'excellence complet).
 
 📱 Comment activer votre compte dès aujourd'hui ?
-Pour finaliser votre inscription et activer immédiatement votre accès complet à l'Espace Membre, je vous invite à me contacter directement sur WhatsApp :
+Pour finaliser votre inscription, convenir ensemble des modalités et activer immédiatement votre accès complet à l'Espace Membre, je vous invite à me contacter directement sur WhatsApp :
 👉 WhatsApp direct : ${PROF_INFO.whatsappUrl}
 👉 Téléphone / WhatsApp : ${PROF_INFO.phone}
 
-N'hésitez pas à m'écrire, je reste à votre entière disposition pour répondre à vos questions et vous guider dans votre préparation.
+N'hésitez pas à m'écrire sur WhatsApp, nous pourrons échanger directement pour répondre à vos questions et débloquer vos accès sans délai.
 
 Excellente continuation et à très bientôt,
 
@@ -72,8 +72,8 @@ Votre compte sur notre plateforme de Mathématiques CPGE (${PROF_INFO.platformUr
 
 Pour rappel, l'Espace Membre privé vous donne un accès illimité à l'intégralité de nos cours, replays vidéo des séances en direct, supports PDF téléchargeables et corrections détaillées des concours (CNC, Mines, Centrale, CCINP, X-ENS) au tarif annuel de ${PROF_INFO.annualPrice}.
 
-Si vous souhaitez débloquer vos accès dès maintenant, écrivez-moi directement sur WhatsApp pour activer votre compte :
-👉 WhatsApp : ${PROF_INFO.whatsappUrl} (${PROF_INFO.phone})
+Si vous souhaitez convenir des modalités et débloquer vos accès dès maintenant, écrivez-moi directement sur WhatsApp :
+👉 WhatsApp direct : ${PROF_INFO.whatsappUrl} (${PROF_INFO.phone})
 
 Bien cordialement,
 
@@ -95,8 +95,8 @@ Je vous contacte concernant votre compte sur notre plateforme de Mathématiques 
 
 De nouvelles séances en direct, des replays vidéo et de nouvelles fiches de concours ont été ajoutés récemment à l'Espace Membre.
 
-Si vous souhaitez renouveler ou réactiver votre accès complet (${PROF_INFO.annualPrice}), contactez-moi directement sur WhatsApp pour débloquer votre compte sans délai :
-👉 WhatsApp : ${PROF_INFO.whatsappUrl} (${PROF_INFO.phone})
+Si vous souhaitez renouveler ou réactiver votre accès complet (${PROF_INFO.annualPrice}), contactez-moi directement sur WhatsApp pour convenir des modalités et débloquer votre compte :
+👉 WhatsApp direct : ${PROF_INFO.whatsappUrl} (${PROF_INFO.phone})
 
 Bien cordialement,
 
@@ -117,8 +117,8 @@ J'ai bien noté votre participation à nos tests d'évaluation sur notre platefo
 
 Pour approfondir les notions et maximiser vos chances aux concours (CNC, CCINP, Mines, Centrale), vous pouvez rejoindre notre Espace Membre complet (${PROF_INFO.annualPrice}) comprenant toutes les séances de cours live, les replays vidéo intégraux, les polycopiés PDF et les annales corrigées pas à pas.
 
-N'hésitez pas à m'écrire sur WhatsApp pour en savoir plus et activer vos accès :
-👉 WhatsApp : ${PROF_INFO.whatsappUrl} (${PROF_INFO.phone})
+N'hésitez pas à m'écrire sur WhatsApp pour convenir des modalités et activer vos accès :
+👉 WhatsApp direct : ${PROF_INFO.whatsappUrl} (${PROF_INFO.phone})
 
 Bien cordialement,
 
