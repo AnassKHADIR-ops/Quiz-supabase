@@ -10,6 +10,12 @@ export function useVideoSecurity({ onDevToolsOpen } = {}) {
   const [isDevToolsOpen, setIsDevToolsOpen] = useState(false);
   const onDevToolsOpenRef = useRef(onDevToolsOpen);
   onDevToolsOpenRef.current = onDevToolsOpen;
+  const dismissedRef = useRef(false);
+
+  const dismissDevTools = () => {
+    dismissedRef.current = true;
+    setIsDevToolsOpen(false);
+  };
 
   useEffect(() => {
     // 1. Interception des raccourcis clavier d'inspection et de copie
@@ -18,6 +24,9 @@ export function useVideoSecurity({ onDevToolsOpen } = {}) {
       if (e.key === "F12" || e.keyCode === 123) {
         e.preventDefault();
         e.stopPropagation();
+        dismissedRef.current = false;
+        setIsDevToolsOpen(true);
+        onDevToolsOpenRef.current?.();
         return false;
       }
 
@@ -27,6 +36,9 @@ export function useVideoSecurity({ onDevToolsOpen } = {}) {
       if (isModifier && e.shiftKey && ["I", "J", "C"].includes(e.key.toUpperCase())) {
         e.preventDefault();
         e.stopPropagation();
+        dismissedRef.current = false;
+        setIsDevToolsOpen(true);
+        onDevToolsOpenRef.current?.();
         return false;
       }
 
@@ -52,18 +64,25 @@ export function useVideoSecurity({ onDevToolsOpen } = {}) {
       return false;
     };
 
-    // 3. Détection dynamique de l'ouverture des DevTools du navigateur
+    // 3. Détection dynamique de l'ouverture des DevTools (calibrée contre les faux positifs)
     const checkDevTools = () => {
-      const threshold = 160;
-      const widthDiff = window.outerWidth - window.innerWidth > threshold;
-      const heightDiff = window.outerHeight - window.innerHeight > threshold;
-      const isOpen = widthDiff || heightDiff;
+      if (dismissedRef.current) return;
+
+      // Éviter les faux positifs dus au zoom d'affichage Windows (125%, 150%) et volets latéraux (Edge Copilot, Favoris)
+      const widthDiff = Math.max(0, window.outerWidth - window.innerWidth);
+      const heightDiff = Math.max(0, window.outerHeight - window.innerHeight);
+
+      // Un inspecteur ancré occupe une portion substantielle (> 220px et > 25% de la dimension)
+      const thresholdW = Math.max(220, window.outerWidth * 0.22);
+      const thresholdH = Math.max(220, window.outerHeight * 0.25);
+
+      const isDocked = (widthDiff > thresholdW && heightDiff > 120) || heightDiff > thresholdH;
 
       setIsDevToolsOpen((prev) => {
-        if (isOpen && !prev) {
+        if (isDocked && !prev) {
           onDevToolsOpenRef.current?.();
         }
-        return isOpen;
+        return isDocked;
       });
     };
 
@@ -71,7 +90,7 @@ export function useVideoSecurity({ onDevToolsOpen } = {}) {
     window.addEventListener("contextmenu", handleContextMenu, { capture: true });
     window.addEventListener("resize", checkDevTools);
 
-    const interval = setInterval(checkDevTools, 800);
+    const interval = setInterval(checkDevTools, 1000);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown, { capture: true });
@@ -81,7 +100,7 @@ export function useVideoSecurity({ onDevToolsOpen } = {}) {
     };
   }, []);
 
-  return { isDevToolsOpen };
+  return { isDevToolsOpen, dismissDevTools };
 }
 
 export default useVideoSecurity;

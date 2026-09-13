@@ -14,7 +14,8 @@ import {
   RotateCw,
   ShieldCheck,
   Loader2,
-  Lock
+  Lock,
+  ExternalLink
 } from "./Icon.jsx";
 
 /**
@@ -106,6 +107,7 @@ export default function MathVideoPlayer({
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [splashAction, setSplashAction] = useState(null); // 'play' | 'pause' | 'seek-forward' | 'seek-backward'
   const [seekSplash, setSeekSplash] = useState(null); // 'left' | 'right' | null
+  const [driveLoaded, setDriveLoaded] = useState(false);
 
   const rawUrl = (typeof videoUrl === "string" ? videoUrl : "")?.trim();
   const ytId = extractYouTubeId(rawUrl);
@@ -336,7 +338,7 @@ export default function MathVideoPlayer({
     }
   }, []);
 
-  const { isDevToolsOpen } = useVideoSecurity({ onDevToolsOpen: pausePlayback });
+  const { isDevToolsOpen, dismissDevTools } = useVideoSecurity({ onDevToolsOpen: pausePlayback });
 
   // Playback Control Actions
   const togglePlay = useCallback(() => {
@@ -618,36 +620,108 @@ export default function MathVideoPlayer({
     );
   }
 
-  // Google Drive Embed Fallback
+  // Google Drive Embed Player
   if (driveId) {
+    const drivePreviewUrl = `https://drive.google.com/file/d/${driveId}/preview`;
+    const driveViewUrl = `https://drive.google.com/file/d/${driveId}/view?usp=sharing`;
+
     return (
       <div
-        className={`math-video-container ${className}`}
-        onContextMenu={(e) => e.preventDefault()}
+        className={`math-video-drive-wrapper ${className}`}
         style={{
-          position: "relative",
           width: "100%",
-          paddingTop: "56.25%",
-          background: "#050811",
+          display: "flex",
+          flexDirection: "column",
           borderRadius: 14,
           overflow: "hidden",
+          background: "#070b19",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
           boxShadow: "0 20px 40px -15px rgba(0, 0, 0, 0.5)",
         }}
       >
-        <iframe
-          title={title}
-          src={`https://drive.google.com/file/d/${driveId}/preview`}
+        <div
+          className="math-video-container math-video-drive"
+          onContextMenu={(e) => e.preventDefault()}
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
+            position: "relative",
             width: "100%",
-            height: "100%",
-            border: 0,
+            paddingTop: "56.25%",
+            background: "#050811",
+            overflow: "hidden",
           }}
-          allow="autoplay; encrypted-media"
-          allowFullScreen
-        />
+        >
+          {/* Spinner during initial load */}
+          {!driveLoaded && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#070b19",
+                color: "#ffffff",
+                gap: 12,
+                zIndex: 3,
+                pointerEvents: "none",
+              }}
+            >
+              <Loader2
+                size={38}
+                style={{
+                  animation: "spin 1s linear infinite",
+                  color: "var(--primary, #3b82f6)",
+                }}
+              />
+              <span style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
+                Chargement du lecteur Google Drive...
+              </span>
+            </div>
+          )}
+
+          <iframe
+            className="math-video-drive-iframe"
+            title={title}
+            src={drivePreviewUrl}
+            onLoad={() => setDriveLoaded(true)}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              border: 0,
+              pointerEvents: "auto",
+              zIndex: 2,
+            }}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+            allowFullScreen
+            referrerPolicy="no-referrer"
+            loading="eager"
+          />
+        </div>
+
+        {/* Action bar and fallback if third-party cookies or browser blocks iframe */}
+        <div className="math-video-drive-bar">
+          <div className="math-video-drive-info">
+            <span style={{ fontSize: "1.05rem" }}>💡</span>
+            <span>
+              Séance hébergée sur <strong>Google Drive</strong>. Si la vidéo ne démarre pas (cookies tiers bloqués par votre navigateur), ouvrez-la directement ci-contre.
+            </span>
+          </div>
+          <div className="math-video-drive-actions">
+            <a
+              href={driveViewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="math-video-drive-btn math-video-drive-btn-primary"
+              title="Ouvrir la vidéo directement sur Google Drive dans un nouvel onglet"
+            >
+              <ExternalLink size={14} /> Ouvrir sur Drive
+            </a>
+          </div>
+        </div>
       </div>
     );
   }
@@ -716,6 +790,24 @@ export default function MathVideoPlayer({
           <p style={{ color: "#94a3b8", fontSize: "0.88rem", maxWidth: 440, lineHeight: 1.5, margin: 0 }}>
             Les outils de développement et d'inspection sont désactivés sur cet espace de cours privé. Veuillez fermer la console ou le panneau d'inspection pour reprendre la lecture de votre séance.
           </p>
+          <button
+            type="button"
+            onClick={dismissDevTools}
+            style={{
+              marginTop: 18,
+              background: "rgba(255, 255, 255, 0.12)",
+              border: "1px solid rgba(255, 255, 255, 0.25)",
+              color: "#ffffff",
+              padding: "8px 18px",
+              borderRadius: 8,
+              fontSize: "0.85rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "background 0.2s ease",
+            }}
+          >
+            Continuer la lecture (Je n'utilise pas l'inspecteur)
+          </button>
         </div>
       )}
 

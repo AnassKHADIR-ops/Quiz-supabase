@@ -63,5 +63,6 @@ export {
   RotateCw,
   FastForward,
   Rewind,
-  Loader2
+  Loader2,
+  ExternalLink
 } from "lucide-react";
