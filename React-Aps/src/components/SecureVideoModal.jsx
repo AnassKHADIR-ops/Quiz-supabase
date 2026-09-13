@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { X, PlayCircle, Download, FileText, CheckCircle, Zap, ShieldCheck, ExternalLink } from "./Icon.jsx";
+import { X, PlayCircle, Download, FileText, CheckCircle, Zap, ShieldCheck } from "./Icon.jsx";
 import MathVideoPlayer from "./MathVideoPlayer.jsx";
-import { getEmbedUrl, extractDriveFileId } from "../utils/driveUtils.js";
+import { getEmbedUrl } from "../utils/driveUtils.js";
 
 function SecureVideoModal({ chapter, videoUrl, title, onClose }) {
   const [isControlsVisible, setIsControlsVisible] = useState(true);
@@ -16,7 +16,6 @@ function SecureVideoModal({ chapter, videoUrl, title, onClose }) {
   }, [onClose]);
 
   const rawUrl = videoUrl || (chapter && (chapter.video_url || chapter.video || chapter.v || chapter.vid || chapter.video_id)) || "";
-  const driveId = extractDriveFileId(rawUrl);
   const displayTitle = title || (chapter && (chapter.titre || chapter.t)) || "Séance & Replay Vidéo";
   const hasResources = Boolean(chapter?.pdf || chapter?.exo || chapter?.corr || chapter?.qcm_id);
 
@@ -195,19 +194,7 @@ function SecureVideoModal({ chapter, videoUrl, title, onClose }) {
                 <CheckCircle size={14} /> Correction PDF
               </a>
             )}
-            {driveId && (
-              <a
-                href={`https://drive.google.com/file/d/${driveId}/view?usp=sharing`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-secondary btn-sm"
-                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-                title="Ouvrir la vidéo directement sur Google Drive"
-              >
-                <ExternalLink size={14} /> Ouvrir sur Drive
-              </a>
-            )}
-            {!hasResources && !driveId && (
+            {!hasResources && (
               <span style={{ fontSize: "0.82rem", color: "var(--text-muted)", display: "inline-flex", alignItems: "center", gap: 5 }}>
                 🎓 Séance de cours & révision mathématique
               </span>
