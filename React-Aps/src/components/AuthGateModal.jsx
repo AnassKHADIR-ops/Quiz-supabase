@@ -114,20 +114,23 @@ export default function AuthGateModal({
   // ── Mode 1: Compte Révoqué ──
   if (isRevoked) {
     return (
-      <div className="modal-backdrop" onMouseDown={onClose} style={{ zIndex: 1100 }}>
+      <div className="modal-backdrop" onMouseDown={onClose} style={{ zIndex: 1100, overflowY: "auto", padding: "16px 12px" }}>
         <div
-          className="document-preview-modal auth-gate-modal fade-up"
+          className="auth-gate-modal fade-up"
           onMouseDown={(e) => e.stopPropagation()}
           style={{
-            maxWidth: 520,
-            width: "92vw",
-            borderRadius: 22,
-            overflow: "hidden",
+            maxWidth: 500,
+            width: "min(94vw, 500px)",
+            maxHeight: "min(92vh, 720px)",
+            borderRadius: 20,
+            overflowY: "auto",
+            overflowX: "hidden",
             background: "var(--card-bg, #ffffff)",
             boxShadow: "0 30px 60px -15px rgba(0, 0, 0, 0.4)",
             border: "1px solid var(--border)",
             padding: 0,
             textAlign: "center",
+            margin: "auto",
           }}
         >
           {/* Header Révoqué */}
@@ -135,7 +138,7 @@ export default function AuthGateModal({
             style={{
               position: "relative",
               background: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 50%, #991b1b 100%)",
-              padding: "36px 24px 28px",
+              padding: "24px 20px 18px",
               color: "white",
             }}
           >
@@ -162,19 +165,19 @@ export default function AuthGateModal({
 
             <div
               style={{
-                width: 64,
-                height: 64,
-                borderRadius: 20,
+                width: 50,
+                height: 50,
+                borderRadius: 16,
                 background: "rgba(255, 255, 255, 0.18)",
                 backdropFilter: "blur(10px)",
                 border: "1px solid rgba(255, 255, 255, 0.3)",
                 display: "grid",
                 placeItems: "center",
-                margin: "0 auto 16px",
+                margin: "0 auto 10px",
                 color: "#ffffff",
               }}
             >
-              <ShieldAlert size={34} />
+              <ShieldAlert size={28} />
             </div>
 
             <div
@@ -183,29 +186,29 @@ export default function AuthGateModal({
                 alignItems: "center",
                 gap: 6,
                 background: "rgba(0, 0, 0, 0.25)",
-                padding: "4px 14px",
+                padding: "3px 12px",
                 borderRadius: 99,
-                fontSize: "0.74rem",
+                fontSize: "0.72rem",
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
-                marginBottom: 10,
+                marginBottom: 8,
               }}
             >
               <AlertTriangle size={13} style={{ color: "#fca5a5" }} />
               Accès Suspendu • Compte Révoqué
             </div>
 
-            <h2 style={{ fontSize: "1.45rem", fontWeight: 800, margin: "0 0 6px", color: "white" }}>
+            <h2 style={{ fontSize: "1.3rem", fontWeight: 800, margin: "0 0 4px", color: "white" }}>
               Accès Révoqué
             </h2>
-            <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.9, lineHeight: 1.45 }}>
+            <p style={{ margin: 0, fontSize: "0.85rem", opacity: 0.9, lineHeight: 1.4 }}>
               {title ? `Accès bloqué : ${title}` : "Accès aux contenus privés suspendu"}
             </p>
           </div>
 
-          <div style={{ padding: "26px 28px 24px", background: "var(--surface)" }}>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.92rem", lineHeight: 1.55, margin: "0 0 20px" }}>
+          <div style={{ padding: "18px 22px 18px", background: "var(--surface)" }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.88rem", lineHeight: 1.45, margin: "0 0 14px" }}>
               Votre accès à cette plateforme privée a été <strong>révoqué</strong> par l'administrateur. Vous ne pouvez plus visionner les vidéos de cours ni consulter les corrections détaillées.
             </p>
 
@@ -214,9 +217,9 @@ export default function AuthGateModal({
               style={{
                 background: "var(--surface-2)",
                 border: "1px solid var(--border)",
-                borderRadius: 14,
-                padding: "14px 16px",
-                marginBottom: 24,
+                borderRadius: 12,
+                padding: "10px 14px",
+                marginBottom: 16,
                 textAlign: "left",
                 display: "flex",
                 alignItems: "center",
@@ -225,13 +228,13 @@ export default function AuthGateModal({
               }}
             >
               <div>
-                <div style={{ fontWeight: 700, color: "var(--text)", fontSize: "0.92rem" }}>{user?.name || "Étudiant"}</div>
-                <div style={{ color: "var(--text-muted)", fontSize: "0.82rem", fontFamily: "monospace" }}>{user?.email}</div>
+                <div style={{ fontWeight: 700, color: "var(--text)", fontSize: "0.88rem" }}>{user?.name || "Étudiant"}</div>
+                <div style={{ color: "var(--text-muted)", fontSize: "0.8rem", fontFamily: "monospace" }}>{user?.email}</div>
               </div>
               <span className="badge badge-danger">Accès Révoqué</span>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <WhatsAppContactButton
                 user={user}
                 type="revoked"
@@ -243,7 +246,7 @@ export default function AuthGateModal({
                 type="button"
                 onClick={handleLogoutAndClose}
                 className="btn btn-secondary"
-                style={{ width: "100%", justifyContent: "center", fontWeight: 600, borderRadius: 12 }}
+                style={{ width: "100%", justifyContent: "center", fontWeight: 600, borderRadius: 12, padding: "10px 16px", fontSize: "0.92rem" }}
               >
                 Se déconnecter
               </button>
@@ -254,7 +257,7 @@ export default function AuthGateModal({
                   background: "transparent",
                   border: "none",
                   color: "var(--text-muted)",
-                  fontSize: "0.82rem",
+                  fontSize: "0.8rem",
                   marginTop: 6,
                   cursor: "pointer",
                   textDecoration: "underline",
@@ -272,27 +275,30 @@ export default function AuthGateModal({
   // ── Mode 2: Compte en attente d'approbation ──
   if (isPending) {
     return (
-      <div className="modal-backdrop" onMouseDown={onClose} style={{ zIndex: 1100 }}>
+      <div className="modal-backdrop" onMouseDown={onClose} style={{ zIndex: 1100, overflowY: "auto", padding: "16px 12px" }}>
         <div
-          className="document-preview-modal auth-gate-modal fade-up"
+          className="auth-gate-modal fade-up"
           onMouseDown={(e) => e.stopPropagation()}
           style={{
-            maxWidth: 520,
-            width: "92vw",
-            borderRadius: 22,
-            overflow: "hidden",
+            maxWidth: 500,
+            width: "min(94vw, 500px)",
+            maxHeight: "min(92vh, 720px)",
+            borderRadius: 20,
+            overflowY: "auto",
+            overflowX: "hidden",
             background: "var(--card-bg, #ffffff)",
             boxShadow: "0 30px 60px -15px rgba(0, 0, 0, 0.4)",
             border: "1px solid var(--border)",
             padding: 0,
             textAlign: "center",
+            margin: "auto",
           }}
         >
           <div
             style={{
               position: "relative",
               background: "linear-gradient(135deg, #78350f 0%, #d97706 50%, #b45309 100%)",
-              padding: "36px 24px 28px",
+              padding: "24px 20px 18px",
               color: "white",
             }}
           >
@@ -319,19 +325,19 @@ export default function AuthGateModal({
 
             <div
               style={{
-                width: 64,
-                height: 64,
-                borderRadius: 20,
+                width: 50,
+                height: 50,
+                borderRadius: 16,
                 background: "rgba(255, 255, 255, 0.18)",
                 backdropFilter: "blur(10px)",
                 border: "1px solid rgba(255, 255, 255, 0.3)",
                 display: "grid",
                 placeItems: "center",
-                margin: "0 auto 16px",
+                margin: "0 auto 10px",
                 color: "#ffffff",
               }}
             >
-              <Clock size={34} />
+              <Clock size={28} />
             </div>
 
             <div
@@ -340,29 +346,29 @@ export default function AuthGateModal({
                 alignItems: "center",
                 gap: 6,
                 background: "rgba(0, 0, 0, 0.2)",
-                padding: "4px 14px",
+                padding: "3px 12px",
                 borderRadius: 99,
-                fontSize: "0.74rem",
+                fontSize: "0.72rem",
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
-                marginBottom: 10,
+                marginBottom: 8,
               }}
             >
               <Sparkles size={13} style={{ color: "#fef08a" }} />
               En attente d'approbation
             </div>
 
-            <h2 style={{ fontSize: "1.45rem", fontWeight: 800, margin: "0 0 6px", color: "white" }}>
+            <h2 style={{ fontSize: "1.3rem", fontWeight: 800, margin: "0 0 4px", color: "white" }}>
               Inscription en cours d'examen
             </h2>
-            <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.9, lineHeight: 1.45 }}>
+            <p style={{ margin: 0, fontSize: "0.85rem", opacity: 0.9, lineHeight: 1.4 }}>
               Votre compte est en attente de validation par l'administrateur
             </p>
           </div>
 
-          <div style={{ padding: "26px 28px 24px", background: "var(--surface)" }}>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.92rem", lineHeight: 1.55, margin: "0 0 20px" }}>
+          <div style={{ padding: "18px 22px 18px", background: "var(--surface)" }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.88rem", lineHeight: 1.45, margin: "0 0 14px" }}>
               Cette plateforme est privée. Votre demande d'accès a été transmise. Les replays vidéo et corrections détaillées seront débloqués dès validation par le professeur.
             </p>
 
@@ -370,9 +376,9 @@ export default function AuthGateModal({
               style={{
                 background: "var(--surface-2)",
                 border: "1px solid var(--border)",
-                borderRadius: 14,
-                padding: "14px 16px",
-                marginBottom: 20,
+                borderRadius: 12,
+                padding: "10px 14px",
+                marginBottom: 16,
                 textAlign: "left",
                 display: "flex",
                 alignItems: "center",
@@ -381,8 +387,8 @@ export default function AuthGateModal({
               }}
             >
               <div>
-                <div style={{ fontWeight: 700, color: "var(--text)", fontSize: "0.92rem" }}>{user?.name || "Étudiant"}</div>
-                <div style={{ color: "var(--text-muted)", fontSize: "0.82rem", fontFamily: "monospace" }}>{user?.email}</div>
+                <div style={{ fontWeight: 700, color: "var(--text)", fontSize: "0.88rem" }}>{user?.name || "Étudiant"}</div>
+                <div style={{ color: "var(--text-muted)", fontSize: "0.8rem", fontFamily: "monospace" }}>{user?.email}</div>
               </div>
               <span className="badge badge-warning">En attente</span>
             </div>
@@ -390,13 +396,13 @@ export default function AuthGateModal({
             {notice && (
               <div
                 style={{
-                  margin: "0 0 16px",
-                  padding: "10px 14px",
+                  margin: "0 0 14px",
+                  padding: "8px 12px",
                   borderRadius: 10,
                   background: notice.includes("débloqué") ? "var(--success-light)" : "var(--primary-light)",
                   color: notice.includes("débloqué") ? "var(--success)" : "var(--primary)",
                   fontWeight: 600,
-                  fontSize: "0.88rem",
+                  fontSize: "0.85rem",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -408,7 +414,7 @@ export default function AuthGateModal({
               </div>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <WhatsAppContactButton
                 user={user}
                 type="pending"
@@ -418,10 +424,10 @@ export default function AuthGateModal({
               />
               <button
                 type="button"
-                className="btn btn-secondary btn-lg"
+                className="btn btn-secondary"
                 onClick={handleCheckStatus}
                 disabled={checking}
-                style={{ width: "100%", justifyContent: "center", fontWeight: 700, borderRadius: 12 }}
+                style={{ width: "100%", justifyContent: "center", fontWeight: 700, borderRadius: 12, padding: "10px 16px", fontSize: "0.92rem" }}
               >
                 {checking ? (
                   <><span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> Vérification...</>
@@ -433,7 +439,7 @@ export default function AuthGateModal({
                 type="button"
                 onClick={handleLogoutAndClose}
                 className="btn btn-secondary btn-sm"
-                style={{ width: "100%", justifyContent: "center", borderRadius: 12 }}
+                style={{ width: "100%", justifyContent: "center", borderRadius: 12, padding: "8px 14px" }}
               >
                 Se déconnecter
               </button>
@@ -446,20 +452,23 @@ export default function AuthGateModal({
 
   // ── Mode 3: Visiteur non connecté (Guest) ──
   return (
-    <div className="modal-backdrop" onMouseDown={onClose} style={{ zIndex: 1100 }}>
+    <div className="modal-backdrop" onMouseDown={onClose} style={{ zIndex: 1100, overflowY: "auto", padding: "16px 12px" }}>
       <div
-        className="document-preview-modal auth-gate-modal fade-up"
+        className="auth-gate-modal fade-up"
         onMouseDown={(e) => e.stopPropagation()}
         style={{
-          maxWidth: 520,
-          width: "92vw",
-          borderRadius: 22,
-          overflow: "hidden",
+          maxWidth: 500,
+          width: "min(94vw, 500px)",
+          maxHeight: "min(92vh, 720px)",
+          borderRadius: 20,
+          overflowY: "auto",
+          overflowX: "hidden",
           background: "var(--card-bg, #ffffff)",
           boxShadow: "0 30px 60px -15px rgba(0, 0, 0, 0.4)",
           border: "1px solid var(--border)",
           padding: 0,
           textAlign: "center",
+          margin: "auto",
         }}
       >
         {/* Top Decorative Banner */}
@@ -467,7 +476,7 @@ export default function AuthGateModal({
           style={{
             position: "relative",
             background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #7c3aed 100%)",
-            padding: "36px 24px 28px",
+            padding: "24px 20px 18px",
             color: "white",
           }}
         >
@@ -496,16 +505,16 @@ export default function AuthGateModal({
           {/* Glowing Icon Badge */}
           <div
             style={{
-              width: 64,
-              height: 64,
-              borderRadius: 20,
+              width: 50,
+              height: 50,
+              borderRadius: 16,
               background: "rgba(255, 255, 255, 0.18)",
               backdropFilter: "blur(10px)",
               border: "1px solid rgba(255, 255, 255, 0.3)",
               display: "grid",
               placeItems: "center",
-              margin: "0 auto 16px",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+              margin: "0 auto 10px",
+              boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
               color: "#ffffff",
             }}
           >
@@ -519,13 +528,13 @@ export default function AuthGateModal({
               gap: 6,
               background: "rgba(255, 255, 255, 0.2)",
               backdropFilter: "blur(6px)",
-              padding: "4px 14px",
+              padding: "3px 12px",
               borderRadius: 99,
-              fontSize: "0.74rem",
+              fontSize: "0.72rem",
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: "0.08em",
-              marginBottom: 10,
+              marginBottom: 8,
               border: "1px solid rgba(255, 255, 255, 0.25)",
             }}
           >
@@ -533,17 +542,17 @@ export default function AuthGateModal({
             {baseConfig.badge}
           </div>
 
-          <h2 style={{ fontSize: "1.45rem", fontWeight: 800, margin: "0 0 6px", color: "white" }}>
+          <h2 style={{ fontSize: "1.3rem", fontWeight: 800, margin: "0 0 4px", color: "white" }}>
             {baseConfig.headline}
           </h2>
-          <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.9, lineHeight: 1.45 }}>
+          <p style={{ margin: 0, fontSize: "0.85rem", opacity: 0.9, lineHeight: 1.4 }}>
             {baseConfig.title}
           </p>
         </div>
 
         {/* Modal Body */}
-        <div style={{ padding: "26px 28px 24px", background: "var(--surface)" }}>
-          <p style={{ color: "var(--text-muted)", fontSize: "0.92rem", lineHeight: 1.55, margin: "0 0 22px" }}>
+        <div style={{ padding: "18px 22px 18px", background: "var(--surface)" }}>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.88rem", lineHeight: 1.45, margin: "0 0 14px" }}>
             {baseConfig.description}
           </p>
 
@@ -552,39 +561,41 @@ export default function AuthGateModal({
             style={{
               background: "var(--surface-2)",
               border: "1px solid var(--border)",
-              borderRadius: 14,
-              padding: "14px 16px",
-              marginBottom: 24,
+              borderRadius: 12,
+              padding: "10px 14px",
+              marginBottom: 16,
               textAlign: "left",
               display: "flex",
               flexDirection: "column",
-              gap: 10,
+              gap: 8,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "0.86rem", color: "var(--text)" }}>
-              <span style={{ fontSize: "1.1rem" }}>🎬</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "0.82rem", color: "var(--text)" }}>
+              <span style={{ fontSize: "1rem" }}>🎬</span>
               <span><strong>Vidéos & Replays HD</strong> : Explications pas-à-pas de chaque chapitre</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "0.86rem", color: "var(--text)" }}>
-              <span style={{ fontSize: "1.1rem" }}>📝</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "0.82rem", color: "var(--text)" }}>
+              <span style={{ fontSize: "1rem" }}>📝</span>
               <span><strong>Corrections Détaillées</strong> : Démonstrations et rédactions complètes</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "0.86rem", color: "var(--text)" }}>
-              <span style={{ fontSize: "1.1rem" }}>⚡</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "0.82rem", color: "var(--text)" }}>
+              <span style={{ fontSize: "1rem" }}>⚡</span>
               <span><strong>QCM & Concours</strong> : Entraînement interactif et suivi de progression</span>
             </div>
           </div>
 
           {/* Action CTAs */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <Link
               to={loginLink}
-              className="btn btn-primary btn-lg"
+              className="btn btn-primary"
               style={{
                 width: "100%",
                 justifyContent: "center",
                 fontWeight: 700,
                 borderRadius: 12,
+                padding: "11px 16px",
+                fontSize: "0.95rem",
                 boxShadow: "0 4px 14px rgba(67, 97, 238, 0.35)",
               }}
             >
@@ -593,12 +604,14 @@ export default function AuthGateModal({
 
             <Link
               to={signupLink}
-              className="btn btn-secondary btn-lg"
+              className="btn btn-secondary"
               style={{
                 width: "100%",
                 justifyContent: "center",
                 fontWeight: 700,
                 borderRadius: 12,
+                padding: "10px 16px",
+                fontSize: "0.95rem",
               }}
             >
               Créer un compte gratuitement
@@ -613,8 +626,8 @@ export default function AuthGateModal({
               background: "transparent",
               border: "none",
               color: "var(--text-muted)",
-              fontSize: "0.82rem",
-              marginTop: 16,
+              fontSize: "0.8rem",
+              marginTop: 12,
               cursor: "pointer",
               textDecoration: "underline",
             }}

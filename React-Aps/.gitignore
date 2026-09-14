@@ -15,3 +15,8 @@ dist/
 # Editor & OS files
 .DS_Store
 Thumbs.db
+
+# Vite temporary config files
+*.timestamp-*.mjs
+*.timestamp-*.js
+

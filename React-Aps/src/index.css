@@ -434,6 +434,33 @@ a:hover { text-decoration: underline; }
   box-shadow: var(--shadow-xl);
   overflow: hidden;
 }
+
+.auth-gate-modal {
+  position: relative;
+  width: min(94vw, 520px);
+  max-height: min(92vh, 740px);
+  max-height: min(92dvh, 740px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.4);
+  overflow-y: auto;
+  overflow-x: hidden;
+  text-align: center;
+  margin: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-height: 720px) {
+  .auth-gate-modal {
+    max-height: 94vh;
+    max-height: 94dvh;
+    border-radius: 16px;
+  }
+}
+
 .document-preview-head {
   display: flex;
   align-items: center;

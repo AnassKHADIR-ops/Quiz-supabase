@@ -5,3 +5,6 @@ dist/
 supabase/.env
 .vercel
 .env*
+*.timestamp-*.mjs
+*.timestamp-*.js
+
