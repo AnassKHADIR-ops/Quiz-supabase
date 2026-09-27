@@ -177,20 +177,37 @@ a:hover { text-decoration: underline; }
 /* ════════════════════════════════════════
    SCROLL ANIMATIONS
    ════════════════════════════════════════ */
+@keyframes fadeUpAutoSafety {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .fade-up {
   opacity: 0;
-  transform: translateY(32px);
+  transform: translateY(24px);
   transition: opacity .65s cubic-bezier(.22,1,.36,1),
               transform .65s cubic-bezier(.22,1,.36,1);
+  animation: fadeUpAutoSafety .7s ease .3s forwards;
 }
-.fade-up.visible        { opacity: 1; transform: translateY(0); }
+.fade-up.visible        { opacity: 1; transform: translateY(0); animation: none; }
 .fade-up.delay-1        { transition-delay: .08s; }
 .fade-up.delay-2        { transition-delay: .16s; }
 .fade-up.delay-3        { transition-delay: .24s; }
 .fade-up.delay-4        { transition-delay: .32s; }
 
-.fade-in                { opacity: 0; transition: opacity .5s ease; }
-.fade-in.visible        { opacity: 1; }
+.fade-in                { opacity: 0; transition: opacity .5s ease; animation: fadeUpAutoSafety .7s ease .3s forwards; }
+.fade-in.visible        { opacity: 1; animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up, .fade-in {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
 
 /* ════════════════════════════════════════
    NAVBAR

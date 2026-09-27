@@ -35,8 +35,8 @@ export default function PasserelleBac() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // WordPress live data sync
-  const { passerelleBacData, isSyncing, isLive, lastSynced, refreshSync } = usePasserelleBacSync();
+  // WordPress live data sync (poll only if admin)
+  const { passerelleBacData, isSyncing, isLive, lastSynced, refreshSync } = usePasserelleBacSync(null, isAdmin ? 15000 : 0);
 
   const [activeCategory, setActiveCategory] = useState(() => searchParams.get("cat") || "all");
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") || "");
@@ -781,23 +781,25 @@ export default function PasserelleBac() {
               )}
             </div>
 
-            {/* Sync status and refresh button */}
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <div className="pb-sync-badge">
-                <span className="pb-sync-dot" />
-                <span>{isLive ? "WordPress Synchronisé" : "Données Locales"}</span>
+            {/* Sync status and refresh button (Visible only to Administrator) */}
+            {isAdmin && (
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div className="pb-sync-badge">
+                  <span className="pb-sync-dot" />
+                  <span>{isLive ? "WordPress Synchronisé" : "Données Locales"}</span>
+                </div>
+                <button
+                  type="button"
+                  className="pb-sync-refresh-btn"
+                  onClick={() => refreshSync(null, true)}
+                  disabled={isSyncing}
+                  title="Forcer la mise à jour depuis anasskhadir.com"
+                >
+                  <RefreshCw size={14} className={isSyncing ? "spinner" : ""} />
+                  <span>{isSyncing ? "Mise à jour..." : "Actualiser"}</span>
+                </button>
               </div>
-              <button
-                type="button"
-                className="pb-sync-refresh-btn"
-                onClick={() => refreshSync(null, true)}
-                disabled={isSyncing}
-                title="Forcer la mise à jour depuis anasskhadir.com"
-              >
-                <RefreshCw size={14} className={isSyncing ? "spinner" : ""} />
-                <span>{isSyncing ? "Mise à jour..." : "Actualiser"}</span>
-              </button>
-            </div>
+            )}
           </div>
         </div>
 

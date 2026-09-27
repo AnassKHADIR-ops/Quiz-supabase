@@ -566,8 +566,8 @@ function Passerelle() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Dynamic real-time synchronization from WordPress
-  const { passerelleData, isSyncing, isLive, lastSynced, refreshSync } = usePasserelleSync();
+  // Dynamic real-time synchronization from WordPress (polling only for admin)
+  const { passerelleData, isSyncing, isLive, lastSynced, refreshSync } = usePasserelleSync(null, isAdmin ? 10000 : 0);
 
   const [activeFiliereId, setActiveFiliereId] = useState(() => searchParams.get("fil") || searchParams.get("filiere") || "mp");
   const [openChapterIds, setOpenChapterIds] = useState(new Set(["mp-alg-lin", "ecs-alg-lin"]));

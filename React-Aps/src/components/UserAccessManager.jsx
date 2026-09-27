@@ -18,9 +18,28 @@ import {
 import AdminEmailModal from "./AdminEmailModal.jsx";
 import { openGmailDirectly, EMAIL_TEMPLATES } from "../utils/emailTemplates.js";
 
+const CACHE_KEY = "ak_cached_admin_users";
+
+function getCachedUsers() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function setCachedUsers(list) {
+  try {
+    if (Array.isArray(list) && list.length > 0) {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(list));
+    }
+  } catch {}
+}
+
 export default function UserAccessManager({ onPendingCountChange }) {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState(() => getCachedUsers());
+  const [loading, setLoading] = useState(() => getCachedUsers().length === 0);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all"); // "all" | "pending" | "approved" | "rejected" | "revoked"
@@ -28,6 +47,14 @@ export default function UserAccessManager({ onPendingCountChange }) {
   const [feedback, setFeedback] = useState(null);
   const [emailModalUser, setEmailModalUser] = useState(null);
   const [emailTemplateId, setEmailTemplateId] = useState("adhesion");
+
+  const updateUsersList = (updater) => {
+    setUsers((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      setCachedUsers(next);
+      return next;
+    });
+  };
 
   const handleOpenEmailModal = (user, templateId = "adhesion") => {
     setEmailTemplateId(templateId);
@@ -44,14 +71,21 @@ export default function UserAccessManager({ onPendingCountChange }) {
     });
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (showSpinner = false) => {
     try {
+      if (showSpinner || users.length === 0) {
+        setLoading(true);
+      }
       setError("");
       const list = await usersApi.list();
-      setUsers(list || []);
-      const pending = (list || []).filter((u) => u.status === "pending").length;
-      if (onPendingCountChange) onPendingCountChange(pending);
+      if (Array.isArray(list)) {
+        updateUsersList(list);
+        const pending = list.filter((u) => u.status === "pending").length;
+        if (onPendingCountChange) onPendingCountChange(pending);
+      }
     } catch (err) {
+      // If we already have users from cache, do NOT blank out the screen!
+      console.warn("[UserAccessManager] fetchUsers warning:", err.message);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -59,7 +93,20 @@ export default function UserAccessManager({ onPendingCountChange }) {
   };
 
   useEffect(() => {
-    fetchUsers();
+    let isMounted = true;
+    fetchUsers().then(() => {
+      // If the first fetch returned empty or failed on fresh load, retry once after 600ms
+      // to account for any initial Supabase token validation delay
+      if (isMounted && users.length === 0) {
+        setTimeout(() => {
+          if (isMounted) fetchUsers();
+        }, 600);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const notify = (text, type = "success") => {
@@ -71,7 +118,7 @@ export default function UserAccessManager({ onPendingCountChange }) {
     setActionId(user.id);
     try {
       const res = await usersApi.approve(user.id);
-      setUsers((prev) =>
+      updateUsersList((prev) =>
         prev.map((u) =>
           u.id === user.id
             ? { ...u, status: "approved", approved_at: res.approved_at || new Date().toISOString(), revoked_at: null }
@@ -95,7 +142,7 @@ export default function UserAccessManager({ onPendingCountChange }) {
     setActionId(user.id);
     try {
       await usersApi.reject(user.id);
-      setUsers((prev) =>
+      updateUsersList((prev) =>
         prev.map((u) => (u.id === user.id ? { ...u, status: "rejected" } : u))
       );
       notify(`Demande d'accès refusée pour ${user.full_name || user.email}.`, "warning");
@@ -120,7 +167,7 @@ export default function UserAccessManager({ onPendingCountChange }) {
     setActionId(user.id);
     try {
       const res = await usersApi.revoke(user.id);
-      setUsers((prev) =>
+      updateUsersList((prev) =>
         prev.map((u) =>
           u.id === user.id
             ? { ...u, status: "revoked", revoked_at: res.revoked_at || new Date().toISOString() }
@@ -139,7 +186,7 @@ export default function UserAccessManager({ onPendingCountChange }) {
     setActionId(user.id);
     try {
       const res = await usersApi.restore(user.id);
-      setUsers((prev) =>
+      updateUsersList((prev) =>
         prev.map((u) =>
           u.id === user.id
             ? { ...u, status: "approved", approved_at: res.approved_at || new Date().toISOString(), revoked_at: null }
@@ -164,7 +211,7 @@ export default function UserAccessManager({ onPendingCountChange }) {
     setActionId(user.id);
     try {
       await usersApi.deleteAccess(user.id);
-      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+      updateUsersList((prev) => prev.filter((u) => u.id !== user.id));
       notify(`Compte de ${user.full_name || user.email} supprimé.`);
       if (onPendingCountChange) {
         const count = users.filter((u) => u.id !== user.id && u.status === "pending").length;

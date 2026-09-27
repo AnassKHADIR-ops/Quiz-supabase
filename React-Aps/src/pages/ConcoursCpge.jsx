@@ -146,57 +146,59 @@ export default function ConcoursCpge() {
           <span>Retour aux Formations & Concours</span>
         </button>
 
-        {/* Sync status */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              background: isLive ? "rgba(16, 185, 129, 0.1)" : "rgba(217, 119, 6, 0.1)",
-              color: isLive ? "#059669" : "#d97706",
-              padding: "5px 12px",
-              borderRadius: 99,
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              border: isLive ? "1px solid rgba(16, 185, 129, 0.25)" : "1px solid rgba(217, 119, 6, 0.25)",
-            }}
-            title={lastSynced ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}` : "Données prêtes"}
-          >
-            <span
+        {/* Sync status (Visible only to Administrator) */}
+        {isAdmin && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
               style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: isLive ? "#10b981" : "#f59e0b",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: isLive ? "rgba(16, 185, 129, 0.1)" : "rgba(217, 119, 6, 0.1)",
+                color: isLive ? "#059669" : "#d97706",
+                padding: "5px 12px",
+                borderRadius: 99,
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                border: isLive ? "1px solid rgba(16, 185, 129, 0.25)" : "1px solid rgba(217, 119, 6, 0.25)",
               }}
-            />
-            {isLive ? "Synchronisé avec anasskhadir.com" : "Données locales prêtes"}
-          </div>
+              title={lastSynced ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}` : "Données prêtes"}
+            >
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  background: isLive ? "#10b981" : "#f59e0b",
+                }}
+              />
+              {isLive ? "Synchronisé avec anasskhadir.com" : "Données locales prêtes"}
+            </div>
 
-          <button
-            onClick={() => refreshSync(true)}
-            disabled={isSyncing}
-            className="btn btn-sm"
-            title="Actualiser depuis WordPress"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: 99,
-              padding: "5px 12px",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              color: "var(--text-muted)",
-              cursor: isSyncing ? "wait" : "pointer",
-            }}
-          >
-            <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
-            <span>{isSyncing ? "Sync..." : "Actualiser"}</span>
-          </button>
-        </div>
+            <button
+              onClick={() => refreshSync(true)}
+              disabled={isSyncing}
+              className="btn btn-sm"
+              title="Actualiser depuis WordPress"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: 99,
+                padding: "5px 12px",
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                color: "var(--text-muted)",
+                cursor: isSyncing ? "wait" : "pointer",
+              }}
+            >
+              <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
+              <span>{isSyncing ? "Sync..." : "Actualiser"}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Hero Banner with Original Styling & Typography */}

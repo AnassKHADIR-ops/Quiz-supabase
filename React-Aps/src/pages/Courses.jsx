@@ -536,8 +536,8 @@ function Courses() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Dynamic live synchronization from WordPress
-  const { curriculum, isSyncing, isLive, lastSynced, refreshSync } = useCoursesSync();
+  // Dynamic live synchronization from WordPress (polling active only for administrator)
+  const { curriculum, isSyncing, isLive, lastSynced, refreshSync } = useCoursesSync(null, isAdmin ? 15000 : 0);
 
   // Selected Year: "annee1" (Sup) or "annee2" (Spé)
   const initialYear = searchParams.get("annee") === "2" ? "annee2" : "annee1";

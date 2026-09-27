@@ -919,7 +919,7 @@ function Dashboard() {
       </div>
 
       {activeTab === "utilisateurs" ? (
-        <div className="card fade-up" style={{ padding: "28px" }}>
+        <div className="card" style={{ padding: "28px" }}>
           <div style={{ marginBottom: 20 }}>
             <h2 style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--primary)", display: "flex", alignItems: "center", gap: 8 }}>
               <Users size={20} /> Gestion des inscriptions & Accès privés
@@ -934,7 +934,7 @@ function Dashboard() {
         <>
           {/* Sélecteur d'examen & Action Imprimer */}
           {exams.length > 0 && (
-            <div className="fade-up" style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+            <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {exams.map((e) => (
                   <button
@@ -968,7 +968,7 @@ function Dashboard() {
           </div>
 
           {/* Contenu de l'onglet actif */}
-          <div className="card fade-up">
+          <div className="card">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--primary)", display: "flex", alignItems: "center", gap: 8 }}>
                 {activeTab === "classement" ? <Trophy size={18} /> : activeTab === "analyse" ? <Sparkles size={18} /> : <ClipboardList size={18} />}

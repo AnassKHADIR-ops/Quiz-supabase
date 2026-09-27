@@ -22,10 +22,47 @@ function message(error) {
   return msg;
 }
 
-async function rpc(name, args = {}) {
-  const { data, error } = await supabase.rpc(name, args);
-  if (error) throw new Error(message(error));
-  return data;
+// Wait for initial Supabase session to restore from localStorage
+let sessionReadyPromise = null;
+export function ensureSessionReady() {
+  if (!sessionReadyPromise) {
+    sessionReadyPromise = supabase.auth.getSession().catch(() => null);
+  }
+  return sessionReadyPromise;
+}
+
+async function rpc(name, args = {}, maxRetries = 2) {
+  // Ensure the local JWT token has been hydrated into Supabase client before executing RPC
+  await ensureSessionReady();
+
+  let lastError = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const { data, error } = await supabase.rpc(name, args);
+    if (!error) return data;
+
+    lastError = error;
+    const errorStr = (error.message || "") + " " + (error.details || "") + " " + (error.hint || "");
+
+    // Check if failure is due to auth race condition during cold page reload
+    const isAuthRace =
+      errorStr.includes("Administrator access required") ||
+      errorStr.includes("permission denied") ||
+      errorStr.includes("42501") ||
+      errorStr.includes("JWT") ||
+      errorStr.includes("token");
+
+    if (attempt < maxRetries && isAuthRace) {
+      // Allow a brief backoff for Supabase's auth state or token refresh to settle
+      await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+      // Re-hydrate session in memory before next attempt
+      await supabase.auth.getSession().catch(() => null);
+      continue;
+    }
+
+    break;
+  }
+
+  throw new Error(message(lastError));
 }
 
 // In-flight profile request cache to deduplicate concurrent calls
