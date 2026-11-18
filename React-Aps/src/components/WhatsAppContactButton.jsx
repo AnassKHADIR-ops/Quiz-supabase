@@ -62,6 +62,9 @@ export function buildWhatsAppMessage({
   } else if (type === "login") {
     body =
       "Je n'arrive pas à me connecter à mon compte (compte en attente de validation ou accès suspendu). Pourriez-vous vérifier mon statut ?";
+  } else if (type === "password_reset") {
+    body =
+      "J'ai oublié mon mot de passe sur la plateforme (quiz.anasskhadir.com) et j'ai envoyé une demande de réinitialisation. Pourriez-vous s'il vous plaît vérifier mon identité et m'envoyer le code de validation à 6 chiffres depuis votre tableau de bord ?";
   } else {
     body = "Je vous contacte concernant l'accès aux cours de votre plateforme privée.";
   }

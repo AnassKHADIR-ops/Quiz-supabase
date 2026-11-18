@@ -3,9 +3,12 @@ import { supabase } from "./lib/supabase.js";
 function message(error) {
   if (!error) return "Une erreur est survenue. Réessayez.";
   const msg = error.message || error.error_description || String(error);
-  
-  if (msg.includes("attente d'approbation") || msg.includes("en attente d'approbation") || msg.includes("P0001")) {
+
+  if (msg.includes("attente d'approbation") || msg.includes("en attente d'approbation") || msg.includes("Account pending")) {
     return "Votre compte est en attente d'approbation par l'administrateur. Veuillez patienter ou vous connecter avec un compte validé.";
+  }
+  if (msg.includes("Could not find the function") || error.code === "PGRST202") {
+    return "Mise à jour de la base de données requise : veuillez exécuter la migration SQL (20261118000000_whatsapp_reset_and_access_fix.sql) dans le SQL Editor de Supabase.";
   }
   if (msg.includes("User already registered") || msg.includes("already exists")) {
     return "Cette adresse e-mail est déjà associée à un compte.";
@@ -70,13 +73,17 @@ let inFlightMePromise = null;
 
 // Auth
 export const authApi = {
-  async register(name, email, password) {
+  async register(name, email, password, phone = "") {
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = name.trim();
+    const cleanPhone = (phone || "").trim();
+    const metadata = { full_name: cleanName };
+    if (cleanPhone) metadata.phone = cleanPhone;
+
     const { data, error } = await supabase.auth.signUp({
       email: cleanEmail,
       password,
-      options: { data: { full_name: cleanName } },
+      options: { data: metadata },
     });
     if (error) throw new Error(message(error));
     if (!data.session) {
@@ -90,6 +97,17 @@ export const authApi = {
     if (error) throw new Error(message(error));
     return authApi.fetchProfileForUser(data.user);
   },
+  requestPasswordReset: (email, phone = "") =>
+    rpc("request_password_reset", {
+      p_email: (email || "").trim().toLowerCase(),
+      p_phone: (phone || "").trim() || null,
+    }),
+  confirmPasswordReset: (email, code, newPassword) =>
+    rpc("confirm_password_reset", {
+      p_email: (email || "").trim().toLowerCase(),
+      p_code: (code || "").trim(),
+      p_new_password: newPassword,
+    }),
   async fetchProfileForUser(supabaseUser) {
     if (!supabaseUser) throw new Error("Session expirée. Connectez-vous de nouveau.");
 
@@ -164,6 +182,12 @@ export const usersApi = {
   revoke: (userId) => rpc("revoke_user", { p_user_id: userId }),
   restore: (userId) => rpc("restore_user", { p_user_id: userId }),
   deleteAccess: (userId) => rpc("delete_user_access", { p_user_id: userId }),
+  quickApproveByEmail: (email) =>
+    rpc("quick_approve_by_email", { p_email: (email || "").trim().toLowerCase() }),
+  generateResetCode: (userId) =>
+    rpc("admin_generate_reset_code", { p_user_id: userId }),
+  setPassword: (userId, newPassword) =>
+    rpc("admin_set_user_password", { p_user_id: userId, p_new_password: newPassword }),
 };
 
 // Exams

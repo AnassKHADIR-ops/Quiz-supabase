@@ -24,8 +24,9 @@ export default function AuthGateModal({
 }) {
   const location = useLocation();
   const currentUrl = location.pathname + location.search;
-  const { user, isRevoked, isPending, isRejected, logout, refreshUser } = useAuth();
+  const { user, isRevoked, isPending, isRejected, logout, refreshUser, reapplyAccess } = useAuth();
   const [checking, setChecking] = useState(false);
+  const [reapplying, setReapplying] = useState(false);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -59,6 +60,19 @@ export default function AuthGateModal({
   const handleLogoutAndClose = async () => {
     await logout();
     onClose();
+  };
+
+  const handleReapply = async () => {
+    setReapplying(true);
+    setNotice("");
+    try {
+      await reapplyAccess();
+      setNotice("Nouvelle demande envoyée ! Le professeur peut maintenant voir votre demande dans son tableau de bord.");
+    } catch (err) {
+      setNotice(err.message || "Erreur lors de l'envoi de la demande.");
+    } finally {
+      setReapplying(false);
+    }
   };
 
   // Base configuration per content type
@@ -111,8 +125,8 @@ export default function AuthGateModal({
   const loginLink = `/login?redirect=${encodeURIComponent(currentUrl)}`;
   const signupLink = `/signup?redirect=${encodeURIComponent(currentUrl)}`;
 
-  // ── Mode 1: Compte Révoqué ──
-  if (isRevoked) {
+  // ── Mode 1: Compte Révoqué ou Refusé (Ancien étudiant souhaitant revenir) ──
+  if (isRevoked || isRejected) {
     return (
       <div className="modal-backdrop" onMouseDown={onClose} style={{ zIndex: 1100, overflowY: "auto", padding: "16px 12px" }}>
         <div
@@ -133,7 +147,7 @@ export default function AuthGateModal({
             margin: "auto",
           }}
         >
-          {/* Header Révoqué */}
+          {/* Header Révoqué / Refusé */}
           <div
             style={{
               position: "relative",
@@ -196,11 +210,11 @@ export default function AuthGateModal({
               }}
             >
               <AlertTriangle size={13} style={{ color: "#fca5a5" }} />
-              Accès Suspendu • Compte Révoqué
+              {isRevoked ? "Accès Suspendu • Compte Révoqué" : "Demande non approuvée"}
             </div>
 
             <h2 style={{ fontSize: "1.3rem", fontWeight: 800, margin: "0 0 4px", color: "white" }}>
-              Accès Révoqué
+              {isRevoked ? "Accès Révoqué" : "Accès Non Accordé"}
             </h2>
             <p style={{ margin: 0, fontSize: "0.85rem", opacity: 0.9, lineHeight: 1.4 }}>
               {title ? `Accès bloqué : ${title}` : "Accès aux contenus privés suspendu"}
@@ -209,7 +223,15 @@ export default function AuthGateModal({
 
           <div style={{ padding: "18px 22px 18px", background: "var(--surface)" }}>
             <p style={{ color: "var(--text-muted)", fontSize: "0.88rem", lineHeight: 1.45, margin: "0 0 14px" }}>
-              Votre accès à cette plateforme privée a été <strong>révoqué</strong> par l'administrateur. Vous ne pouvez plus visionner les vidéos de cours ni consulter les corrections détaillées.
+              {isRevoked ? (
+                <>
+                  Votre accès à cette plateforme privée a été <strong>révoqué</strong>. Vous pouvez envoyer une nouvelle demande d'accès ci-dessous afin qu'elle apparaisse directement dans le tableau de bord du professeur.
+                </>
+              ) : (
+                <>
+                  Votre demande précédente n'a pas été acceptée. Vous pouvez soumettre une nouvelle demande d'approbation ou contacter le professeur sur WhatsApp.
+                </>
+              )}
             </p>
 
             {/* Identifiant utilisateur */}
@@ -219,7 +241,7 @@ export default function AuthGateModal({
                 border: "1px solid var(--border)",
                 borderRadius: 12,
                 padding: "10px 14px",
-                marginBottom: 16,
+                marginBottom: 14,
                 textAlign: "left",
                 display: "flex",
                 alignItems: "center",
@@ -231,13 +253,42 @@ export default function AuthGateModal({
                 <div style={{ fontWeight: 700, color: "var(--text)", fontSize: "0.88rem" }}>{user?.name || "Étudiant"}</div>
                 <div style={{ color: "var(--text-muted)", fontSize: "0.8rem", fontFamily: "monospace" }}>{user?.email}</div>
               </div>
-              <span className="badge badge-danger">Accès Révoqué</span>
+              <span className="badge badge-danger">{isRevoked ? "Accès Révoqué" : "Refusé"}</span>
             </div>
 
+            {notice && (
+              <div
+                style={{
+                  margin: "0 0 14px",
+                  padding: "9px 12px",
+                  borderRadius: 10,
+                  background: "var(--primary-light)",
+                  color: "var(--primary)",
+                  fontWeight: 600,
+                  fontSize: "0.83rem",
+                }}
+              >
+                {notice}
+              </div>
+            )}
+
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <button
+                type="button"
+                onClick={handleReapply}
+                disabled={reapplying}
+                className="btn btn-primary"
+                style={{ width: "100%", justifyContent: "center", fontWeight: 700, borderRadius: 12, padding: "11px 16px", fontSize: "0.92rem" }}
+              >
+                {reapplying ? (
+                  <><span className="spinner" style={{ width: 15, height: 15, borderWidth: 2, borderTopColor: "white" }} /> Envoi de la demande…</>
+                ) : (
+                  <><RefreshCw size={15} /> Demander à nouveau l'accès</>
+                )}
+              </button>
               <WhatsAppContactButton
                 user={user}
-                type="revoked"
+                type={isRevoked ? "revoked" : "rejected"}
                 contentTitle={title}
                 variant="modal"
                 label="Demander le déblocage sur WhatsApp"

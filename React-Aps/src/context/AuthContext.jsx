@@ -223,8 +223,8 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
-  const register = async (name, email, password) => {
-    const data = await authApi.register(name, email, password);
+  const register = async (name, email, password, phone = "") => {
+    const data = await authApi.register(name, email, password, phone);
     setUser(data.user);
     setCachedUser(data.user);
     setLoading(false);

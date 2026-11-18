@@ -64,5 +64,10 @@ export {
   FastForward,
   Rewind,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  KeyRound,
+  Phone,
+  Copy,
+  Send,
+  Shield
 } from "lucide-react";

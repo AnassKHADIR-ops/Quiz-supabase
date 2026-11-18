@@ -9,8 +9,10 @@ import {
   CheckCircle,
   Eye,
   EyeOff,
+  KeyRound,
   Lock,
   Mail,
+  Phone,
   ShieldCheck,
   Sparkles,
   Trophy,
@@ -91,6 +93,7 @@ function MoonIcon() {
 function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -118,7 +121,7 @@ function Signup() {
     setError("");
     setLoading(true);
     try {
-      await register(name, email, password);
+      await register(name, email, password, phone);
       if (redirectUrl) {
         navigate(redirectUrl, { replace: true });
       } else {
@@ -338,6 +341,32 @@ function Signup() {
               </div>
             </div>
 
+            <div className="form-group" style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: 6, display: "block" }}>
+                Numéro WhatsApp <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(recommandé pour validation & sécurité)</span>
+              </label>
+              <div style={{ position: "relative" }}>
+                <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex" }}>
+                  <Phone size={16} />
+                </div>
+                <input
+                  type="tel"
+                  placeholder="+212 6 XX XX XX XX"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  style={{
+                    paddingLeft: 40,
+                    width: "100%",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--border)",
+                    background: "var(--surface-2)",
+                    color: "var(--text)",
+                    fontSize: "0.9rem",
+                  }}
+                />
+              </div>
+            </div>
+
             <div className="form-group" style={{ marginBottom: 20 }}>
               <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: 6, display: "block" }}>
                 Mot de passe <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(min. 6 caractères)</span>
@@ -411,9 +440,29 @@ function Signup() {
                   />
                 </div>
               ) : (
-                <p className="error-msg" style={{ marginBottom: 16, fontSize: "0.85rem", display: "flex", alignItems: "center", gap: 6 }}>
-                  <AlertTriangle size={15} /> {error}
-                </p>
+                <div style={{ marginBottom: 16 }}>
+                  <p className="error-msg" style={{ marginBottom: error.toLowerCase().includes("déjà associée") ? 10 : 0, fontSize: "0.85rem", display: "flex", alignItems: "center", gap: 6 }}>
+                    <AlertTriangle size={15} /> {error}
+                  </p>
+                  {error.toLowerCase().includes("déjà associée") && (
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <Link
+                        to={`/login?email=${encodeURIComponent(email.trim())}`}
+                        className="btn btn-primary btn-sm"
+                        style={{ flex: 1, justifyContent: "center" }}
+                      >
+                        Se connecter
+                      </Link>
+                      <Link
+                        to={`/login?forgot=1&email=${encodeURIComponent(email.trim())}`}
+                        className="btn btn-secondary btn-sm"
+                        style={{ flex: 1, justifyContent: "center", gap: 5 }}
+                      >
+                        <KeyRound size={13} /> Mot de passe oublié ?
+                      </Link>
+                    </div>
+                  )}
+                </div>
               )
             )}
 

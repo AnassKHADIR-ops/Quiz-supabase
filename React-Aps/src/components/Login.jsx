@@ -1,15 +1,20 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { authApi } from "../api.js";
 import { useTheme } from "../hooks/useTheme.js";
 import {
   AlertTriangle,
+  ArrowLeft,
   ArrowRight,
   CheckCircle,
   Eye,
   EyeOff,
+  KeyRound,
   Lock,
   Mail,
+  Phone,
+  ShieldCheck,
   Sparkles,
   Trophy,
   GraduationCap
@@ -86,14 +91,29 @@ function MoonIcon() {
 }
 
 function Login() {
-  const [email, setEmail] = useState("");
+  const [searchParams] = useSearchParams();
+  const initialEmail = searchParams.get("email") || "";
+  const initialForgot = searchParams.get("forgot") === "1";
+
+  const [mode, setMode] = useState(initialForgot ? "forgot" : "login"); // "login" | "forgot"
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // États pour la réinitialisation sécurisée par WhatsApp (2 étapes)
+  const [resetStep, setResetStep] = useState(1); // 1 = Demande + WhatsApp, 2 = Code 6 chiffres + Nouveau MDP
+  const [resetPhone, setResetPhone] = useState("");
+  const [resetRequestedInfo, setResetRequestedInfo] = useState(null);
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
   const { user, login } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [dark, toggleTheme] = useTheme();
 
   const redirectUrl = searchParams.get("redirect") || "";
@@ -111,9 +131,25 @@ function Login() {
     }
   }, [user, redirectUrl, navigate]);
 
+  const openForgotMode = () => {
+    setMode("forgot");
+    setResetStep(1);
+    setError("");
+    setSuccessMsg("");
+    setResetRequestedInfo(null);
+  };
+
+  const backToLogin = () => {
+    setMode("login");
+    setError("");
+    setResetStep(1);
+    setResetRequestedInfo(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccessMsg("");
     setLoading(true);
     try {
       const loggedUser = await login(email, password);
@@ -124,6 +160,72 @@ function Login() {
       } else {
         navigate("/", { replace: true });
       }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRequestReset = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccessMsg("");
+    if (!email.trim()) {
+      setError("Veuillez renseigner votre adresse e-mail.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await authApi.requestPasswordReset(email, resetPhone);
+      setResetRequestedInfo({
+        email: res?.email || email.trim().toLowerCase(),
+        full_name: res?.full_name || "",
+        expires_at: res?.expires_at || null,
+      });
+      setSuccessMsg(
+        "Demande sécurisée enregistrée ! Contactez maintenant Pr. Anass Khadir sur WhatsApp pour qu'il vous communique votre code à 6 chiffres."
+      );
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmReset = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccessMsg("");
+
+    const cleanCode = resetCode.replace(/\s+/g, "");
+    if (!email.trim()) {
+      setError("Veuillez renseigner votre adresse e-mail.");
+      return;
+    }
+    if (cleanCode.length !== 6) {
+      setError("Le code de validation reçu sur WhatsApp doit contenir exactement 6 chiffres.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError("Le nouveau mot de passe doit comporter au moins 6 caractères.");
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setError("Les deux mots de passe ne correspondent pas.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await authApi.confirmPasswordReset(email, cleanCode, newPassword);
+      setPassword("");
+      setResetCode("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setResetRequestedInfo(null);
+      setMode("login");
+      setSuccessMsg("Mot de passe réinitialisé avec succès ! Vous pouvez maintenant vous connecter.");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -297,134 +399,528 @@ function Login() {
             </p>
           </div>
 
-          <div style={{ textAlign: "left", marginBottom: 20 }}>
-            <h2 style={{ fontSize: "1.35rem", fontWeight: 800, color: "var(--text)" }}>Connexion</h2>
-            <p className="auth-sub" style={{ fontSize: "0.86rem", color: "var(--text-muted)", marginTop: 2 }}>
-              Accédez à vos examens et concours privés
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            {/* Champ Email */}
-            <div className="form-group" style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: 6, display: "block" }}>
-                Adresse e-mail
-              </label>
-              <div style={{ position: "relative" }}>
-                <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex" }}>
-                  <Mail size={16} />
-                </div>
-                <input
-                  type="email"
-                  placeholder="nom.prenom@exemple.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoFocus
-                  style={{
-                    paddingLeft: 40,
-                    width: "100%",
-                    borderRadius: "var(--radius-sm)",
-                    border: "1px solid var(--border)",
-                    background: "var(--surface-2)",
-                    color: "var(--text)",
-                    fontSize: "0.9rem",
-                    transition: "all .15s ease",
-                  }}
-                />
+          {mode === "login" ? (
+            <>
+              <div style={{ textAlign: "left", marginBottom: 20 }}>
+                <h2 style={{ fontSize: "1.35rem", fontWeight: 800, color: "var(--text)" }}>Connexion</h2>
+                <p className="auth-sub" style={{ fontSize: "0.86rem", color: "var(--text-muted)", marginTop: 2 }}>
+                  Accédez à vos examens et concours privés
+                </p>
               </div>
-            </div>
 
-            {/* Champ Mot de passe */}
-            <div className="form-group" style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: 6, display: "block" }}>
-                Mot de passe
-              </label>
-              <div style={{ position: "relative" }}>
-                <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex" }}>
-                  <Lock size={16} />
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+              {successMsg && (
+                <div
                   style={{
-                    paddingLeft: 40,
-                    paddingRight: 40,
-                    width: "100%",
-                    borderRadius: "var(--radius-sm)",
-                    border: "1px solid var(--border)",
-                    background: "var(--surface-2)",
-                    color: "var(--text)",
-                    fontSize: "0.9rem",
-                    transition: "all .15s ease",
+                    marginBottom: 16,
+                    padding: "11px 14px",
+                    borderRadius: 10,
+                    background: "var(--success-light)",
+                    border: "1px solid var(--success)",
+                    color: "var(--success)",
+                    fontSize: "0.84rem",
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
                   }}
-                />
+                >
+                  <CheckCircle size={16} style={{ flexShrink: 0 }} />
+                  <span>{successMsg}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                {/* Champ Email */}
+                <div className="form-group" style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: 6, display: "block" }}>
+                    Adresse e-mail
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex" }}>
+                      <Mail size={16} />
+                    </div>
+                    <input
+                      type="email"
+                      placeholder="nom.prenom@exemple.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      autoFocus
+                      style={{
+                        paddingLeft: 40,
+                        width: "100%",
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--border)",
+                        background: "var(--surface-2)",
+                        color: "var(--text)",
+                        fontSize: "0.9rem",
+                        transition: "all .15s ease",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Champ Mot de passe + Lien Mot de passe oublié */}
+                <div className="form-group" style={{ marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, margin: 0 }}>
+                      Mot de passe
+                    </label>
+                    <button
+                      type="button"
+                      onClick={openForgotMode}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--primary)",
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        padding: 0,
+                        textDecoration: "underline",
+                      }}
+                    >
+                      Mot de passe oublié ?
+                    </button>
+                  </div>
+                  <div style={{ position: "relative" }}>
+                    <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex" }}>
+                      <Lock size={16} />
+                    </div>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      style={{
+                        paddingLeft: 40,
+                        paddingRight: 40,
+                        width: "100%",
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--border)",
+                        background: "var(--surface-2)",
+                        color: "var(--text)",
+                        fontSize: "0.9rem",
+                        transition: "all .15s ease",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: "absolute",
+                        right: 12,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--text-muted)",
+                        cursor: "pointer",
+                        display: "flex",
+                      }}
+                      title={showPassword ? "Masquer" : "Afficher"}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {error && (
+                  <div style={{ marginBottom: 16 }}>
+                    <p className="error-msg" style={{ marginBottom: (error.toLowerCase().includes("attente") || error.toLowerCase().includes("révoqué") || error.toLowerCase().includes("suspendu") || error.toLowerCase().includes("incorrect")) ? 10 : 0, fontSize: "0.85rem", display: "flex", alignItems: "center", gap: 6 }}>
+                      <AlertTriangle size={15} /> {error}
+                    </p>
+                    {(error.toLowerCase().includes("attente") || error.toLowerCase().includes("révoqué") || error.toLowerCase().includes("suspendu")) && (
+                      <WhatsAppContactButton
+                        user={{ email }}
+                        type={error.toLowerCase().includes("révoqué") || error.toLowerCase().includes("suspendu") ? "revoked" : "pending"}
+                        variant="modal"
+                        label={error.toLowerCase().includes("révoqué") ? "Demander le déblocage sur WhatsApp" : "Demander l'approbation sur WhatsApp"}
+                      />
+                    )}
+                    {error.toLowerCase().includes("incorrect") && (
+                      <button
+                        type="button"
+                        onClick={openForgotMode}
+                        className="btn btn-secondary btn-sm"
+                        style={{ width: "100%", justifyContent: "center", gap: 6, marginTop: 4 }}
+                      >
+                        <KeyRound size={14} /> Mot de passe oublié ? Réinitialiser via WhatsApp
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Bouton de Connexion */}
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-lg"
+                  disabled={loading}
+                  style={{
+                    width: "100%",
+                    justifyContent: "center",
+                    marginTop: 6,
+                    fontWeight: 700,
+                    fontSize: "0.95rem",
+                    boxShadow: "0 4px 14px rgba(67, 97, 238, 0.35)",
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2, borderTopColor: "white" }} />
+                      Connexion en cours…
+                    </>
+                  ) : (
+                    <>
+                      Se connecter <ArrowRight size={16} />
+                    </>
+                  )}
+                </button>
+              </form>
+            </>
+          ) : (
+            /* ── Mode Réinitialisation Sécurisée via WhatsApp ── */
+            <div>
+              <button
+                type="button"
+                onClick={backToLogin}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--text-muted)",
+                  fontSize: "0.82rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: 0,
+                  marginBottom: 14,
+                }}
+              >
+                <ArrowLeft size={14} /> Retour à la connexion
+              </button>
+
+              <div style={{ textAlign: "left", marginBottom: 16 }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.74rem", fontWeight: 700, color: "var(--primary)", background: "var(--primary-light)", padding: "3px 10px", borderRadius: 99, marginBottom: 8 }}>
+                  <ShieldCheck size={13} /> Validation sécurisée WhatsApp • Étape {resetStep}/2
+                </div>
+                <h2 style={{ fontSize: "1.3rem", fontWeight: 800, color: "var(--text)", margin: 0 }}>
+                  Mot de passe oublié
+                </h2>
+                <p style={{ fontSize: "0.83rem", color: "var(--text-muted)", marginTop: 4, lineHeight: 1.45 }}>
+                  {resetStep === 1
+                    ? "Envoyez une demande sécurisée. Pr. Anass Khadir vérifiera votre identité sur WhatsApp et vous transmettra votre code à 6 chiffres."
+                    : "Saisissez le code à 6 chiffres communiqué par Pr. Anass Khadir sur WhatsApp, puis choisissez votre nouveau mot de passe."}
+                </p>
+              </div>
+
+              {/* Onglets rapides Étape 1 / Étape 2 */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 6,
+                  padding: 4,
+                  background: "var(--surface-2)",
+                  borderRadius: 10,
+                  border: "1px solid var(--border)",
+                  marginBottom: 16,
+                }}
+              >
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => { setResetStep(1); setError(""); }}
                   style={{
-                    position: "absolute",
-                    right: 12,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "transparent",
+                    padding: "7px 10px",
+                    borderRadius: 8,
                     border: "none",
-                    color: "var(--text-muted)",
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
                     cursor: "pointer",
-                    display: "flex",
+                    background: resetStep === 1 ? "var(--primary)" : "transparent",
+                    color: resetStep === 1 ? "white" : "var(--text-muted)",
                   }}
-                  title={showPassword ? "Masquer" : "Afficher"}
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  1. Demander un code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setResetStep(2); setError(""); }}
+                  style={{
+                    padding: "7px 10px",
+                    borderRadius: 8,
+                    border: "none",
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    background: resetStep === 2 ? "var(--primary)" : "transparent",
+                    color: resetStep === 2 ? "white" : "var(--text-muted)",
+                  }}
+                >
+                  2. J'ai reçu le code
                 </button>
               </div>
-            </div>
 
-            {error && (
-              <div style={{ marginBottom: 16 }}>
-                <p className="error-msg" style={{ marginBottom: (error.toLowerCase().includes("attente") || error.toLowerCase().includes("révoqué") || error.toLowerCase().includes("suspendu")) ? 10 : 0, fontSize: "0.85rem", display: "flex", alignItems: "center", gap: 6 }}>
+              {error && (
+                <p className="error-msg" style={{ marginBottom: 14, fontSize: "0.84rem", display: "flex", alignItems: "center", gap: 6 }}>
                   <AlertTriangle size={15} /> {error}
                 </p>
-                {(error.toLowerCase().includes("attente") || error.toLowerCase().includes("révoqué") || error.toLowerCase().includes("suspendu")) && (
-                  <WhatsAppContactButton
-                    user={{ email }}
-                    type={error.toLowerCase().includes("révoqué") || error.toLowerCase().includes("suspendu") ? "revoked" : "pending"}
-                    variant="modal"
-                    label={error.toLowerCase().includes("révoqué") ? "Demander le déblocage sur WhatsApp" : "Demander l'approbation sur WhatsApp"}
-                  />
-                )}
-              </div>
-            )}
+              )}
 
-            {/* Bouton de Connexion */}
-            <button
-              type="submit"
-              className="btn btn-primary btn-lg"
-              disabled={loading}
-              style={{
-                width: "100%",
-                justifyContent: "center",
-                marginTop: 6,
-                fontWeight: 700,
-                fontSize: "0.95rem",
-                boxShadow: "0 4px 14px rgba(67, 97, 238, 0.35)",
-              }}
-            >
-              {loading ? (
+              {resetStep === 1 ? (
                 <>
-                  <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2, borderTopColor: "white" }} />
-                  Connexion en cours…
+                  {!resetRequestedInfo ? (
+                    <form onSubmit={handleRequestReset}>
+                      <div className="form-group" style={{ marginBottom: 14 }}>
+                        <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: 6, display: "block" }}>
+                          Adresse e-mail de votre compte *
+                        </label>
+                        <div style={{ position: "relative" }}>
+                          <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex" }}>
+                            <Mail size={16} />
+                          </div>
+                          <input
+                            type="email"
+                            placeholder="nom.prenom@exemple.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            autoFocus
+                            style={{
+                              paddingLeft: 40,
+                              width: "100%",
+                              borderRadius: "var(--radius-sm)",
+                              border: "1px solid var(--border)",
+                              background: "var(--surface-2)",
+                              color: "var(--text)",
+                              fontSize: "0.9rem",
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-group" style={{ marginBottom: 18 }}>
+                        <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: 6, display: "block" }}>
+                          Votre numéro WhatsApp <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(facultatif)</span>
+                        </label>
+                        <div style={{ position: "relative" }}>
+                          <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex" }}>
+                            <Phone size={16} />
+                          </div>
+                          <input
+                            type="tel"
+                            placeholder="+212 6 XX XX XX XX"
+                            value={resetPhone}
+                            onChange={(e) => setResetPhone(e.target.value)}
+                            style={{
+                              paddingLeft: 40,
+                              width: "100%",
+                              borderRadius: "var(--radius-sm)",
+                              border: "1px solid var(--border)",
+                              background: "var(--surface-2)",
+                              color: "var(--text)",
+                              fontSize: "0.9rem",
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="btn btn-primary btn-lg"
+                        disabled={loading}
+                        style={{ width: "100%", justifyContent: "center", fontWeight: 700, fontSize: "0.92rem" }}
+                      >
+                        {loading ? (
+                          <>
+                            <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2, borderTopColor: "white" }} />
+                            Génération sécurisée…
+                          </>
+                        ) : (
+                          <>
+                            <KeyRound size={16} /> Demander un code à Pr. Khadir
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  ) : (
+                    <div
+                      style={{
+                        padding: 16,
+                        borderRadius: 14,
+                        background: "rgba(37, 211, 102, 0.08)",
+                        border: "1px solid rgba(37, 211, 102, 0.35)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--success)", fontWeight: 800, fontSize: "0.92rem" }}>
+                        <CheckCircle size={18} /> Demande transmise au professeur !
+                      </div>
+                      <p style={{ margin: 0, fontSize: "0.84rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                        Un code sécurisé à 6 chiffres (valable <strong>30 min</strong>) est maintenant affiché dans le tableau de bord de <strong>Pr. Anass Khadir</strong> pour le compte <code>{resetRequestedInfo.email}</code>.
+                      </p>
+                      <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--text)", fontWeight: 600 }}>
+                        Cliquez ci-dessous pour le contacter sur WhatsApp afin qu'il vérifie votre identité et vous envoie ce code :
+                      </p>
+
+                      <WhatsAppContactButton
+                        user={{ name: resetRequestedInfo.full_name, email: resetRequestedInfo.email }}
+                        type="password_reset"
+                        variant="modal"
+                        label="Demander mon code sur WhatsApp"
+                      />
+
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => { setResetStep(2); setError(""); }}
+                        style={{ width: "100%", justifyContent: "center", fontWeight: 700 }}
+                      >
+                        J'ai reçu mon code à 6 chiffres <ArrowRight size={15} />
+                      </button>
+                    </div>
+                  )}
                 </>
               ) : (
-                <>
-                  Se connecter <ArrowRight size={16} />
-                </>
+                <form onSubmit={handleConfirmReset}>
+                  <div className="form-group" style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: 5, display: "block" }}>
+                      Adresse e-mail
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="nom.prenom@exemple.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      style={{
+                        width: "100%",
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--border)",
+                        background: "var(--surface-2)",
+                        color: "var(--text)",
+                        fontSize: "0.9rem",
+                      }}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: 5, display: "block" }}>
+                      Code de validation reçu sur WhatsApp (6 chiffres) *
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="ex: 482913"
+                      value={resetCode}
+                      onChange={(e) => setResetCode(e.target.value.replace(/[^0-9]/g, ""))}
+                      required
+                      autoFocus
+                      style={{
+                        width: "100%",
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--primary)",
+                        background: "var(--surface-2)",
+                        color: "var(--text)",
+                        fontSize: "1.15rem",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontWeight: 800,
+                        letterSpacing: "0.28em",
+                        textAlign: "center",
+                      }}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: 5, display: "block" }}>
+                      Nouveau mot de passe <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(min. 6 caractères)</span>
+                    </label>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        minLength={6}
+                        required
+                        style={{
+                          paddingRight: 40,
+                          width: "100%",
+                          borderRadius: "var(--radius-sm)",
+                          border: "1px solid var(--border)",
+                          background: "var(--surface-2)",
+                          color: "var(--text)",
+                          fontSize: "0.9rem",
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        style={{
+                          position: "absolute",
+                          right: 12,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--text-muted)",
+                          cursor: "pointer",
+                          display: "flex",
+                        }}
+                      >
+                        {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: 18 }}>
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: 5, display: "block" }}>
+                      Confirmer le nouveau mot de passe
+                    </label>
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      minLength={6}
+                      required
+                      style={{
+                        width: "100%",
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--border)",
+                        background: "var(--surface-2)",
+                        color: "var(--text)",
+                        fontSize: "0.9rem",
+                      }}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-lg"
+                    disabled={loading}
+                    style={{ width: "100%", justifyContent: "center", fontWeight: 700, fontSize: "0.92rem" }}
+                  >
+                    {loading ? (
+                      <>
+                        <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2, borderTopColor: "white" }} />
+                        Mise à jour en cours…
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle size={16} /> Confirmer le nouveau mot de passe
+                      </>
+                    )}
+                  </button>
+                </form>
               )}
-            </button>
-          </form>
+            </div>
+          )}
 
           <div className="auth-footer" style={{ marginTop: 24, fontSize: "0.85rem", textAlign: "center" }}>
             Pas encore de compte ?{" "}
