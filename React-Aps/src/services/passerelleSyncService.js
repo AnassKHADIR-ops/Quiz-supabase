@@ -16,13 +16,16 @@ export { extractJsVariable };
 /**
  * Normalizes live JSON filières array into the format expected by the React app.
  * Preserves partial items (e.g. séances with only PDF, or only video, or multi-part corrections).
+ * Filters out any null/malformed entries that could crash renderers.
  */
 export function normalizeLiveFilieres(filieres) {
   if (!Array.isArray(filieres)) return [];
 
-  return filieres.map((f) => {
+  return filieres
+    .filter((f) => f && typeof f === "object")
+    .map((f) => {
     const nom = f.nom || f.id || "Filière";
-    const cleanId = (f.id || f.nom || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const cleanId = String(f.id || f.nom || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
     const defaultDe =
       cleanId === "mp"
@@ -70,13 +73,24 @@ export function normalizeLiveFilieres(filieres) {
       vers: f.vers || defaultVers,
       icon: f.icon || defaultIcon,
       chapitres: Array.isArray(f.chapitres)
-        ? f.chapitres.map((c, cIdx) => ({
+        ? f.chapitres
+            .filter((c) => c && typeof c === "object")
+            .map((c, cIdx) => ({
             id: c.id || `${cleanId}-chap-${cIdx + 1}`,
             titre: c.titre || `Chapitre ${cIdx + 1}`,
             why: c.why || "",
             fiche: c.fiche || c.ficheUrl || c.fiche_url || null,
+            ...(Array.isArray(c.fiches)
+              ? {
+                  fiches: c.fiches.filter(
+                    (fi) => fi != null && (typeof fi === "object" || typeof fi === "string")
+                  ),
+                }
+              : {}),
             items: Array.isArray(c.items)
-              ? c.items.map((it, itIdx) => {
+              ? c.items
+                  .filter((it) => it && typeof it === "object")
+                  .map((it, itIdx) => {
                   const videoUrl =
                     it.video ||
                     it.videoUrl ||
@@ -112,7 +126,9 @@ export function normalizeLiveFilieres(filieres) {
                 })
               : [],
             seances: Array.isArray(c.seances)
-              ? c.seances.map((s, sIdx) => {
+              ? c.seances
+                  .filter((s) => s && typeof s === "object")
+                  .map((s, sIdx) => {
                   const videoUrl =
                     s.video ||
                     s.videoUrl ||
@@ -166,7 +182,9 @@ export function normalizeLiveFilieres(filieres) {
           }))
         : [],
       livres: Array.isArray(f.livres)
-        ? f.livres.map((l) => ({
+        ? f.livres
+            .filter((l) => l && typeof l === "object")
+            .map((l) => ({
             titre: l.titre || "Ouvrage",
             auteur: l.auteur || "",
             lien: l.lien || l.url || "",
@@ -175,6 +193,10 @@ export function normalizeLiveFilieres(filieres) {
         : [],
     };
   });
+}
+
+export function sanitizePasserelleFilieres(filieres) {
+  return normalizeLiveFilieres(filieres);
 }
 
 /**
@@ -194,7 +216,7 @@ export function parsePasserellePayload(payloadText) {
           return parsePasserellePayload(parsed[0].content.rendered);
         }
         // Direct array of filières
-        if (parsed.length > 0 && (parsed[0].nom || parsed[0].chapitres || parsed[0].id)) {
+        if (parsed.length > 0 && parsed[0] && (parsed[0].nom || parsed[0].chapitres || parsed[0].id)) {
           return parsed;
         }
       }
@@ -266,12 +288,15 @@ export function getInitialPasserelleData() {
     if (cached) {
       const parsed = JSON.parse(cached);
       if (parsed && Array.isArray(parsed.filieres) && parsed.filieres.length > 0) {
-        return {
-          ...PASSERELLE_DATA,
-          filieres: parsed.filieres,
-          _isLive: true,
-          _lastSynced: localStorage.getItem(CACHE_TIMESTAMP_KEY) || null,
-        };
+        const sanitized = sanitizePasserelleFilieres(parsed.filieres);
+        if (sanitized.length > 0) {
+          return {
+            ...PASSERELLE_DATA,
+            filieres: sanitized,
+            _isLive: true,
+            _lastSynced: localStorage.getItem(CACHE_TIMESTAMP_KEY) || null,
+          };
+        }
       }
     }
   } catch (e) {

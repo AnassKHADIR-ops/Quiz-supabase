@@ -72,11 +72,14 @@ export default function ConcoursCpge() {
     setPdfModalData({ url, title: `${type} · ${title}` });
   };
 
-  // Guard against invalid payload shapes
+  // Guard against invalid payload shapes & null sujets
   const validConcoursList = useMemo(() => {
-    return (concoursList || []).filter(
-      (c) => c && typeof c === "object" && c.id && (Array.isArray(c.sujets) || c.titre)
-    );
+    return (concoursList || [])
+      .filter((c) => c && typeof c === "object" && c.id && (Array.isArray(c.sujets) || c.titre))
+      .map((c) => ({
+        ...c,
+        sujets: Array.isArray(c.sujets) ? c.sujets.filter((s) => s && typeof s === "object") : [],
+      }));
   }, [concoursList]);
 
   // Calculate statistics across all concours

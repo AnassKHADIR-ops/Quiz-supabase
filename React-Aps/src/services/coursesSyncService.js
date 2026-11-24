@@ -13,53 +13,112 @@ import {
 export { extractJsVariable };
 
 /**
+ * Removes null / malformed items from a curriculum structure (handles live WP responses & legacy localStorage cache).
+ */
+export function sanitizeCurriculum(raw) {
+  if (!raw || typeof raw !== "object") return CPGE_CURRICULUM;
+
+  const sanitizeList = (arr, allowString = false) =>
+    Array.isArray(arr)
+      ? arr.filter((x) => x != null && (typeof x === "object" || (allowString && typeof x === "string" && x.trim() !== "")))
+      : [];
+
+  const sanitizeYear = (yrObj, fallbackYr) => {
+    if (!yrObj || !Array.isArray(yrObj.branches) || yrObj.branches.length === 0) {
+      return fallbackYr;
+    }
+    const cleanBranches = yrObj.branches
+      .filter((b) => b && typeof b === "object")
+      .map((b, bIdx) => ({
+        ...b,
+        id: b.id || `branch-${bIdx + 1}`,
+        nom: b.nom || b.id || `Filière ${bIdx + 1}`,
+        chapitres: sanitizeList(b.chapitres).map((ch, cIdx) => ({
+          ...ch,
+          id: ch.id || `${b.id || "ch"}-${ch.n ?? cIdx + 1}`,
+          n: ch.n ?? cIdx + 1,
+          titre: typeof ch.titre === "string" ? ch.titre : `Chapitre ${cIdx + 1}`,
+          cours: sanitizeList(ch.cours),
+          sessions: Array.isArray(ch.sessions) ? sanitizeList(ch.sessions) : undefined,
+          fiches: sanitizeList(ch.fiches, true),
+          tds: sanitizeList(ch.tds),
+          items: Array.isArray(ch.items) ? sanitizeList(ch.items) : undefined,
+          videos: sanitizeList(ch.videos, true),
+        })),
+        livres: sanitizeList(b.livres),
+      }));
+
+    return cleanBranches.length > 0 ? { ...fallbackYr, ...yrObj, branches: cleanBranches } : fallbackYr;
+  };
+
+  return {
+    ...CPGE_CURRICULUM,
+    ...raw,
+    annee1: sanitizeYear(raw.annee1, CPGE_CURRICULUM.annee1),
+    annee2: sanitizeYear(raw.annee2, CPGE_CURRICULUM.annee2),
+  };
+}
+
+/**
  * Normalizes an array of CH items from Elementor (ECT/ECS format) into the format expected by Courses.jsx.
  */
 export function normalizeChArray(chList, branchId) {
   if (!Array.isArray(chList)) return [];
 
-  return chList.map((ch, idx) => {
-    const num = ch.n || ch.num || idx + 1;
-    const cat = (ch.cat || (ch.tags && ch.tags[0]) || "algebre").toLowerCase();
-    const id = ch.id || `${branchId}-${num}`;
+  return chList
+    .filter((ch) => ch && typeof ch === "object")
+    .map((ch, idx) => {
+      const num = ch.n || ch.num || idx + 1;
+      const cat = String(ch.cat || (Array.isArray(ch.tags) && ch.tags[0]) || "algebre").toLowerCase();
+      const id = ch.id || `${branchId}-${num}`;
 
-    // Normalize single links
-    let fiche_url = ch.fiche_url || null;
-    if (!fiche_url && typeof ch.fiche === "string") fiche_url = ch.fiche;
+      // Normalize single links
+      let fiche_url = ch.fiche_url || null;
+      if (!fiche_url && typeof ch.fiche === "string") fiche_url = ch.fiche;
 
-    let enonce_url = ch.enonce_url || null;
-    let correction_url = ch.correction_url || null;
-    let video_url = ch.video_url || null;
+      let enonce_url = ch.enonce_url || null;
+      let correction_url = ch.correction_url || null;
+      let video_url = ch.video_url || null;
 
-    if (Array.isArray(ch.tds) && ch.tds.length > 0) {
-      const premierTd = ch.tds[0];
-      if (premierTd.exo) enonce_url = premierTd.exo;
-      if (premierTd.corr) correction_url = premierTd.corr;
-    }
+      const cleanCours = Array.isArray(ch.cours) ? ch.cours.filter((x) => x && typeof x === "object") : [];
+      const cleanFiches = Array.isArray(ch.fiches)
+        ? ch.fiches.filter((x) => x != null && (typeof x === "object" || typeof x === "string"))
+        : [];
+      const rawTds = Array.isArray(ch.tds) ? ch.tds : Array.isArray(ch.exercices) ? ch.exercices : [];
+      const cleanTds = rawTds.filter((x) => x && typeof x === "object");
+      const cleanVideos = Array.isArray(ch.videos)
+        ? ch.videos.filter((x) => x != null && (typeof x === "object" || typeof x === "string"))
+        : [];
 
-    if (Array.isArray(ch.cours) && ch.cours.length > 0) {
-      const premierCours = ch.cours[0];
-      if (premierCours.u && !fiche_url) fiche_url = premierCours.u;
-      if (premierCours.video) video_url = premierCours.video;
-    }
+      if (cleanTds.length > 0) {
+        const premierTd = cleanTds[0];
+        if (premierTd.exo) enonce_url = premierTd.exo;
+        if (premierTd.corr) correction_url = premierTd.corr;
+      }
 
-    return {
-      id,
-      n: num,
-      titre: ch.titre || `Chapitre ${num}`,
-      cat: cat === "probabilites" ? "proba" : cat,
-      badge: ch.badge || (cat === "algebre" ? "Algèbre" : cat === "analyse" ? "Analyse" : cat === "proba" ? "Probabilités" : "Cours"),
-      description: ch.description || ch.meta || ch.desc || "",
-      fiche_url,
-      enonce_url,
-      correction_url,
-      video_url,
-      cours: Array.isArray(ch.cours) ? ch.cours : [],
-      fiches: Array.isArray(ch.fiches) ? ch.fiches : (fiche_url ? [{ t: "Fiche de résumé", u: fiche_url }] : []),
-      tds: Array.isArray(ch.tds) ? ch.tds : (Array.isArray(ch.exercices) ? ch.exercices : []),
-      videos: Array.isArray(ch.videos) ? ch.videos : (video_url ? [{ titre: "Vidéo d'explication", url: video_url }] : []),
-    };
-  });
+      if (cleanCours.length > 0) {
+        const premierCours = cleanCours[0];
+        if (premierCours.u && !fiche_url) fiche_url = premierCours.u;
+        if (premierCours.video) video_url = premierCours.video;
+      }
+
+      return {
+        id,
+        n: num,
+        titre: ch.titre || `Chapitre ${num}`,
+        cat: cat === "probabilites" ? "proba" : cat,
+        badge: ch.badge || (cat === "algebre" ? "Algèbre" : cat === "analyse" ? "Analyse" : cat === "proba" ? "Probabilités" : "Cours"),
+        description: ch.description || ch.meta || ch.desc || "",
+        fiche_url,
+        enonce_url,
+        correction_url,
+        video_url,
+        cours: cleanCours,
+        fiches: cleanFiches.length > 0 ? cleanFiches : (fiche_url ? [{ t: "Fiche de résumé", u: fiche_url }] : []),
+        tds: cleanTds,
+        videos: cleanVideos.length > 0 ? cleanVideos : (video_url ? [{ titre: "Vidéo d'explication", url: video_url }] : []),
+      };
+    });
 }
 
 /**
@@ -68,60 +127,69 @@ export function normalizeChArray(chList, branchId) {
 export function normalizeDataChapitres(chapitresList, branchId) {
   if (!Array.isArray(chapitresList)) return [];
 
-  return chapitresList.map((ch, idx) => {
-    const num = ch.num != null ? ch.num : idx + 1;
-    const cat = Array.isArray(ch.tags) && ch.tags.length > 0 ? ch.tags[0] : "algebre";
-    const id = ch.id || `${branchId}-${num}`;
+  return chapitresList
+    .filter((ch) => ch && typeof ch === "object")
+    .map((ch, idx) => {
+      const num = ch.num != null ? ch.num : idx + 1;
+      const cat = Array.isArray(ch.tags) && ch.tags.length > 0 ? ch.tags[0] : "algebre";
+      const id = ch.id || `${branchId}-${num}`;
 
-    let fiche_url = null;
-    if (Array.isArray(ch.fiches) && ch.fiches.length > 0) {
-      fiche_url = ch.fiches[0].pdf || ch.fiches[0].u || null;
-    }
+      const cleanCours = Array.isArray(ch.cours) ? ch.cours.filter((c) => c && typeof c === "object") : [];
+      const cleanFiches = Array.isArray(ch.fiches) ? ch.fiches.filter((f) => f && typeof f === "object") : [];
+      const cleanExercices = Array.isArray(ch.exercices) ? ch.exercices.filter((e) => e && typeof e === "object") : [];
+      const cleanVideos = Array.isArray(ch.videos)
+        ? ch.videos.filter((v) => v != null && (typeof v === "object" || typeof v === "string"))
+        : [];
 
-    let enonce_url = null;
-    let correction_url = null;
-    let video_url = null;
+      let fiche_url = null;
+      if (cleanFiches.length > 0) {
+        fiche_url = cleanFiches[0].pdf || cleanFiches[0].u || null;
+      }
 
-    if (Array.isArray(ch.exercices) && ch.exercices.length > 0) {
-      const ex = ch.exercices[0];
-      enonce_url = ex.enonce || null;
-      if (typeof ex.correction === "string") correction_url = ex.correction;
-      else if (Array.isArray(ex.correction) && ex.correction.length > 0) correction_url = ex.correction[0].url || null;
-      if (typeof ex.video === "string") video_url = ex.video;
-    }
+      let enonce_url = null;
+      let correction_url = null;
+      let video_url = null;
 
-    return {
-      id,
-      n: num,
-      titre: ch.titre || `Chapitre ${num}`,
-      cat: cat === "probabilites" ? "proba" : cat,
-      badge: "Informatique",
-      description: ch.meta || ch.desc || "",
-      fiche_url,
-      enonce_url,
-      correction_url,
-      video_url,
-      cours: (ch.cours || []).map((c) => ({
-        t: c.titre,
-        u: c.pdf || c.u || "",
-        v: c.video || "",
-        sous: c.desc || (c.niveau ? `${c.niveau} • ${c.duree || ""}` : ""),
-      })),
-      fiches: (ch.fiches || []).map((f) => ({
-        t: f.titre,
-        u: f.pdf || f.u || "",
-        sous: "Fiche résumé",
-      })),
-      tds: (ch.exercices || []).map((e) => ({
-        t: e.titre,
-        exo: e.enonce || "",
-        corr: typeof e.correction === "string" ? e.correction : (Array.isArray(e.correction) && e.correction[0]?.url) || "",
-        video: typeof e.video === "string" ? e.video : (Array.isArray(e.video) && e.video[0]?.url) || "",
-        sous: e.temps ? `Temps estimé : ${e.temps}` : "",
-      })),
-      videos: ch.videos || [],
-    };
-  });
+      if (cleanExercices.length > 0) {
+        const ex = cleanExercices[0];
+        enonce_url = ex.enonce || null;
+        if (typeof ex.correction === "string") correction_url = ex.correction;
+        else if (Array.isArray(ex.correction) && ex.correction.length > 0) correction_url = ex.correction[0]?.url || null;
+        if (typeof ex.video === "string") video_url = ex.video;
+      }
+
+      return {
+        id,
+        n: num,
+        titre: ch.titre || `Chapitre ${num}`,
+        cat: cat === "probabilites" ? "proba" : cat,
+        badge: "Informatique",
+        description: ch.meta || ch.desc || "",
+        fiche_url,
+        enonce_url,
+        correction_url,
+        video_url,
+        cours: cleanCours.map((c) => ({
+          t: c.titre || c.t || "Cours",
+          u: c.pdf || c.u || "",
+          v: c.video || "",
+          sous: c.desc || (c.niveau ? `${c.niveau} • ${c.duree || ""}` : ""),
+        })),
+        fiches: cleanFiches.map((f) => ({
+          t: f.titre || f.t || "Fiche résumé",
+          u: f.pdf || f.u || "",
+          sous: "Fiche résumé",
+        })),
+        tds: cleanExercices.map((e) => ({
+          t: e.titre || e.t || "Exercice",
+          exo: e.enonce || "",
+          corr: typeof e.correction === "string" ? e.correction : (Array.isArray(e.correction) && e.correction[0]?.url) || "",
+          video: typeof e.video === "string" ? e.video : (Array.isArray(e.video) && e.video[0]?.url) || "",
+          sous: e.temps ? `Temps estimé : ${e.temps}` : "",
+        })),
+        videos: cleanVideos,
+      };
+    });
 }
 
 /**
@@ -129,12 +197,14 @@ export function normalizeDataChapitres(chapitresList, branchId) {
  */
 export function normalizeLivresArray(livresList) {
   if (!Array.isArray(livresList)) return [];
-  return livresList.map((l) => ({
-    titre: l.titre || "Ouvrage de référence",
-    auteur: l.auteur || "",
-    lien: l.lien || "",
-    cover: l.cover || null,
-  }));
+  return livresList
+    .filter((l) => l && typeof l === "object")
+    .map((l) => ({
+      titre: l.titre || "Ouvrage de référence",
+      auteur: l.auteur || "",
+      lien: l.lien || "",
+      cover: l.cover || null,
+    }));
 }
 
 /**
@@ -316,13 +386,9 @@ export function getInitialCurriculumData() {
       const hasValidAnnee1 = Array.isArray(parsed?.annee1?.branches) && parsed.annee1.branches.length > 0;
       const hasValidAnnee2 = Array.isArray(parsed?.annee2?.branches) && parsed.annee2.branches.length > 0;
       if (parsed && (hasValidAnnee1 || hasValidAnnee2)) {
+        const sanitized = sanitizeCurriculum(parsed);
         return {
-          curriculum: {
-            ...CPGE_CURRICULUM,
-            ...parsed,
-            annee1: hasValidAnnee1 ? parsed.annee1 : CPGE_CURRICULUM.annee1,
-            annee2: hasValidAnnee2 ? parsed.annee2 : CPGE_CURRICULUM.annee2,
-          },
+          curriculum: sanitized,
           _isLive: true,
           _lastSynced: getStorageItem(CACHE_TIMESTAMP_KEY) || null,
         };
@@ -381,12 +447,13 @@ export async function syncCoursesFromWordPress(customUrl = null, force = true) {
     if (customResp.ok) {
       const customData = await customResp.json();
       if (customData && (customData.annee1 || customData.annee2)) {
+        const sanitizedCustom = sanitizeCurriculum(customData);
         const now = new Date().toISOString();
-        setStorageItem(CACHE_KEY, JSON.stringify(customData));
+        setStorageItem(CACHE_KEY, JSON.stringify(sanitizedCustom));
         setStorageItem(CACHE_TIMESTAMP_KEY, now);
         return {
           success: true,
-          curriculum: customData,
+          curriculum: sanitizedCustom,
           lastSynced: now,
         };
       }
@@ -413,13 +480,14 @@ export async function syncCoursesFromWordPress(customUrl = null, force = true) {
     const liveCurriculum = parseWordPressCurriculum(pages);
 
     if (liveCurriculum) {
+      const sanitizedLive = sanitizeCurriculum(liveCurriculum);
       const now = new Date().toISOString();
-      setStorageItem(CACHE_KEY, JSON.stringify(liveCurriculum));
+      setStorageItem(CACHE_KEY, JSON.stringify(sanitizedLive));
       setStorageItem(CACHE_TIMESTAMP_KEY, now);
 
       return {
         success: true,
-        curriculum: liveCurriculum,
+        curriculum: sanitizedLive,
         lastSynced: now,
       };
     } else {

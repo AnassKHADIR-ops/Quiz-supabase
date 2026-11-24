@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getInitialCurriculumData,
+  sanitizeCurriculum,
   syncCoursesFromWordPress,
 } from "../services/coursesSyncService.js";
 
@@ -78,11 +79,12 @@ export function useCoursesSync(customWpUrl = null, pollIntervalMs = 15000) {
         try {
           const parsed = JSON.parse(e.newValue);
           if (parsed && (Array.isArray(parsed.annee1?.branches) || Array.isArray(parsed.annee2?.branches))) {
-            const newFingerprint = JSON.stringify(parsed);
+            const sanitized = sanitizeCurriculum(parsed);
+            const newFingerprint = JSON.stringify(sanitized);
             if (newFingerprint !== fingerprintRef.current) {
               fingerprintRef.current = newFingerprint;
               setState({
-                curriculum: parsed,
+                curriculum: sanitized,
                 _isLive: true,
                 _lastSynced: new Date().toISOString(),
               });

@@ -6,6 +6,8 @@
 
 /**
  * Décode les entités HTML courantes présentes dans les balises script de WordPress / Elementor.
+ * Préserve les guillemets typographiques (’, ‘, “, ”) en Unicode afin de ne jamais couper
+ * prématurément une chaîne JS délimitée par ' ou ".
  */
 export function decodeHtmlEntities(str) {
   if (!str || typeof str !== "string") return "";
@@ -15,22 +17,26 @@ export function decodeHtmlEntities(str) {
     .replace(/&#39;/g, "'")
     .replace(/&#34;/g, '"')
     .replace(/&apos;/g, "'")
+    .replace(/&#038;/g, "&")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
-    .replace(/&rsquo;/g, "'")
-    .replace(/&lsquo;/g, "'")
-    .replace(/&rdquo;/g, '"')
-    .replace(/&ldquo;/g, '"')
-    .replace(/&#8216;/g, "'")
-    .replace(/&#8217;/g, "'")
-    .replace(/&#8220;/g, '"')
-    .replace(/&#8221;/g, '"')
+    .replace(/&rsquo;/g, "’")
+    .replace(/&lsquo;/g, "‘")
+    .replace(/&rdquo;/g, "”")
+    .replace(/&ldquo;/g, "“")
+    .replace(/&#8216;/g, "‘")
+    .replace(/&#8217;/g, "’")
+    .replace(/&#8220;/g, "“")
+    .replace(/&#8221;/g, "”")
+    .replace(/&#8211;/g, "–")
+    .replace(/&#8212;/g, "—")
+    .replace(/&#8230;/g, "…")
     .replace(/&nbsp;/g, " ");
 }
 
 /**
- * Analyse et désérialise un littéral JS (objets, tableaux, chaînes simples/doubles, nombres, booléens)
+ * Analyse et désérialise un littéral JS (objets, tableaux, chaînes simples/doubles/backticks, nombres, booléens)
  * sans JAMAIS exécuter de code (aucun new Function ni eval).
  */
 export function safeParseJsLiteral(codeStr) {
@@ -50,7 +56,7 @@ export function safeParseJsLiteral(codeStr) {
   function skipWhitespaceAndComments() {
     while (idx < len) {
       const ch = decoded[idx];
-      if (ch === " " || ch === "\t" || ch === "\n" || ch === "\r") {
+      if (ch === " " || ch === "\t" || ch === "\n" || ch === "\r" || ch === "\u00a0") {
         idx++;
         continue;
       }
@@ -70,6 +76,14 @@ export function safeParseJsLiteral(codeStr) {
         }
         if (idx < len) idx += 2;
         continue;
+      }
+      // Balises HTML injectées par WordPress wpautop (<br />, <p>, </p>) entre les tokens JS
+      if (ch === "<") {
+        const htmlTagMatch = decoded.slice(idx).match(/^<\/?(?:br|p)(?:\s[^>]*)?\/?>/i);
+        if (htmlTagMatch) {
+          idx += htmlTagMatch[0].length;
+          continue;
+        }
       }
       break;
     }
@@ -112,7 +126,7 @@ export function safeParseJsLiteral(codeStr) {
   function parseIdentifierOrKey() {
     skipWhitespaceAndComments();
     const ch = decoded[idx];
-    if (ch === '"' || ch === "'") {
+    if (ch === '"' || ch === "'" || ch === "`") {
       return parseString();
     }
     const start = idx;
@@ -148,7 +162,17 @@ export function safeParseJsLiteral(codeStr) {
         idx++; // fin du tableau
         return arr;
       }
+      // Ignorer les virgules vides éventuelles (sparse arrays)
+      if (idx < len && decoded[idx] === ",") {
+        idx++;
+        continue;
+      }
+      const beforeIdx = idx;
       const val = parseValue();
+      if (idx === beforeIdx) {
+        idx++;
+        continue;
+      }
       arr.push(val);
       skipWhitespaceAndComments();
       if (idx < len && decoded[idx] === ",") {
@@ -172,10 +196,18 @@ export function safeParseJsLiteral(codeStr) {
         idx++; // fin de l'objet
         return obj;
       }
+      if (idx < len && decoded[idx] === ",") {
+        idx++;
+        continue;
+      }
+      const beforeIdx = idx;
       const key = parseIdentifierOrKey();
       skipWhitespaceAndComments();
       if (idx < len && decoded[idx] === ":") {
         idx++; // saute ':'
+      } else if (idx === beforeIdx) {
+        idx++;
+        continue;
       }
       const val = parseValue();
       if (key) {
@@ -201,23 +233,29 @@ export function safeParseJsLiteral(codeStr) {
 
     if (ch === "{") return parseObject();
     if (ch === "[") return parseArray();
-    if (ch === '"' || ch === "'") return parseString();
+    if (ch === '"' || ch === "'" || ch === "`") return parseString();
     if (ch === "-" || (ch >= "0" && ch <= "9")) return parseNumber();
 
-    if (decoded.startsWith("true", idx)) {
+    if (decoded.startsWith("true", idx) && !/[a-zA-Z0-9_$]/.test(decoded[idx + 4] || "")) {
       idx += 4;
       return true;
     }
-    if (decoded.startsWith("false", idx)) {
+    if (decoded.startsWith("false", idx) && !/[a-zA-Z0-9_$]/.test(decoded[idx + 5] || "")) {
       idx += 5;
       return false;
     }
-    if (decoded.startsWith("null", idx)) {
+    if (decoded.startsWith("null", idx) && !/[a-zA-Z0-9_$]/.test(decoded[idx + 4] || "")) {
       idx += 4;
       return null;
     }
-    if (decoded.startsWith("undefined", idx)) {
+    if (decoded.startsWith("undefined", idx) && !/[a-zA-Z0-9_$]/.test(decoded[idx + 9] || "")) {
       idx += 9;
+      return null;
+    }
+
+    // Consomme un identifiant inconnu complet (évite de générer plusieurs null par caractère)
+    if (/[a-zA-Z_$]/.test(ch)) {
+      while (idx < len && /[a-zA-Z0-9_$.]/.test(decoded[idx])) idx++;
       return null;
     }
 
@@ -240,70 +278,94 @@ export const safeEvalLiteral = safeParseJsLiteral;
 /**
  * Extrait une variable JavaScript déclarée dans un bloc HTML / script
  * en utilisant un équilibrage de parenthèses/crochets et notre parseur sécurisé.
+ * Ne capture que les assignations directes de littéraux tableau/objet (`= [` ou `= {`).
  */
 export function extractJsVariable(htmlContent, varName) {
   if (!htmlContent || typeof htmlContent !== "string") return null;
 
-  const regex = new RegExp(`(?:var|let|const|window\\.)\\s*\\b${varName}\\b\\s*=\\s*`, "i");
-  const match = regex.exec(htmlContent);
-  if (!match) return null;
+  const regex = new RegExp(`(?:var|let|const|window\\.)\\s*\\b${varName}\\b\\s*=\\s*`, "gi");
+  let match;
 
-  const openPos = match.index + match[0].length;
-  const startChar = htmlContent.slice(openPos).search(/[\[{]/);
-  if (startChar === -1) return null;
+  while ((match = regex.exec(htmlContent)) !== null) {
+    let pos = match.index + match[0].length;
+    // Autoriser uniquement les espaces/commentaires/balises wpautop entre '=' et '[' ou '{'
+    while (pos < htmlContent.length) {
+      const ch = htmlContent[pos];
+      if (ch === " " || ch === "\t" || ch === "\n" || ch === "\r") {
+        pos++;
+        continue;
+      }
+      if (ch === "<") {
+        const tagMatch = htmlContent.slice(pos).match(/^<\/?(?:br|p)(?:\s[^>]*)?\/?>/i);
+        if (tagMatch) {
+          pos += tagMatch[0].length;
+          continue;
+        }
+      }
+      break;
+    }
 
-  const actualOpenPos = openPos + startChar;
-  const openChar = htmlContent[actualOpenPos];
-  const closeChar = openChar === "[" ? "]" : "}";
-
-  let depth = 0;
-  let inString = null;
-  let inComment = false;
-  let inSingleLineComment = false;
-
-  for (let i = actualOpenPos; i < htmlContent.length; i++) {
-    const ch = htmlContent[i];
-    const prev = htmlContent[i - 1];
-
-    if (inSingleLineComment) {
-      if (ch === "\n" || ch === "\r") inSingleLineComment = false;
+    const openChar = htmlContent[pos];
+    if (openChar !== "[" && openChar !== "{") {
       continue;
     }
 
-    if (inComment) {
-      if (prev === "*" && ch === "/") inComment = false;
-      continue;
-    }
+    const closeChar = openChar === "[" ? "]" : "}";
+    let depth = 0;
+    let inString = null;
+    let inComment = false;
+    let inSingleLineComment = false;
 
-    if (inString) {
-      if (ch === inString && prev !== "\\") inString = null;
-      continue;
-    }
+    for (let i = pos; i < htmlContent.length; i++) {
+      const ch = htmlContent[i];
+      const prev = htmlContent[i - 1];
 
-    if (ch === '"' || ch === "'" || ch === "`") {
-      inString = ch;
-      continue;
-    }
+      if (inSingleLineComment) {
+        if (ch === "\n" || ch === "\r") inSingleLineComment = false;
+        continue;
+      }
 
-    if (ch === "/" && htmlContent[i + 1] === "*") {
-      inComment = true;
-      i++;
-      continue;
-    }
+      if (inComment) {
+        if (prev === "*" && ch === "/") inComment = false;
+        continue;
+      }
 
-    if (ch === "/" && htmlContent[i + 1] === "/") {
-      inSingleLineComment = true;
-      i++;
-      continue;
-    }
+      if (inString) {
+        if (ch === "\\") {
+          i++;
+          continue;
+        }
+        if (ch === inString) inString = null;
+        continue;
+      }
 
-    if (ch === openChar) {
-      depth++;
-    } else if (ch === closeChar) {
-      depth--;
-      if (depth === 0) {
-        const rawBlock = htmlContent.slice(actualOpenPos, i + 1);
-        return safeParseJsLiteral(rawBlock);
+      if (ch === '"' || ch === "'" || ch === "`") {
+        inString = ch;
+        continue;
+      }
+
+      if (ch === "/" && htmlContent[i + 1] === "*") {
+        inComment = true;
+        i++;
+        continue;
+      }
+
+      if (ch === "/" && htmlContent[i + 1] === "/") {
+        inSingleLineComment = true;
+        i++;
+        continue;
+      }
+
+      if (ch === openChar) {
+        depth++;
+      } else if (ch === closeChar) {
+        depth--;
+        if (depth === 0) {
+          const rawBlock = htmlContent.slice(pos, i + 1);
+          const parsed = safeParseJsLiteral(rawBlock);
+          if (parsed != null) return parsed;
+          break;
+        }
       }
     }
   }

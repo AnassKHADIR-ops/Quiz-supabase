@@ -18,7 +18,9 @@ export { extractJsVariable };
 export function normalizeLiveBacThemes(themes) {
   if (!Array.isArray(themes)) return [];
 
-  return themes.map((t, tIdx) => {
+  return themes
+    .filter((t) => t && typeof t === "object")
+    .map((t, tIdx) => {
     const rawId = t.id || t.categorie || `theme-${tIdx + 1}`;
     const cleanId = String(rawId).toLowerCase().replace(/[^a-z0-9_-]/g, "");
 
@@ -35,7 +37,9 @@ export function normalizeLiveBacThemes(themes) {
       : "ti-annales";
 
     const items = Array.isArray(t.items)
-      ? t.items.map((item, itemIdx) => {
+      ? t.items
+          .filter((item) => item && typeof item === "object")
+          .map((item, itemIdx) => {
           const rawVideo = item.video || item.videoUrl || item.video_url || item.replayUrl || item.youtube || null;
           let normalizedVideo = null;
 
@@ -75,22 +79,36 @@ export function normalizeLiveBacThemes(themes) {
  * Normalise les catégories pour les filtres.
  */
 export function normalizeLiveBacCategories(categories, fallbackThemes = []) {
-  if (Array.isArray(categories) && categories.length > 0) {
-    return categories.map((c) => ({
+  const validCategories = Array.isArray(categories)
+    ? categories.filter((c) => c && typeof c === "object")
+    : [];
+  if (validCategories.length > 0) {
+    return validCategories.map((c) => ({
       id: c.id || String(c.label || "").toLowerCase(),
       label: c.label || c.titre || c.id,
     }));
   }
 
   // Si non défini, déduire des thèmes
-  if (Array.isArray(fallbackThemes) && fallbackThemes.length > 0) {
-    return fallbackThemes.map((t) => ({
+  const validThemes = Array.isArray(fallbackThemes)
+    ? fallbackThemes.filter((t) => t && typeof t === "object")
+    : [];
+  if (validThemes.length > 0) {
+    return validThemes.map((t) => ({
       id: t.categorie || t.id,
       label: `${t.icon ? t.icon + " " : ""}${t.titre}`,
     }));
   }
 
   return PASSERELLE_BAC_DATA.categories;
+}
+
+export function sanitizePasserelleBacPayload(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const themes = normalizeLiveBacThemes(raw.themes);
+  if (themes.length === 0) return null;
+  const categories = normalizeLiveBacCategories(raw.categories, themes);
+  return { themes, categories };
 }
 
 /**
@@ -146,12 +164,15 @@ export function getInitialPasserelleBacData() {
     if (cached) {
       const parsed = JSON.parse(cached);
       if (parsed && Array.isArray(parsed.themes) && parsed.themes.length > 0) {
-        return {
-          categories: parsed.categories || PASSERELLE_BAC_DATA.categories,
-          themes: parsed.themes,
-          _isLive: true,
-          _lastSynced: localStorage.getItem(CACHE_TIMESTAMP_KEY) || null,
-        };
+        const sanitized = sanitizePasserelleBacPayload(parsed);
+        if (sanitized) {
+          return {
+            categories: sanitized.categories || PASSERELLE_BAC_DATA.categories,
+            themes: sanitized.themes,
+            _isLive: true,
+            _lastSynced: localStorage.getItem(CACHE_TIMESTAMP_KEY) || null,
+          };
+        }
       }
     }
   } catch (e) {

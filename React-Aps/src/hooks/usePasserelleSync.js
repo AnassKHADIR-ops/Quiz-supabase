@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getInitialPasserelleData,
   syncPasserelleFromWordPress,
+  sanitizePasserelleFilieres,
 } from "../services/passerelleSyncService.js";
 
 const CACHE_KEY = "passerelle_live_data";
@@ -79,16 +80,19 @@ export function usePasserelleSync(wpUrl = null, pollIntervalMs = 10000) {
         try {
           const parsed = JSON.parse(e.newValue);
           if (parsed && Array.isArray(parsed.filieres)) {
-            const newFingerprint = JSON.stringify(parsed.filieres);
-            if (newFingerprint !== fingerprintRef.current) {
-              fingerprintRef.current = newFingerprint;
-              setData((prev) => ({
-                ...prev,
-                filieres: parsed.filieres,
-                _isLive: true,
-                _lastSynced: parsed.updatedAt || new Date().toISOString(),
-              }));
-              console.info("[usePasserelleSync] 🔄 Synchronized from another active browser tab.");
+            const sanitized = sanitizePasserelleFilieres(parsed.filieres);
+            if (sanitized.length > 0) {
+              const newFingerprint = JSON.stringify(sanitized);
+              if (newFingerprint !== fingerprintRef.current) {
+                fingerprintRef.current = newFingerprint;
+                setData((prev) => ({
+                  ...prev,
+                  filieres: sanitized,
+                  _isLive: true,
+                  _lastSynced: parsed.updatedAt || new Date().toISOString(),
+                }));
+                console.info("[usePasserelleSync] 🔄 Synchronized from another active browser tab.");
+              }
             }
           }
         } catch (err) {}

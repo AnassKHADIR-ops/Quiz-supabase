@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getInitialPasserelleBacData,
   syncPasserelleBacFromWordPress,
+  sanitizePasserelleBacPayload,
 } from "../services/passerelleBacSyncService.js";
 
 const CACHE_KEY = "passerelle_bac_live_data";
@@ -81,14 +82,15 @@ export function usePasserelleBacSync(wpUrl = null, pollIntervalMs = 10000) {
       if (e.key === CACHE_KEY && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
-          if (parsed && Array.isArray(parsed.themes)) {
-            const newFingerprint = JSON.stringify(parsed.themes);
+          const sanitized = sanitizePasserelleBacPayload(parsed);
+          if (sanitized) {
+            const newFingerprint = JSON.stringify(sanitized.themes);
             if (newFingerprint !== fingerprintRef.current) {
               fingerprintRef.current = newFingerprint;
               setData((prev) => ({
                 ...prev,
-                categories: parsed.categories || prev.categories,
-                themes: parsed.themes,
+                categories: sanitized.categories || prev.categories,
+                themes: sanitized.themes,
                 _isLive: true,
                 _lastSynced: parsed.updatedAt || new Date().toISOString(),
               }));

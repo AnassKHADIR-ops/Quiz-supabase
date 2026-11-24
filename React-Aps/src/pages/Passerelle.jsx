@@ -90,15 +90,19 @@ function couvCouleurs(titre) {
 }
 
 function BookCard({ livre, onOpenPdf }) {
-  const titre = livre.titre || "Ouvrage de référence";
-  const auteur = livre.auteur || "";
-  const hasLink = isUrlActive(livre.lien);
-  const targetCover = livre.cover || (livre.lien && livre.lien.includes("drive.google.com") ? livre.lien : null);
+  const safeLivre = livre && typeof livre === "object" ? livre : null;
+  const titre = safeLivre?.titre || "Ouvrage de référence";
+  const auteur = safeLivre?.auteur || "";
+  const lien = safeLivre?.lien || "";
+  const hasLink = isUrlActive(lien);
+  const targetCover = safeLivre?.cover || (typeof lien === "string" && lien.includes("drive.google.com") ? lien : null);
   const srcs = useMemo(() => getDriveImageUrls(targetCover), [targetCover]);
   const [imgIdx, setImgIdx] = useState(0);
   const [imgFailed, setImgFailed] = useState(false);
 
   const colors = useMemo(() => couvCouleurs(titre), [titre]);
+
+  if (!safeLivre) return null;
 
   const handleImgError = () => {
     if (imgIdx + 1 < srcs.length) {
@@ -298,14 +302,17 @@ function BookCard({ livre, onOpenPdf }) {
 }
 
 function FicheCard({ fiche, chapTitre, onOpenPdf }) {
-  const url = fiche.url || fiche.u || (typeof fiche === "string" ? fiche : "");
-  const titre = fiche.label || fiche.titre || fiche.t || "Fiche de synthèse";
-  const sous = fiche.sous || "L'essentiel du chapitre";
+  const isObj = Boolean(fiche && typeof fiche === "object");
+  const url = isObj ? (fiche.url || fiche.u || "") : (typeof fiche === "string" ? fiche : "");
+  const titre = isObj ? (fiche.label || fiche.titre || fiche.t || "Fiche de synthèse") : "Fiche de synthèse";
+  const sous = isObj ? (fiche.sous || "L'essentiel du chapitre") : "L'essentiel du chapitre";
   const isActif = isUrlActive(url);
-  const targetCover = fiche.cover || url;
+  const targetCover = (isObj && fiche.cover) || url;
   const srcs = useMemo(() => getDriveImageUrls(targetCover), [targetCover]);
   const [imgIdx, setImgIdx] = useState(0);
   const [imgFailed, setImgFailed] = useState(false);
+
+  if (!fiche) return null;
 
   const handleImgError = () => {
     if (imgIdx + 1 < srcs.length) setImgIdx((p) => p + 1);
@@ -346,6 +353,7 @@ function FicheCard({ fiche, chapTitre, onOpenPdf }) {
 }
 
 function SessionVideoCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo }) {
+  if (!seance || typeof seance !== "object") return null;
   const titre = seance.titre || seance.title || seance.name || `Séance ${index + 1}`;
 
   const rawVideo =
@@ -474,6 +482,7 @@ function SessionVideoCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo }) 
 }
 
 function ExerciseDocLine({ item, index, chapTitre, onOpenPdf, onOpenCorrection, onOpenVideo }) {
+  if (!item || typeof item !== "object") return null;
   const enonces = normalizeLinks(item.enonce);
   const corrections = normalizeLinks(item.correction);
   const videos = normalizeLinks(item.video);
@@ -577,18 +586,24 @@ function Passerelle() {
   const [pdfModalData, setPdfModalData] = useState(null);
   const [authGateData, setAuthGateData] = useState(null);
 
+  const validFilieres = useMemo(() => {
+    return Array.isArray(passerelleData?.filieres)
+      ? passerelleData.filieres.filter((f) => f && typeof f === "object")
+      : [];
+  }, [passerelleData]);
+
   const filiere = useMemo(() => {
     return (
-      (passerelleData.filieres || []).find((f) => f.id === activeFiliereId) ||
-      (passerelleData.filieres || [])[0]
+      validFilieres.find((f) => f.id === activeFiliereId) ||
+      validFilieres[0]
     );
-  }, [passerelleData, activeFiliereId]);
+  }, [validFilieres, activeFiliereId]);
 
   // Deep linking & popstate handling from URL
   useEffect(() => {
     const filParam = searchParams.get("fil") || searchParams.get("filiere");
-    if (filParam && passerelleData?.filieres) {
-      const matchFil = passerelleData.filieres.find(
+    if (filParam && validFilieres.length > 0) {
+      const matchFil = validFilieres.find(
         (f) =>
           String(f?.id || "").toLowerCase() === filParam.toLowerCase() ||
           String(f?.nom || "").toLowerCase() === filParam.toLowerCase() ||
@@ -645,16 +660,18 @@ function Passerelle() {
     }
 
     if (chapParam && filiere) {
-      const foundChap = (filiere.chapitres || []).find(
-        (c) => String(c.id) === String(chapParam) || c.titre.toLowerCase().includes(chapParam.toLowerCase())
-      );
+      const foundChap = (filiere.chapitres || [])
+        .filter((c) => c && typeof c === "object")
+        .find(
+          (c) => String(c.id) === String(chapParam) || String(c.titre || "").toLowerCase().includes(chapParam.toLowerCase())
+        );
       if (foundChap) {
         setOpenChapterIds((prev) => new Set([...prev, foundChap.id]));
         if (viewParam === "video" && !videoUrlParam) {
           let targetVideo = null;
           let targetTitle = foundChap.titre;
 
-          for (const item of foundChap.items || []) {
+          for (const item of (foundChap.items || []).filter((it) => it && typeof it === "object")) {
             const vLinks = normalizeLinks(item.video);
             if (vLinks.length && isUrlActive(vLinks[0].url)) {
               targetVideo = vLinks[0].url;
@@ -663,7 +680,7 @@ function Passerelle() {
             }
           }
           if (!targetVideo) {
-            for (const s of foundChap.seances || []) {
+            for (const s of (foundChap.seances || []).filter((se) => se && typeof se === "object")) {
               const vLinks = normalizeLinks(s.video);
               if (vLinks.length && isUrlActive(vLinks[0].url)) {
                 targetVideo = vLinks[0].url;
@@ -779,18 +796,27 @@ function Passerelle() {
   };
 
   // Filtered chapters for current filière
+  const validChapitres = useMemo(() => {
+    if (!filiere || !Array.isArray(filiere.chapitres)) return [];
+    return filiere.chapitres.filter((c) => c && typeof c === "object");
+  }, [filiere]);
+
+  const validLivres = useMemo(() => {
+    if (!filiere || !Array.isArray(filiere.livres)) return [];
+    return filiere.livres.filter((l) => l && typeof l === "object");
+  }, [filiere]);
+
   const filteredChapitres = useMemo(() => {
-    if (!filiere) return [];
     const q = searchQuery.toLowerCase().trim();
-    if (!q) return filiere.chapitres || [];
-    return (filiere.chapitres || []).filter((c) => {
+    if (!q) return validChapitres;
+    return validChapitres.filter((c) => {
       const inTitle = String(c?.titre || "").toLowerCase().includes(q);
       const inWhy = c?.why && String(c.why).toLowerCase().includes(q);
-      const inItems = (c?.items || []).some((it) => String(it?.titre || "").toLowerCase().includes(q));
-      const inSeances = (c?.seances || []).some((s) => String(s?.titre || "").toLowerCase().includes(q));
+      const inItems = (c?.items || []).some((it) => it && String(it?.titre || "").toLowerCase().includes(q));
+      const inSeances = (c?.seances || []).some((s) => s && String(s?.titre || "").toLowerCase().includes(q));
       return inTitle || inWhy || inItems || inSeances;
     });
-  }, [filiere, searchQuery]);
+  }, [validChapitres, searchQuery]);
 
   return (
     <div id="tss" className="passerelle-container page" style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 18px 80px" }}>
@@ -960,7 +986,7 @@ function Passerelle() {
       >
         <div>
           <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--tss-or)", fontFamily: "serif" }}>
-            {(passerelleData.filieres || []).length}
+            {validFilieres.length}
           </div>
           <div style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "var(--tss-encre-douce)", letterSpacing: "0.08em" }}>
             Filières
@@ -968,7 +994,7 @@ function Passerelle() {
         </div>
         <div>
           <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--tss-or)", fontFamily: "serif" }}>
-            {filiere?.chapitres?.length || 0}
+            {validChapitres.length}
           </div>
           <div style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "var(--tss-encre-douce)", letterSpacing: "0.08em" }}>
             Chapitres ({filiere?.nom})
@@ -976,7 +1002,7 @@ function Passerelle() {
         </div>
         <div>
           <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--tss-or)", fontFamily: "serif" }}>
-            {(filiere?.chapitres || []).reduce((acc, c) => acc + (c.items?.length || 0), 0)}
+            {validChapitres.reduce((acc, c) => acc + (Array.isArray(c.items) ? c.items.filter((it) => it && typeof it === "object").length : 0), 0)}
           </div>
           <div style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "var(--tss-encre-douce)", letterSpacing: "0.08em" }}>
             Fiches d'exercices
@@ -984,7 +1010,7 @@ function Passerelle() {
         </div>
         <div>
           <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--tss-or)", fontFamily: "serif" }}>
-            {(filiere?.chapitres || []).reduce((acc, c) => acc + (c.seances?.length || 0), 0)}
+            {validChapitres.reduce((acc, c) => acc + (Array.isArray(c.seances) ? c.seances.filter((se) => se && typeof se === "object").length : 0), 0)}
           </div>
           <div style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "var(--tss-encre-douce)", letterSpacing: "0.08em" }}>
             Séances & Replays
@@ -1001,7 +1027,7 @@ function Passerelle() {
       >
         {/* Filière Selector Horizontal Scroll */}
         <div className="horizontal-scroll-row" style={{ gap: 8, flex: "1 1 auto" }}>
-          {(passerelleData.filieres || []).map((f, fIdx) => {
+          {validFilieres.map((f, fIdx) => {
             const isSelected = activeFiliereId === f.id;
             return (
               <button
@@ -1051,7 +1077,7 @@ function Passerelle() {
           <div style={{ display: "flex", gap: 6 }}>
             <button
               type="button"
-              onClick={() => setOpenChapterIds(new Set((filiere?.chapitres || []).map((c) => c.id)))}
+              onClick={() => setOpenChapterIds(new Set(validChapitres.map((c) => c.id)))}
               className="btn btn-secondary btn-sm"
               style={{ fontSize: "0.8rem", padding: "6px 12px", borderRadius: 8, whiteSpace: "nowrap" }}
             >
@@ -1107,8 +1133,8 @@ function Passerelle() {
         {filteredChapitres.map((chap, idx) => {
           const isOpen = openChapterIds.has(chap.id);
           const hasFiche = normalizeLinks(chap.fiche).length > 0;
-          const items = chap.items || [];
-          const seances = chap.seances || [];
+          const items = (Array.isArray(chap.items) ? chap.items : []).filter((it) => it && typeof it === "object");
+          const seances = (Array.isArray(chap.seances) ? chap.seances : []).filter((se) => se && typeof se === "object");
 
           return (
             <div
@@ -1222,7 +1248,7 @@ function Passerelle() {
                 >
                   {(() => {
                     const fiches = Array.isArray(chap.fiches)
-                      ? chap.fiches
+                      ? chap.fiches.filter((fi) => fi != null && (typeof fi === "object" || typeof fi === "string"))
                       : normalizeLinks(chap.fiche).map((l) => ({
                           titre: l.label || "Fiche de synthèse",
                           url: l.url,
@@ -1328,7 +1354,7 @@ function Passerelle() {
       </div>
 
       {/* ── 📚 Bibliothèque d'ouvrages conseillés ── */}
-      {filiere?.livres && filiere.livres.length > 0 && (
+      {validLivres.length > 0 && (
         <div
           style={{
             background: "var(--tss-carte-subtle)",
@@ -1366,7 +1392,7 @@ function Passerelle() {
               justifyItems: "center",
             }}
           >
-            {filiere.livres.map((livre, lIdx) => (
+            {validLivres.map((livre, lIdx) => (
               <BookCard key={lIdx} livre={livre} onOpenPdf={openPdf} />
             ))}
           </div>
@@ -1393,7 +1419,9 @@ function Passerelle() {
         </div>
 
         <div style={{ display: "grid", gap: 16, maxWidth: 840, margin: "0 auto" }}>
-          {(passerelleData?.plan || []).map((item, pIdx) => (
+          {(passerelleData?.plan || [])
+            .filter((item) => item && typeof item === "object")
+            .map((item, pIdx) => (
             <div
               key={pIdx}
               style={{

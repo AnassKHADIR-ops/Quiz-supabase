@@ -156,7 +156,7 @@ export default function PasserelleBac() {
 
   // Filter themes and items based on search and selected category
   const filteredThemes = useMemo(() => {
-    const themes = passerelleBacData?.themes || [];
+    const themes = (passerelleBacData?.themes || []).filter((t) => t && typeof t === "object");
     const q = searchQuery.toLowerCase().trim();
 
     return themes
@@ -166,19 +166,24 @@ export default function PasserelleBac() {
           return null;
         }
 
-        if (!q) return theme;
+        const safeItems = (Array.isArray(theme.items) ? theme.items : []).filter(
+          (item) => item && typeof item === "object"
+        );
+
+        if (!q) return { ...theme, items: safeItems };
 
         const themeMatch =
           String(theme?.titre || "").toLowerCase().includes(q) ||
           (theme?.meta && String(theme.meta).toLowerCase().includes(q));
 
-        const matchedItems = (theme?.items || []).filter((item) =>
-          String(item?.label || "").toLowerCase().includes(q) ||
-          (item?.sous && String(item.sous).toLowerCase().includes(q))
+        const matchedItems = safeItems.filter(
+          (item) =>
+            String(item?.label || "").toLowerCase().includes(q) ||
+            (item?.sous && String(item.sous).toLowerCase().includes(q))
         );
 
         if (themeMatch) {
-          return theme;
+          return { ...theme, items: safeItems };
         }
 
         if (matchedItems.length > 0) {
@@ -195,7 +200,7 @@ export default function PasserelleBac() {
 
   // Statistics counters
   const stats = useMemo(() => {
-    const themes = passerelleBacData?.themes || [];
+    const themes = (passerelleBacData?.themes || []).filter((t) => t && typeof t === "object");
     let sujetsCount = 0;
     let exercicesCount = 0;
     let correctionsCount = 0;
@@ -203,7 +208,7 @@ export default function PasserelleBac() {
 
     for (const t of themes) {
       const isSujetTheme = t.id === "sujets" || t.categorie === "sujets";
-      for (const item of t.items || []) {
+      for (const item of (Array.isArray(t.items) ? t.items : []).filter((it) => it && typeof it === "object")) {
         if (isSujetTheme) {
           sujetsCount++;
         } else {
@@ -224,9 +229,10 @@ export default function PasserelleBac() {
   }, [passerelleBacData]);
 
   const categoriesList = useMemo(() => {
+    const validCats = (passerelleBacData?.categories || []).filter((c) => c && typeof c === "object");
     return [
       { id: "all", label: "🌟 Tous les Modules" },
-      ...(passerelleBacData?.categories || []),
+      ...validCats,
     ];
   }, [passerelleBacData]);
 

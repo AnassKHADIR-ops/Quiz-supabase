@@ -64,8 +64,9 @@ function getLeatherPalette(str = "") {
 }
 
 function CourseBookCard({ livre, onOpenPdf }) {
-  const { titre, auteur, lien, cover } = livre;
-  const hasLink = Boolean(lien && lien.trim() !== "");
+  const safeLivre = livre && typeof livre === "object" ? livre : null;
+  const { titre = "", auteur = "", lien = "", cover = null } = safeLivre || {};
+  const hasLink = Boolean(lien && typeof lien === "string" && lien.trim() !== "");
 
   const srcs = useMemo(() => {
     if (cover) return getDriveImageUrls(cover);
@@ -85,6 +86,8 @@ function CourseBookCard({ livre, onOpenPdf }) {
   };
 
   const palette = useMemo(() => getLeatherPalette(titre), [titre]);
+
+  if (!safeLivre) return null;
 
   const handleClick = () => {
     if (!hasLink) return;
@@ -289,14 +292,17 @@ function normalizeLinks(champ) {
 }
 
 function CourseFicheCard({ fiche, chapTitre, onOpenPdf }) {
-  const url = fiche.url || fiche.u || (typeof fiche === "string" ? fiche : "");
-  const titre = fiche.label || fiche.titre || fiche.t || "Fiche de synthèse";
-  const sous = fiche.sous || "L'essentiel du chapitre";
+  const isObj = Boolean(fiche && typeof fiche === "object");
+  const url = isObj ? (fiche.url || fiche.u || "") : (typeof fiche === "string" ? fiche : "");
+  const titre = isObj ? (fiche.label || fiche.titre || fiche.t || "Fiche de synthèse") : "Fiche de synthèse";
+  const sous = isObj ? (fiche.sous || "L'essentiel du chapitre") : "L'essentiel du chapitre";
   const isActif = isUrlActive(url);
-  const targetCover = fiche.cover || url;
+  const targetCover = (isObj && fiche.cover) || url;
   const srcs = useMemo(() => getDriveImageUrls(targetCover), [targetCover]);
   const [imgIdx, setImgIdx] = useState(0);
   const [imgFailed, setImgFailed] = useState(false);
+
+  if (!fiche) return null;
 
   const handleImgError = () => {
     if (imgIdx + 1 < srcs.length) setImgIdx((p) => p + 1);
@@ -337,6 +343,7 @@ function CourseFicheCard({ fiche, chapTitre, onOpenPdf }) {
 }
 
 function CourseSessionCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo }) {
+  if (!seance || typeof seance !== "object") return null;
   const titre = seance.titre || seance.title || seance.t || seance.name || `Séance ${index + 1}`;
 
   const videoUrl =
@@ -460,6 +467,7 @@ function CourseSessionCard({ seance, index, chapTitre, onOpenPdf, onOpenVideo })
 }
 
 function CourseExerciseLine({ item, index, chapTitre, onOpenPdf, onOpenCorrection, onOpenVideo }) {
+  if (!item || typeof item !== "object") return null;
   const titre = item.titre || item.t || `Exercice ${index + 1}`;
   const sous = item.sous || "";
   const enonceUrl = item.enonce || item.exo || item.u || "";
@@ -547,7 +555,9 @@ function Courses() {
   const rawYearData = curriculum?.[selectedYear] || curriculum?.annee1 || {};
   const yearData = {
     ...rawYearData,
-    branches: Array.isArray(rawYearData.branches) ? rawYearData.branches : [],
+    branches: Array.isArray(rawYearData.branches)
+      ? rawYearData.branches.filter((b) => b && typeof b === "object")
+      : [],
   };
   const defaultBranch = yearData.branches[0]?.id || "tsi1";
   const initialBranch = searchParams.get("branche") || searchParams.get("fil") || defaultBranch;
@@ -569,11 +579,11 @@ function Courses() {
     const branchParam = searchParams.get("branche") || searchParams.get("fil");
     if (branchParam) {
       const yearKey = anneeParam === "2" ? "annee2" : (anneeParam === "1" ? "annee1" : selectedYear);
-      const branches = curriculum[yearKey]?.branches || [];
+      const branches = (curriculum?.[yearKey]?.branches || []).filter((b) => b && typeof b === "object");
       const match = branches.find(
         (b) =>
-          b.id.toLowerCase() === branchParam.toLowerCase() ||
-          b.nom.toLowerCase() === branchParam.toLowerCase()
+          String(b.id || "").toLowerCase() === branchParam.toLowerCase() ||
+          String(b.nom || "").toLowerCase() === branchParam.toLowerCase()
       );
       if (match) {
         setSelectedBranch(match.id);
@@ -633,7 +643,7 @@ function Courses() {
 
   // If year changes, ensure valid branch
   useEffect(() => {
-    const branches = curriculum[selectedYear]?.branches || [];
+    const branches = (curriculum?.[selectedYear]?.branches || []).filter((b) => b && typeof b === "object");
     const valid = branches.some((b) => b.id === selectedBranch);
     if (!valid && branches.length > 0) {
       setSelectedBranch(branches[0].id);
@@ -642,13 +652,13 @@ function Courses() {
 
   // Current branch object
   const currentBranch = useMemo(() => {
-    const branches = curriculum[selectedYear]?.branches || [];
+    const branches = (curriculum?.[selectedYear]?.branches || []).filter((b) => b && typeof b === "object");
     return branches.find((b) => b.id === selectedBranch) || branches[0] || { chapitres: [] };
   }, [selectedYear, selectedBranch, curriculum]);
 
   // Filtered chapters
   const filteredChapters = useMemo(() => {
-    const list = currentBranch.chapitres || [];
+    const list = (currentBranch.chapitres || []).filter((c) => c && typeof c === "object");
     return list.filter((c) => {
       const matchesCat =
         activeCat === "all" ||
@@ -665,11 +675,17 @@ function Courses() {
     });
   }, [currentBranch, activeCat, searchQuery]);
 
+  const validLivres = useMemo(() => {
+    return Array.isArray(currentBranch.livres)
+      ? currentBranch.livres.filter((l) => l && typeof l === "object")
+      : [];
+  }, [currentBranch]);
+
   const handleSelectYear = (yr) => {
     setSelectedYear(yr);
     const newParams = new URLSearchParams(searchParams);
     newParams.set("annee", yr === "annee2" ? "2" : "1");
-    const branches = curriculum[yr]?.branches || [];
+    const branches = (curriculum?.[yr]?.branches || []).filter((b) => b && typeof b === "object");
     if (branches.length > 0) {
       newParams.set("branche", branches[0].id);
       setSelectedBranch(branches[0].id);
@@ -1015,15 +1031,21 @@ function Courses() {
       {/* ── Chapters List ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {filteredChapters.map((chapter) => {
+          const hasValidItems = (arr) =>
+            Array.isArray(arr) &&
+            arr.some((x) => x != null && (typeof x === "object" || typeof x === "string"));
+
           const hasMultiDocs =
-            (chapter.cours && chapter.cours.length > 0) ||
-            (chapter.fiches && chapter.fiches.length > 0) ||
-            (chapter.tds && chapter.tds.length > 0) ||
-            (chapter.videos && chapter.videos.length > 0);
+            hasValidItems(chapter.cours) ||
+            hasValidItems(chapter.sessions) ||
+            hasValidItems(chapter.fiches) ||
+            hasValidItems(chapter.tds) ||
+            hasValidItems(chapter.items) ||
+            hasValidItems(chapter.videos);
 
           const isOpen = openChapterIds.has(chapter.id);
 
-          const hasVideo = !!chapter.video_url || (chapter.videos && chapter.videos.length > 0);
+          const hasVideo = !!chapter.video_url || hasValidItems(chapter.videos);
           const hasCorrection = !!chapter.correction_url;
           const hasEnonce = !!chapter.enonce_url;
           const hasFiche = !!chapter.fiche_url;
@@ -1160,14 +1182,28 @@ function Courses() {
                   }}
                 >
                   {(() => {
-                    const seances = (chapter.cours || chapter.sessions || chapter.videos || []).map((s, idx) => ({
-                      titre: s.t || s.titre || `Séance ${idx + 1}`,
-                      sous: s.sous || "Théorie & Replay interactif",
-                      video: s.v || s.video || s.vid || "",
-                      support: s.u || s.support || s.pdf || "",
-                    }));
+                    const rawSeances = chapter.cours || chapter.sessions || chapter.videos || [];
+                    const seances = (Array.isArray(rawSeances) ? rawSeances : [])
+                      .filter((s) => s != null && (typeof s === "object" || typeof s === "string"))
+                      .map((s, idx) =>
+                        typeof s === "string"
+                          ? {
+                              titre: `Séance ${idx + 1}`,
+                              sous: "Théorie & Replay interactif",
+                              video: s,
+                              support: "",
+                            }
+                          : {
+                              titre: s.t || s.titre || s.title || `Séance ${idx + 1}`,
+                              sous: s.sous || s.description || "Théorie & Replay interactif",
+                              video: s.v || s.video || s.vid || s.videoUrl || s.video_url || "",
+                              support: s.u || s.support || s.pdf || s.supportUrl || "",
+                            }
+                      );
 
-                    let fiches = chapter.fiches || [];
+                    let fiches = (Array.isArray(chapter.fiches) ? chapter.fiches : []).filter(
+                      (f) => f != null && (typeof f === "object" || typeof f === "string")
+                    );
                     if (fiches.length === 0 && (chapter.fiche_resume_url || chapter.fiche)) {
                       fiches = normalizeLinks(chapter.fiche_resume_url || chapter.fiche).map((l) => ({
                         t: l.label || "Fiche de synthèse",
@@ -1176,7 +1212,10 @@ function Courses() {
                       }));
                     }
 
-                    const tds = chapter.tds || chapter.items || [];
+                    const rawTds = chapter.tds || chapter.items || [];
+                    const tds = (Array.isArray(rawTds) ? rawTds : []).filter(
+                      (td) => td && typeof td === "object"
+                    );
 
                     const hasMain = seances.length > 0 || tds.length > 0;
                     const hasSide = fiches.length > 0;
@@ -1285,7 +1324,7 @@ function Courses() {
       </div>
 
       {/* ── Bibliothèque de Référence (Books Shelf) ── */}
-      {currentBranch.livres && currentBranch.livres.length > 0 && (
+      {validLivres.length > 0 && (
         <div
           className="card fade-up"
           style={{
@@ -1331,7 +1370,7 @@ function Courses() {
               justifyItems: "center",
             }}
           >
-            {currentBranch.livres.map((livre, lIdx) => (
+            {validLivres.map((livre, lIdx) => (
               <CourseBookCard key={lIdx} livre={livre} onOpenPdf={openPdf} />
             ))}
           </div>

@@ -94,6 +94,9 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       const errName = this.state.error?.name || "Error";
       const errMsg = this.state.error?.message || String(this.state.error || "");
+      const errStack = this.state.error?.stack
+        ? String(this.state.error.stack).split("\n").slice(1, 6).join("\n")
+        : "";
 
       return (
         <div
@@ -210,6 +213,7 @@ class ErrorBoundary extends React.Component {
                 }}
               >
                 {errName}: {errMsg}
+                {errStack ? `\n${errStack}` : ""}
               </pre>
             </details>
           )}

@@ -13,13 +13,26 @@ import {
 
 export { extractJsVariable };
 
+export function sanitizeConcoursList(list) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .filter((c) => c && typeof c === "object" && (Array.isArray(c.sujets) || c.titre))
+    .map((c) => ({
+      ...c,
+      sujets: Array.isArray(c.sujets)
+        ? c.sujets.filter((s) => s && typeof s === "object")
+        : [],
+    }));
+}
+
 export function parseConcoursPayload(rawPayload) {
   if (!rawPayload) return null;
 
   if (Array.isArray(rawPayload)) {
     // If it's a valid array of concours blocks
-    if (rawPayload.length > 0 && (rawPayload[0]?.sujets || rawPayload[0]?.titre)) {
-      return rawPayload;
+    const sanitized = sanitizeConcoursList(rawPayload);
+    if (sanitized.length > 0 && (sanitized[0].sujets.length > 0 || sanitized[0].titre)) {
+      return sanitized;
     }
     // If it's a WordPress REST API response: [{ id: ..., content: { rendered: ... } }]
     if (rawPayload.length > 0 && rawPayload[0]?.content?.rendered) {
@@ -29,7 +42,10 @@ export function parseConcoursPayload(rawPayload) {
   }
 
   if (typeof rawPayload === "object") {
-    if (Array.isArray(rawPayload.CONCOURS)) return rawPayload.CONCOURS;
+    if (Array.isArray(rawPayload.CONCOURS)) {
+      const sanitized = sanitizeConcoursList(rawPayload.CONCOURS);
+      return sanitized.length > 0 ? sanitized : null;
+    }
     if (rawPayload.content?.rendered) {
       return parseConcoursPayload(rawPayload.content.rendered);
     }
@@ -45,8 +61,9 @@ export function parseConcoursPayload(rawPayload) {
     } catch {}
 
     const extracted = extractJsVariable(rawPayload, "CONCOURS");
-    if (Array.isArray(extracted) && extracted.length > 0 && (extracted[0]?.sujets || extracted[0]?.titre)) {
-      return extracted;
+    const sanitized = sanitizeConcoursList(extracted);
+    if (sanitized.length > 0) {
+      return sanitized;
     }
   }
   return null;
@@ -127,8 +144,9 @@ export function useConcoursSync() {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed?.concours) && parsed.concours.length > 0 && (parsed.concours[0]?.sujets || parsed.concours[0]?.titre)) {
-          return parsed.concours;
+        const sanitized = sanitizeConcoursList(parsed?.concours);
+        if (sanitized.length > 0) {
+          return sanitized;
         }
       }
     } catch {}
