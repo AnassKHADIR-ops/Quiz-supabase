@@ -734,8 +734,9 @@ function Dashboard() {
   useEffect(() => {
     examsApi.list()
       .then((data) => {
-        setExams(data);
-        if (data.length > 0) setSelectedExamId(data[0].id);
+        const list = Array.isArray(data) ? data : [];
+        setExams(list);
+        if (list.length > 0) setSelectedExamId(list[0].id);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoadingExams(false));
@@ -750,7 +751,7 @@ function Dashboard() {
       examsApi.get(examId).catch(() => null),
     ])
       .then(([resData, exDetail]) => {
-        setResults(resData || []);
+        setResults(Array.isArray(resData) ? resData : []);
         setSelectedExamDetail(exDetail);
       })
       .catch((err) => setError(err.message))

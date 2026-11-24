@@ -544,7 +544,11 @@ function Courses() {
   const [selectedYear, setSelectedYear] = useState(initialYear);
 
   // Selected Branch (filière)
-  const yearData = curriculum[selectedYear] || curriculum.annee1 || { branches: [] };
+  const rawYearData = curriculum?.[selectedYear] || curriculum?.annee1 || {};
+  const yearData = {
+    ...rawYearData,
+    branches: Array.isArray(rawYearData.branches) ? rawYearData.branches : [],
+  };
   const defaultBranch = yearData.branches[0]?.id || "tsi1";
   const initialBranch = searchParams.get("branche") || searchParams.get("fil") || defaultBranch;
   const [selectedBranch, setSelectedBranch] = useState(initialBranch);
@@ -654,9 +658,9 @@ function Courses() {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
-        c.titre.toLowerCase().includes(q) ||
-        (c.description && c.description.toLowerCase().includes(q)) ||
-        String(c.n).includes(q);
+        String(c?.titre || "").toLowerCase().includes(q) ||
+        (c?.description && String(c.description).toLowerCase().includes(q)) ||
+        String(c?.n ?? "").includes(q);
       return matchesCat && matchesSearch;
     });
   }, [currentBranch, activeCat, searchQuery]);

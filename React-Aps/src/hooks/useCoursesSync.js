@@ -77,7 +77,7 @@ export function useCoursesSync(customWpUrl = null, pollIntervalMs = 15000) {
       if (e.key === CACHE_KEY && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
-          if (parsed && (parsed.annee1 || parsed.annee2)) {
+          if (parsed && (Array.isArray(parsed.annee1?.branches) || Array.isArray(parsed.annee2?.branches))) {
             const newFingerprint = JSON.stringify(parsed);
             if (newFingerprint !== fingerprintRef.current) {
               fingerprintRef.current = newFingerprint;

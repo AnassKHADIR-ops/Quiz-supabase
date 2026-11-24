@@ -49,8 +49,15 @@ function buildStudentWhatsAppUrl(phone, text) {
 function getCachedUsers() {
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      sessionStorage.removeItem(CACHE_KEY);
+      return [];
+    }
+    return parsed.filter((u) => u && typeof u === "object");
   } catch {
+    try { sessionStorage.removeItem(CACHE_KEY); } catch {}
     return [];
   }
 }
@@ -421,9 +428,9 @@ export default function UserAccessManager({ onPendingCountChange }) {
       const q = search.trim().toLowerCase();
       const matchSearch =
         !q ||
-        (u.full_name && u.full_name.toLowerCase().includes(q)) ||
-        (u.email && u.email.toLowerCase().includes(q)) ||
-        (u.phone && String(u.phone).toLowerCase().includes(q));
+        String(u.full_name || "").toLowerCase().includes(q) ||
+        String(u.email || "").toLowerCase().includes(q) ||
+        String(u.phone || "").toLowerCase().includes(q);
       return matchFilter && matchSearch;
     });
   }, [users, filter, search]);
@@ -741,14 +748,17 @@ export default function UserAccessManager({ onPendingCountChange }) {
             const isRevoked = u.status === "revoked";
             const isTeacher = u.role === "teacher" || u.role === "admin";
             const isBusy = actionId === u.id;
-            const initials = u.full_name
-              ? u.full_name
-                  .split(" ")
+            const fullNameStr = typeof u.full_name === "string" ? u.full_name.trim() : "";
+            const emailStr = typeof u.email === "string" ? u.email : "";
+            const initials = fullNameStr
+              ? fullNameStr
+                  .split(/\s+/)
+                  .filter(Boolean)
                   .map((n) => n[0])
                   .join("")
                   .toUpperCase()
                   .slice(0, 2)
-              : u.email?.[0]?.toUpperCase() || "?";
+              : emailStr?.[0]?.toUpperCase() || "?";
 
             return (
               <div

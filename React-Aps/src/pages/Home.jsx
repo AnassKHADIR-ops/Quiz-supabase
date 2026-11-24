@@ -28,6 +28,7 @@ import {
 import { useAuth } from "../context/AuthContext.jsx";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 import WhatsAppContactButton from "../components/WhatsAppContactButton.jsx";
+import { getDriveDownloadUrl } from "../utils/driveUtils.js";
 
 function Home() {
   const { user, isRevoked, isPending, logout, refreshUser } = useAuth();
@@ -49,7 +50,7 @@ function Home() {
   useEffect(() => {
     schoolsApi
       .list()
-      .then((data) => setSchools(data || []))
+      .then((data) => setSchools(Array.isArray(data) ? data : []))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -60,8 +61,8 @@ function Home() {
     return (
       schools.find(
         (s) =>
-          String(s.id).toLowerCase() === schoolParam.toLowerCase() ||
-          s.name.toLowerCase() === schoolParam.toLowerCase()
+          String(s?.id || "").toLowerCase() === schoolParam.toLowerCase() ||
+          String(s?.name || "").toLowerCase() === schoolParam.toLowerCase()
       ) || null
     );
   }, [schoolParam, schools]);
@@ -72,8 +73,8 @@ function Home() {
     return (
       school.subjects.find(
         (sub) =>
-          String(sub.id).toLowerCase() === subjectParam.toLowerCase() ||
-          sub.name.toLowerCase() === subjectParam.toLowerCase()
+          String(sub?.id || "").toLowerCase() === subjectParam.toLowerCase() ||
+          String(sub?.name || "").toLowerCase() === subjectParam.toLowerCase()
       ) || null
     );
   }, [subjectParam, school]);
@@ -160,11 +161,11 @@ function Home() {
     if (!q) return [];
     return allExams.filter((ex) => {
       return (
-        ex.title.toLowerCase().includes(q) ||
-        ex.schoolName.toLowerCase().includes(q) ||
-        ex.subjectName.toLowerCase().includes(q) ||
+        String(ex.title || "").toLowerCase().includes(q) ||
+        String(ex.schoolName || "").toLowerCase().includes(q) ||
+        String(ex.subjectName || "").toLowerCase().includes(q) ||
         (ex.year && String(ex.year).includes(q)) ||
-        (ex.description && ex.description.toLowerCase().includes(q))
+        (ex.description && String(ex.description).toLowerCase().includes(q))
       );
     });
   }, [allExams, search]);
@@ -943,7 +944,7 @@ function Home() {
                         </button>
                         <a
                           className="btn btn-secondary btn-sm"
-                          href={driveDownloadUrl(prog.document_url)}
+                          href={getDriveDownloadUrl(prog.document_url)}
                           target="_blank"
                           rel="noreferrer"
                         >
@@ -1000,7 +1001,7 @@ function Home() {
                         </button>
                         <a
                           className="btn btn-secondary btn-sm"
-                          href={driveDownloadUrl(prog.document_url)}
+                          href={getDriveDownloadUrl(prog.document_url)}
                           target="_blank"
                           rel="noreferrer"
                         >

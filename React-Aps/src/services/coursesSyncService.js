@@ -313,16 +313,25 @@ export function getInitialCurriculumData() {
     const cached = getStorageItem(CACHE_KEY);
     if (cached) {
       const parsed = JSON.parse(cached);
-      if (parsed && (parsed.annee1 || parsed.annee2)) {
+      const hasValidAnnee1 = Array.isArray(parsed?.annee1?.branches) && parsed.annee1.branches.length > 0;
+      const hasValidAnnee2 = Array.isArray(parsed?.annee2?.branches) && parsed.annee2.branches.length > 0;
+      if (parsed && (hasValidAnnee1 || hasValidAnnee2)) {
         return {
-          curriculum: parsed,
+          curriculum: {
+            ...CPGE_CURRICULUM,
+            ...parsed,
+            annee1: hasValidAnnee1 ? parsed.annee1 : CPGE_CURRICULUM.annee1,
+            annee2: hasValidAnnee2 ? parsed.annee2 : CPGE_CURRICULUM.annee2,
+          },
           _isLive: true,
           _lastSynced: getStorageItem(CACHE_TIMESTAMP_KEY) || null,
         };
       }
+      removeStorageItem(CACHE_KEY);
     }
   } catch (e) {
     console.warn("[CoursesSync] Failed to read cached curriculum:", e);
+    removeStorageItem(CACHE_KEY);
   }
 
   return {

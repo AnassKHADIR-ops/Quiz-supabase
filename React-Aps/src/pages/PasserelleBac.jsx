@@ -169,12 +169,12 @@ export default function PasserelleBac() {
         if (!q) return theme;
 
         const themeMatch =
-          theme.titre.toLowerCase().includes(q) ||
-          (theme.meta && theme.meta.toLowerCase().includes(q));
+          String(theme?.titre || "").toLowerCase().includes(q) ||
+          (theme?.meta && String(theme.meta).toLowerCase().includes(q));
 
-        const matchedItems = (theme.items || []).filter((item) =>
-          item.label.toLowerCase().includes(q) ||
-          (item.sous && item.sous.toLowerCase().includes(q))
+        const matchedItems = (theme?.items || []).filter((item) =>
+          String(item?.label || "").toLowerCase().includes(q) ||
+          (item?.sous && String(item.sous).toLowerCase().includes(q))
         );
 
         if (themeMatch) {

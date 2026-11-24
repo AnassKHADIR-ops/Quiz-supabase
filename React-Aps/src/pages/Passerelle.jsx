@@ -590,10 +590,10 @@ function Passerelle() {
     if (filParam && passerelleData?.filieres) {
       const matchFil = passerelleData.filieres.find(
         (f) =>
-          f.id.toLowerCase() === filParam.toLowerCase() ||
-          f.nom.toLowerCase() === filParam.toLowerCase() ||
-          f.de?.toLowerCase() === filParam.toLowerCase() ||
-          f.vers?.toLowerCase() === filParam.toLowerCase()
+          String(f?.id || "").toLowerCase() === filParam.toLowerCase() ||
+          String(f?.nom || "").toLowerCase() === filParam.toLowerCase() ||
+          String(f?.de || "").toLowerCase() === filParam.toLowerCase() ||
+          String(f?.vers || "").toLowerCase() === filParam.toLowerCase()
       );
       if (matchFil) {
         setActiveFiliereId(matchFil.id);
@@ -784,10 +784,10 @@ function Passerelle() {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return filiere.chapitres || [];
     return (filiere.chapitres || []).filter((c) => {
-      const inTitle = c.titre.toLowerCase().includes(q);
-      const inWhy = c.why && c.why.toLowerCase().includes(q);
-      const inItems = (c.items || []).some((it) => it.titre.toLowerCase().includes(q));
-      const inSeances = (c.seances || []).some((s) => s.titre.toLowerCase().includes(q));
+      const inTitle = String(c?.titre || "").toLowerCase().includes(q);
+      const inWhy = c?.why && String(c.why).toLowerCase().includes(q);
+      const inItems = (c?.items || []).some((it) => String(it?.titre || "").toLowerCase().includes(q));
+      const inSeances = (c?.seances || []).some((s) => String(s?.titre || "").toLowerCase().includes(q));
       return inTitle || inWhy || inItems || inSeances;
     });
   }, [filiere, searchQuery]);
@@ -1001,11 +1001,11 @@ function Passerelle() {
       >
         {/* Filière Selector Horizontal Scroll */}
         <div className="horizontal-scroll-row" style={{ gap: 8, flex: "1 1 auto" }}>
-          {(passerelleData.filieres || []).map((f) => {
+          {(passerelleData.filieres || []).map((f, fIdx) => {
             const isSelected = activeFiliereId === f.id;
             return (
               <button
-                key={f.id}
+                key={f.id || fIdx}
                 type="button"
                 onClick={() => handleSelectFiliere(f.id)}
                 className={`btn ${isSelected ? "btn-primary" : "btn-secondary"}`}
@@ -1112,7 +1112,7 @@ function Passerelle() {
 
           return (
             <div
-              key={chap.id}
+              key={chap.id || idx}
               className="card chapter-accordion-item"
               style={{
                 borderRadius: 16,

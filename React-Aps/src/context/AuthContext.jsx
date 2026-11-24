@@ -7,8 +7,19 @@ const CACHE_KEY = "ak_cached_user";
 function getCachedUser() {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) || (!parsed.id && !parsed.email)) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+    return {
+      ...parsed,
+      name: typeof parsed.name === "string" ? parsed.name : (typeof parsed.email === "string" ? parsed.email.split("@")[0] : "Étudiant"),
+      email: typeof parsed.email === "string" ? parsed.email : "",
+    };
   } catch {
+    try { localStorage.removeItem(CACHE_KEY); } catch {}
     return null;
   }
 }

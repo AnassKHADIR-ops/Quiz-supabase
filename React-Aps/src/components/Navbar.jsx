@@ -93,9 +93,11 @@ function Navbar() {
     navigate("/login");
   };
 
-  const initials = user?.name
-    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-    : user?.email?.[0]?.toUpperCase() || "?";
+  const userName = typeof user?.name === "string" ? user.name.trim() : "";
+  const userEmail = typeof user?.email === "string" ? user.email : "";
+  const initials = userName
+    ? userName.split(/\s+/).filter(Boolean).map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : userEmail?.[0]?.toUpperCase() || "?";
 
   const isActive = (path) => location.pathname === path;
 
@@ -159,7 +161,7 @@ function Navbar() {
             <div className="nav-user">
               <div className="avatar">{initials}</div>
               <span className="nav-username" style={{ fontWeight: 500, color: "var(--text)", fontSize: "0.875rem" }}>
-                {user.name?.split(" ")[0] || user.email}
+                {userName ? userName.split(/\s+/)[0] : userEmail}
               </span>
               {isRevoked && (
                 <span className="badge badge-danger" style={{ fontSize: "0.7rem", padding: "2px 8px" }}>
