@@ -7,6 +7,7 @@ import {
   Award,
   BookOpen,
   Calendar,
+  ChevronDown,
   ClipboardList,
   Clock,
   Download,
@@ -35,6 +36,11 @@ function Home() {
   const subjectParam = searchParams.get("subject") || null;
   const yearParam = searchParams.get("year") ? Number(searchParams.get("year")) : null;
   const [previewDoc, setPreviewDoc] = useState(null);
+  const [programmesOpen, setProgrammesOpen] = useState(false);
+
+  useEffect(() => {
+    setProgrammesOpen(false);
+  }, [schoolParam, yearParam]);
 
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -180,13 +186,6 @@ function Home() {
       {/* ═══ HERO PLEINE LARGEUR ═══ */}
       <header className="ak-hero">
         <div className="ak-hero-in">
-          <div className="ak-hero-top">
-            <span className="ak-eyebrow">
-              <span className="ak-eyebrow-dot" aria-hidden="true" />
-              E-Learning Mathématiques · Pr. A. Khadir
-            </span>
-          </div>
-
           <h1>
             {heroTitle ? (
               <>
@@ -809,9 +808,14 @@ function Home() {
             {school && enseignement && !year && (
               <div>
                 {(school.programmes || []).length > 0 && (
-                  <div className="ak-card open" style={{ marginBottom: 24 }}>
-                    <div className="ak-card-head" style={{ cursor: "default" }}>
-                      <span className="ak-card-n">
+                  <article className={`ak-card cat-algebre ${programmesOpen ? "open" : ""}`} style={{ marginBottom: 24 }}>
+                    <button
+                      type="button"
+                      className="ak-card-head"
+                      aria-expanded={programmesOpen}
+                      onClick={() => setProgrammesOpen((prev) => !prev)}
+                    >
+                      <span className="ak-card-n" aria-hidden="true">
                         <GraduationCap size={20} />
                       </span>
                       <span className="ak-card-titles">
@@ -820,42 +824,50 @@ function Home() {
                           Orientations pédagogiques et programmes du Ministère de l'Éducation Nationale
                         </span>
                       </span>
-                    </div>
-                    <div className="ak-card-body">
-                      <div className="ak-doc-list">
-                        {(school.programmes || []).map((prog) => (
-                          <div key={prog.id} className="ak-doc-line-wrap">
-                            <div className="ak-doc-line">
-                              <span className="ak-doc-line-ic" aria-hidden="true">
-                                <FileText size={15} />
-                              </span>
-                              <span className="ak-doc-line-txt">
-                                <span className="ak-doc-line-t">{prog.label}</span>
-                                <span className="ak-doc-line-d">Session {prog.year}</span>
-                              </span>
-                              <span className="ak-doc-line-b">
-                                <button
-                                  type="button"
-                                  className="ak-btn ak-btn-pdf"
-                                  onClick={() => setPreviewDoc(prog)}
-                                >
-                                  <BookOpen size={14} /> Aperçu
-                                </button>
-                                <a
-                                  className="ak-btn ak-btn-exo"
-                                  href={getDriveDownloadUrl(prog.document_url)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  <Download size={14} /> Télécharger
-                                </a>
-                              </span>
+                      <span className="ak-badge ak-b-algebre">
+                        {(school.programmes || []).length} document{(school.programmes || []).length > 1 ? "s" : ""}
+                      </span>
+                      <span className="ak-card-chev" aria-hidden="true">
+                        <ChevronDown size={17} />
+                      </span>
+                    </button>
+                    {programmesOpen && (
+                      <div className="ak-card-body">
+                        <div className="ak-doc-list">
+                          {(school.programmes || []).map((prog) => (
+                            <div key={prog.id} className="ak-doc-line-wrap">
+                              <div className="ak-doc-line">
+                                <span className="ak-doc-line-ic" aria-hidden="true">
+                                  <FileText size={15} />
+                                </span>
+                                <span className="ak-doc-line-txt">
+                                  <span className="ak-doc-line-t">{prog.label}</span>
+                                  <span className="ak-doc-line-d">Session {prog.year}</span>
+                                </span>
+                                <span className="ak-doc-line-b">
+                                  <button
+                                    type="button"
+                                    className="ak-btn ak-btn-pdf"
+                                    onClick={() => setPreviewDoc(prog)}
+                                  >
+                                    <BookOpen size={14} /> Aperçu
+                                  </button>
+                                  <a
+                                    className="ak-btn ak-btn-exo"
+                                    href={getDriveDownloadUrl(prog.document_url)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    <Download size={14} /> Télécharger
+                                  </a>
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    )}
+                  </article>
                 )}
 
                 <div className="ak-sep">
@@ -894,47 +906,60 @@ function Home() {
             {school && enseignement && year && (
               <div>
                 {yearProgrammes.length > 0 && (
-                  <div className="ak-card open" style={{ marginBottom: 24 }}>
-                    <div className="ak-card-head" style={{ cursor: "default" }}>
+                  <article className={`ak-card cat-algebre ${programmesOpen ? "open" : ""}`} style={{ marginBottom: 24 }}>
+                    <button
+                      type="button"
+                      className="ak-card-head"
+                      aria-expanded={programmesOpen}
+                      onClick={() => setProgrammesOpen((prev) => !prev)}
+                    >
                       <span className="ak-card-n">{year}</span>
                       <span className="ak-card-titles">
                         <span className="ak-card-titre">Documents officiels — Session {year}</span>
                       </span>
-                    </div>
-                    <div className="ak-card-body">
-                      <div className="ak-doc-list">
-                        {yearProgrammes.map((prog) => (
-                          <div key={prog.id} className="ak-doc-line-wrap">
-                            <div className="ak-doc-line">
-                              <span className="ak-doc-line-ic" aria-hidden="true">
-                                <FileText size={15} />
-                              </span>
-                              <span className="ak-doc-line-txt">
-                                <span className="ak-doc-line-t">{prog.label}</span>
-                              </span>
-                              <span className="ak-doc-line-b">
-                                <button
-                                  type="button"
-                                  className="ak-btn ak-btn-pdf"
-                                  onClick={() => setPreviewDoc(prog)}
-                                >
-                                  <BookOpen size={14} /> Aperçu
-                                </button>
-                                <a
-                                  className="ak-btn ak-btn-exo"
-                                  href={getDriveDownloadUrl(prog.document_url)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  <Download size={14} /> Télécharger
-                                </a>
-                              </span>
+                      <span className="ak-badge ak-b-algebre">
+                        {yearProgrammes.length} document{yearProgrammes.length > 1 ? "s" : ""}
+                      </span>
+                      <span className="ak-card-chev" aria-hidden="true">
+                        <ChevronDown size={17} />
+                      </span>
+                    </button>
+                    {programmesOpen && (
+                      <div className="ak-card-body">
+                        <div className="ak-doc-list">
+                          {yearProgrammes.map((prog) => (
+                            <div key={prog.id} className="ak-doc-line-wrap">
+                              <div className="ak-doc-line">
+                                <span className="ak-doc-line-ic" aria-hidden="true">
+                                  <FileText size={15} />
+                                </span>
+                                <span className="ak-doc-line-txt">
+                                  <span className="ak-doc-line-t">{prog.label}</span>
+                                </span>
+                                <span className="ak-doc-line-b">
+                                  <button
+                                    type="button"
+                                    className="ak-btn ak-btn-pdf"
+                                    onClick={() => setPreviewDoc(prog)}
+                                  >
+                                    <BookOpen size={14} /> Aperçu
+                                  </button>
+                                  <a
+                                    className="ak-btn ak-btn-exo"
+                                    href={getDriveDownloadUrl(prog.document_url)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    <Download size={14} /> Télécharger
+                                  </a>
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    )}
+                  </article>
                 )}
 
                 <div className="ak-sep">

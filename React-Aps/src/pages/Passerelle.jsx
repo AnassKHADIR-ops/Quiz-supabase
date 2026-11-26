@@ -14,6 +14,7 @@ import {
   VideoViewSwitch,
 } from "../components/AcademicParts.jsx";
 import {
+  Calendar,
   ChevronDown,
   Layers,
   PenLine,
@@ -45,6 +46,7 @@ function Passerelle() {
   const [openChapterIds, setOpenChapterIds] = useState(() => new Set());
   const [chapterTabMap, setChapterTabMap] = useState({});
   const [compactVideoMap, setCompactVideoMap] = useState({});
+  const [roadmapOpen, setRoadmapOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [videoModalData, setVideoModalData] = useState(null);
@@ -357,40 +359,33 @@ function Passerelle() {
       {/* ═══ HERO ACADÉMIQUE PLEINE LARGEUR ═══ */}
       <header className="ak-hero">
         <div className="ak-hero-in">
-          <div className="ak-hero-top">
-            <span className="ak-eyebrow">
-              <span className="ak-eyebrow-dot" aria-hidden="true" />
-              {passerelleData.eyebrow || "Accompagnement Mathématiques · Sup → Spé"}
-            </span>
-
-            {isAdmin && (
-              <>
-                {isLive && (
-                  <span
-                    className="ak-sync-pill"
-                    title={
-                      lastSynced
-                        ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}`
-                        : "En direct WordPress"
-                    }
-                  >
-                    <span className="ak-sync-dot" aria-hidden="true" />
-                    En direct WordPress
-                  </span>
-                )}
-                <button
-                  type="button"
-                  className="ak-sync-btn"
-                  onClick={() => refreshSync(null, true)}
-                  disabled={isSyncing}
-                  title="Synchroniser depuis WordPress"
+          {isAdmin && (
+            <div className="ak-hero-top">
+              {isLive && (
+                <span
+                  className="ak-sync-pill"
+                  title={
+                    lastSynced
+                      ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}`
+                      : "En direct WordPress"
+                  }
                 >
-                  <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
-                  <span>{isSyncing ? "Synchronisation…" : "Actualiser"}</span>
-                </button>
-              </>
-            )}
-          </div>
+                  <span className="ak-sync-dot" aria-hidden="true" />
+                  En direct WordPress
+                </span>
+              )}
+              <button
+                type="button"
+                className="ak-sync-btn"
+                onClick={() => refreshSync(null, true)}
+                disabled={isSyncing}
+                title="Synchroniser depuis WordPress"
+              >
+                <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
+                <span>{isSyncing ? "Synchronisation…" : "Actualiser"}</span>
+              </button>
+            </div>
+          )}
 
           <h1>
             La Passerelle <em>Sup → Spé</em>
@@ -506,7 +501,7 @@ function Passerelle() {
                   sous: "L'essentiel du chapitre",
                 }));
 
-            const activeTab = chapterTabMap[chap.id] || "all";
+            const activeTab = chapterTabMap[chap.id] || null;
             const isCompact = Boolean(compactVideoMap[chap.id]);
 
             return (
@@ -578,9 +573,9 @@ function Passerelle() {
                           }
                         />
 
-                        <div className="ak-ch-stack">
-                          {fiches.length > 0 &&
-                            (activeTab === "all" || activeTab === "fiches") && (
+                        {activeTab && (
+                          <div className="ak-ch-stack">
+                            {fiches.length > 0 && activeTab === "fiches" && (
                               <section className="ak-fiches-shelf">
                                 <div className="ak-doc-sec-t">
                                   <span className="ak-doc-sec-ic ic-fch" aria-hidden="true">
@@ -604,8 +599,7 @@ function Passerelle() {
                               </section>
                             )}
 
-                          {seances.length > 0 &&
-                            (activeTab === "all" || activeTab === "videos") && (
+                            {seances.length > 0 && activeTab === "videos" && (
                               <section>
                                 <div className="ak-doc-sec-t">
                                   <span className="ak-doc-sec-ic ic-vid" aria-hidden="true">
@@ -646,8 +640,7 @@ function Passerelle() {
                               </section>
                             )}
 
-                          {items.length > 0 &&
-                            (activeTab === "all" || activeTab === "tds") && (
+                            {items.length > 0 && activeTab === "tds" && (
                               <section>
                                 <div className="ak-doc-sec-t">
                                   <span className="ak-doc-sec-ic ic-td" aria-hidden="true">
@@ -673,7 +666,8 @@ function Passerelle() {
                                 </div>
                               </section>
                             )}
-                        </div>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
@@ -690,29 +684,53 @@ function Passerelle() {
           onOpenPdf={openPdf}
         />
 
-        {/* Feuille de route de l'été */}
+        {/* Feuille de route de l'été (repliée par défaut) */}
         {validPlan.length > 0 && (
-          <section className="ak-roadmap" aria-label="Feuille de route de l'été">
-            <div className="ak-livres-tete" style={{ marginBlockEnd: 0 }}>
-              <span className="ak-livres-tag">Organisation</span>
-              <h2 className="ak-livres-h">Feuille de route de l'été</h2>
-              <p className="ak-livres-sub">
-                Une progression régulière pour aborder la 2ème année avec sérénité.
-              </p>
-            </div>
-            <div className="ak-roadmap-grid">
-              {validPlan.map((step, pIdx) => (
-                <div key={pIdx} className="ak-roadmap-item">
-                  <span className="ak-roadmap-tag">{step.semaine}</span>
-                  <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--ak-ink)" }}>
-                    {step.titre}
-                  </h3>
-                  <p style={{ margin: 0, fontSize: "13px", color: "var(--ak-ink-s)", lineHeight: 1.55 }}>
-                    {step.desc}
-                  </p>
+          <section
+            className={`ak-card cat-analyse ${roadmapOpen ? "open" : ""}`}
+            style={{ marginBlockStart: 16 }}
+            aria-label="Feuille de route de l'été"
+          >
+            <button
+              type="button"
+              className="ak-card-head"
+              aria-expanded={roadmapOpen}
+              onClick={() => setRoadmapOpen((prev) => !prev)}
+            >
+              <span className="ak-card-n" aria-hidden="true">
+                <Calendar size={18} />
+              </span>
+              <span className="ak-card-titles">
+                <span className="ak-card-titre">Feuille de route de l'été</span>
+                <span className="ak-card-desc">
+                  Une progression régulière pour aborder la 2ème année avec sérénité.
+                </span>
+              </span>
+              <span className="ak-badge ak-b-analyse">
+                {validPlan.length} étape{validPlan.length > 1 ? "s" : ""}
+              </span>
+              <span className="ak-card-chev" aria-hidden="true">
+                <ChevronDown size={17} />
+              </span>
+            </button>
+
+            {roadmapOpen && (
+              <div className="ak-card-body">
+                <div className="ak-roadmap-grid" style={{ marginBlockStart: 0 }}>
+                  {validPlan.map((step, pIdx) => (
+                    <div key={pIdx} className="ak-roadmap-item">
+                      <span className="ak-roadmap-tag">{step.semaine}</span>
+                      <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--ak-ink)" }}>
+                        {step.titre}
+                      </h3>
+                      <p style={{ margin: 0, fontSize: "13px", color: "var(--ak-ink-s)", lineHeight: 1.55 }}>
+                        {step.desc}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </section>
         )}
       </main>

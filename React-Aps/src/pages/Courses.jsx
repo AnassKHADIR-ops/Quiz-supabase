@@ -393,40 +393,33 @@ function Courses() {
       {/* ═══ HERO ACADÉMIQUE PLEINE LARGEUR ═══ */}
       <header className="ak-hero">
         <div className="ak-hero-in">
-          <div className="ak-hero-top">
-            <span className="ak-eyebrow">
-              <span className="ak-eyebrow-dot" aria-hidden="true" />
-              CPGE {currentBranch.nom || "Mathématiques"} · Programme Officiel
-            </span>
-
-            {isAdmin && (
-              <>
-                {isLive && (
-                  <span
-                    className="ak-sync-pill"
-                    title={
-                      lastSynced
-                        ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}`
-                        : "Données synchronisées"
-                    }
-                  >
-                    <span className="ak-sync-dot" aria-hidden="true" />
-                    Synchronisé WordPress
-                  </span>
-                )}
-                <button
-                  type="button"
-                  className="ak-sync-btn"
-                  onClick={() => refreshSync()}
-                  disabled={isSyncing}
-                  title="Recharger les données en direct depuis WordPress"
+          {isAdmin && (
+            <div className="ak-hero-top">
+              {isLive && (
+                <span
+                  className="ak-sync-pill"
+                  title={
+                    lastSynced
+                      ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}`
+                      : "Données synchronisées"
+                  }
                 >
-                  <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
-                  <span>{isSyncing ? "Synchronisation…" : "Actualiser"}</span>
-                </button>
-              </>
-            )}
-          </div>
+                  <span className="ak-sync-dot" aria-hidden="true" />
+                  Synchronisé WordPress
+                </span>
+              )}
+              <button
+                type="button"
+                className="ak-sync-btn"
+                onClick={() => refreshSync()}
+                disabled={isSyncing}
+                title="Recharger les données en direct depuis WordPress"
+              >
+                <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
+                <span>{isSyncing ? "Synchronisation…" : "Actualiser"}</span>
+              </button>
+            </div>
+          )}
 
           <h1>
             Cours, Résumés &amp; Exercices{" "}
@@ -586,7 +579,7 @@ function Courses() {
               const catLabel = getCategoryLabel(catKey);
               const chapDesc = chapter.description || chapter.desc || "";
 
-              const activeTab = chapterTabMap[chapter.id] || "all";
+              const activeTab = chapterTabMap[chapter.id] || null;
               const isCompact = Boolean(compactVideoMap[chapter.id]);
 
               return (
@@ -692,10 +685,10 @@ function Courses() {
                                 }
                               />
 
-                              <div className="ak-ch-stack">
-                                {/* 1. Fiches de synthèse (Bandeau horizontal compact) */}
-                                {fiches.length > 0 &&
-                                  (activeTab === "all" || activeTab === "fiches") && (
+                              {activeTab && (
+                                <div className="ak-ch-stack">
+                                  {/* 1. Fiches de synthèse (Bandeau horizontal compact) */}
+                                  {fiches.length > 0 && activeTab === "fiches" && (
                                     <section className="ak-fiches-shelf">
                                       <div className="ak-doc-sec-t">
                                         <span className="ak-doc-sec-ic ic-fch" aria-hidden="true">
@@ -721,9 +714,8 @@ function Courses() {
                                     </section>
                                   )}
 
-                                {/* 2. Séances vidéo (Grille 3-4 cols pleine largeur + mode liste) */}
-                                {sessionsVideo.length > 0 &&
-                                  (activeTab === "all" || activeTab === "videos") && (
+                                  {/* 2. Séances vidéo (Grille 3-4 cols pleine largeur + mode liste) */}
+                                  {sessionsVideo.length > 0 && activeTab === "videos" && (
                                     <section>
                                       <div className="ak-doc-sec-t">
                                         <span className="ak-doc-sec-ic ic-vid" aria-hidden="true">
@@ -768,9 +760,8 @@ function Courses() {
                                     </section>
                                   )}
 
-                                {/* 3. Cours & Polycopiés PDF */}
-                                {coursDocs.length > 0 &&
-                                  (activeTab === "all" || activeTab === "cours") && (
+                                  {/* 3. Cours & Polycopiés PDF */}
+                                  {coursDocs.length > 0 && activeTab === "cours" && (
                                     <section>
                                       <div className="ak-doc-sec-t">
                                         <span className="ak-doc-sec-ic ic-crs" aria-hidden="true">
@@ -793,9 +784,8 @@ function Courses() {
                                     </section>
                                   )}
 
-                                {/* 4. TD & Devoirs Libres */}
-                                {tds.length > 0 &&
-                                  (activeTab === "all" || activeTab === "tds") && (
+                                  {/* 4. TD & Devoirs Libres */}
+                                  {tds.length > 0 && activeTab === "tds" && (
                                     <section>
                                       <div className="ak-doc-sec-t">
                                         <span className="ak-doc-sec-ic ic-td" aria-hidden="true">
@@ -821,7 +811,8 @@ function Courses() {
                                       </div>
                                     </section>
                                   )}
-                              </div>
+                                </div>
+                              )}
                             </>
                           );
                         })()}

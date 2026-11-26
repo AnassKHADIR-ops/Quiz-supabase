@@ -8,6 +8,7 @@ import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 import {
   Award,
   CheckCircle,
+  ChevronDown,
   FileText,
   Lock,
   PenLine,
@@ -30,6 +31,16 @@ export default function PasserelleBac() {
 
   const [activeCategory, setActiveCategory] = useState(() => searchParams.get("cat") || "all");
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") || "");
+  const [openThemeIds, setOpenThemeIds] = useState(() => new Set());
+
+  const toggleTheme = (themeKey) => {
+    setOpenThemeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(themeKey)) next.delete(themeKey);
+      else next.add(themeKey);
+      return next;
+    });
+  };
 
   const [videoModalData, setVideoModalData] = useState(null);
   const [pdfModalData, setPdfModalData] = useState(null);
@@ -248,40 +259,33 @@ export default function PasserelleBac() {
       {/* ═══ HERO PLEINE LARGEUR ═══ */}
       <header className="ak-hero">
         <div className="ak-hero-in">
-          <div className="ak-hero-top">
-            <span className="ak-eyebrow">
-              <span className="ak-eyebrow-dot" aria-hidden="true" />
-              Concours d'entrée 1ère Année CPGE · Lycée → Sup
-            </span>
-
-            {isAdmin && (
-              <>
-                {isLive && (
-                  <span
-                    className="ak-sync-pill"
-                    title={
-                      lastSynced
-                        ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}`
-                        : "Synchronisé WordPress"
-                    }
-                  >
-                    <span className="ak-sync-dot" aria-hidden="true" />
-                    Synchronisé WordPress
-                  </span>
-                )}
-                <button
-                  type="button"
-                  className="ak-sync-btn"
-                  onClick={() => refreshSync(null, true)}
-                  disabled={isSyncing}
-                  title="Forcer la mise à jour depuis anasskhadir.com"
+          {isAdmin && (
+            <div className="ak-hero-top">
+              {isLive && (
+                <span
+                  className="ak-sync-pill"
+                  title={
+                    lastSynced
+                      ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}`
+                      : "Synchronisé WordPress"
+                  }
                 >
-                  <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
-                  <span>{isSyncing ? "Mise à jour…" : "Actualiser"}</span>
-                </button>
-              </>
-            )}
-          </div>
+                  <span className="ak-sync-dot" aria-hidden="true" />
+                  Synchronisé WordPress
+                </span>
+              )}
+              <button
+                type="button"
+                className="ak-sync-btn"
+                onClick={() => refreshSync(null, true)}
+                disabled={isSyncing}
+                title="Forcer la mise à jour depuis anasskhadir.com"
+              >
+                <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
+                <span>{isSyncing ? "Mise à jour…" : "Actualiser"}</span>
+              </button>
+            </div>
+          )}
 
           <h1>
             Passerelle <em>Bac → Prépa</em>
@@ -417,6 +421,8 @@ export default function PasserelleBac() {
         ) : (
           filteredThemes.map((theme, tIdx) => {
             const safeItems = (theme.items || []).filter((it) => it && typeof it === "object");
+            const themeKey = theme.id || `theme-${tIdx}`;
+            const isOpen = openThemeIds.has(themeKey) || Boolean(searchQuery.trim());
             const catClass =
               theme.id === "analyse"
                 ? "cat-analyse"
@@ -425,12 +431,17 @@ export default function PasserelleBac() {
                 : "cat-geometrie";
 
             return (
-              <section
-                key={theme.id || tIdx}
-                className={`ak-card open ${catClass}`}
+              <article
+                key={themeKey}
+                className={`ak-card ${catClass} ${isOpen ? "open" : ""}`}
                 style={{ animationDelay: `${Math.min(tIdx * 0.04, 0.25).toFixed(3)}s` }}
               >
-                <div className="ak-card-head" style={{ cursor: "default" }}>
+                <button
+                  type="button"
+                  className="ak-card-head"
+                  aria-expanded={isOpen}
+                  onClick={() => toggleTheme(themeKey)}
+                >
                   <span className="ak-card-n">{formatChapterNum(tIdx + 1)}</span>
                   <span className="ak-card-titles">
                     <span className="ak-card-titre">{theme.titre}</span>
@@ -439,90 +450,95 @@ export default function PasserelleBac() {
                   <span className="ak-badge ak-b-default">
                     {safeItems.length} document{safeItems.length > 1 ? "s" : ""}
                   </span>
-                </div>
+                  <span className="ak-card-chev" aria-hidden="true">
+                    <ChevronDown size={17} />
+                  </span>
+                </button>
 
-                <div className="ak-card-body">
-                  <div className="ak-doc-list" data-count={safeItems.length}>
-                    {safeItems.map((item, idx) => {
-                      const hasEnonce = Boolean(item.enonce);
-                      const hasCorrection = Boolean(item.correction);
-                      const hasVideo = Boolean(item.video);
-                      const isMultiPartVideo = Array.isArray(item.video);
+                {isOpen && (
+                  <div className="ak-card-body">
+                    <div className="ak-doc-list" data-count={safeItems.length}>
+                      {safeItems.map((item, idx) => {
+                        const hasEnonce = Boolean(item.enonce);
+                        const hasCorrection = Boolean(item.correction);
+                        const hasVideo = Boolean(item.video);
+                        const isMultiPartVideo = Array.isArray(item.video);
 
-                      return (
-                        <div key={item.id || idx} className="ak-doc-line-wrap">
-                          <div className="ak-doc-line">
-                            <span className="ak-doc-line-ic" aria-hidden="true">
-                              <PenLine size={15} />
-                            </span>
-                            <span className="ak-doc-line-txt">
-                              <span className="ak-doc-line-t">{item.label}</span>
-                              {item.sous && <span className="ak-doc-line-d">{item.sous}</span>}
-                            </span>
+                        return (
+                          <div key={item.id || idx} className="ak-doc-line-wrap">
+                            <div className="ak-doc-line">
+                              <span className="ak-doc-line-ic" aria-hidden="true">
+                                <PenLine size={15} />
+                              </span>
+                              <span className="ak-doc-line-txt">
+                                <span className="ak-doc-line-t">{item.label}</span>
+                                {item.sous && <span className="ak-doc-line-d">{item.sous}</span>}
+                              </span>
 
-                            <span className="ak-doc-line-b">
-                              {hasEnonce && (
-                                <button
-                                  type="button"
-                                  className="ak-btn ak-btn-exo"
-                                  onClick={() => handleOpenPdf(item.enonce, `Sujet : ${item.label}`)}
-                                >
-                                  <FileText size={14} />
-                                  <span>Sujet PDF</span>
-                                </button>
-                              )}
+                              <span className="ak-doc-line-b">
+                                {hasEnonce && (
+                                  <button
+                                    type="button"
+                                    className="ak-btn ak-btn-exo"
+                                    onClick={() => handleOpenPdf(item.enonce, `Sujet : ${item.label}`)}
+                                  >
+                                    <FileText size={14} />
+                                    <span>Sujet PDF</span>
+                                  </button>
+                                )}
 
-                              {hasCorrection && (
-                                <button
-                                  type="button"
-                                  className="ak-btn ak-btn-corr"
-                                  onClick={() =>
-                                    handleOpenCorrection(item.correction, `Correction : ${item.label}`)
-                                  }
-                                >
-                                  <CheckCircle size={14} />
-                                  <span>Corrigé PDF</span>
-                                  {!isApproved && <Lock size={11} />}
-                                </button>
-                              )}
+                                {hasCorrection && (
+                                  <button
+                                    type="button"
+                                    className="ak-btn ak-btn-corr"
+                                    onClick={() =>
+                                      handleOpenCorrection(item.correction, `Correction : ${item.label}`)
+                                    }
+                                  >
+                                    <CheckCircle size={14} />
+                                    <span>Corrigé PDF</span>
+                                    {!isApproved && <Lock size={11} />}
+                                  </button>
+                                )}
 
-                              {hasVideo &&
-                                (isMultiPartVideo ? (
-                                  item.video.map((vUrl, partIdx) => (
+                                {hasVideo &&
+                                  (isMultiPartVideo ? (
+                                    item.video.map((vUrl, partIdx) => (
+                                      <button
+                                        key={partIdx}
+                                        type="button"
+                                        className="ak-btn ak-btn-video"
+                                        onClick={() =>
+                                          handleOpenVideo(vUrl, `${item.label} · Partie ${partIdx + 1}`)
+                                        }
+                                      >
+                                        <Play size={12} style={{ fill: "currentColor" }} />
+                                        <span>Partie {partIdx + 1}</span>
+                                        {!isApproved && <Lock size={11} />}
+                                      </button>
+                                    ))
+                                  ) : (
                                     <button
-                                      key={partIdx}
                                       type="button"
                                       className="ak-btn ak-btn-video"
                                       onClick={() =>
-                                        handleOpenVideo(vUrl, `${item.label} · Partie ${partIdx + 1}`)
+                                        handleOpenVideo(item.video, `Vidéo : ${item.label}`)
                                       }
                                     >
                                       <Play size={12} style={{ fill: "currentColor" }} />
-                                      <span>Partie {partIdx + 1}</span>
+                                      <span>Vidéo Corrigé</span>
                                       {!isApproved && <Lock size={11} />}
                                     </button>
-                                  ))
-                                ) : (
-                                  <button
-                                    type="button"
-                                    className="ak-btn ak-btn-video"
-                                    onClick={() =>
-                                      handleOpenVideo(item.video, `Vidéo : ${item.label}`)
-                                    }
-                                  >
-                                    <Play size={12} style={{ fill: "currentColor" }} />
-                                    <span>Vidéo Corrigé</span>
-                                    {!isApproved && <Lock size={11} />}
-                                  </button>
-                                ))}
-                            </span>
+                                  ))}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              </section>
+                )}
+              </article>
             );
           })
         )}

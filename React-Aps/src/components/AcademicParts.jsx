@@ -639,7 +639,8 @@ export function ExerciseTdLine({
 }
 
 /**
- * Onglets rapides internes à un chapitre (`Tout voir`, `Fiches`, `Vidéos`, `Cours PDF`, `TD & DL`).
+ * Boutons repliables internes à un chapitre (`Fiches`, `Vidéos`, `Cours PDF`, `TD & DL`).
+ * Tous repliés au premier moment : l'élève clique sur le bouton correspondant pour ouvrir/replier.
  */
 export function ChapterTabs({ counts, activeTab, onChange }) {
   const tabs = [];
@@ -648,33 +649,28 @@ export function ChapterTabs({ counts, activeTab, onChange }) {
   if (counts.cours > 0) tabs.push({ id: "cours", label: "Cours PDF", n: counts.cours, Icon: BookOpen });
   if (counts.tds > 0) tabs.push({ id: "tds", label: "TD & DL", n: counts.tds, Icon: PenLine });
 
-  if (tabs.length < 2) return null;
+  if (tabs.length === 0) return null;
 
   return (
-    <div className="ak-ch-tabs" role="tablist" aria-label="Sections du chapitre">
-      <button
-        type="button"
-        role="tab"
-        aria-selected={activeTab === "all"}
-        className={`ak-ch-tab ${activeTab === "all" ? "on" : ""}`}
-        onClick={() => onChange("all")}
-      >
-        Tout voir
-      </button>
+    <div
+      className={`ak-ch-tabs ${!activeTab ? "is-collapsed" : ""}`}
+      role="group"
+      aria-label="Sections du chapitre"
+    >
       {tabs.map(({ id, label, n, Icon }) => {
         const on = activeTab === id;
         return (
           <button
             key={id}
             type="button"
-            role="tab"
-            aria-selected={on}
+            aria-expanded={on}
             className={`ak-ch-tab ${on ? "on" : ""}`}
-            onClick={() => onChange(id)}
+            onClick={() => onChange(on ? null : id)}
           >
             <Icon size={13} />
             <span>{label}</span>
             <span className="ak-ch-tab-n">{n}</span>
+            <ChevronDown size={13} className="ak-tab-chev" aria-hidden="true" />
           </button>
         );
       })}
@@ -796,27 +792,48 @@ export function BookCard({ livre, onOpenPdf }) {
 }
 
 export function BookshelfSection({ livres, branchNom, onOpenPdf }) {
+  const [open, setOpen] = useState(false);
   const validLivres = Array.isArray(livres)
     ? livres.filter((l) => l && typeof l === "object")
     : [];
   if (validLivres.length === 0) return null;
 
   return (
-    <section className="ak-livres-section" aria-label="Bibliothèque conseillée">
-      <div className="ak-livres-tete">
-        <span className="ak-livres-tag">Bibliothèque CPGE</span>
-        <h2 className="ak-livres-h">
-          Les ouvrages de référence conseillés{branchNom ? ` en ${branchNom}` : ""}
-        </h2>
-        <p className="ak-livres-sub">
-          Cliquez sur un ouvrage pour le feuilleter et le télécharger au format PDF.
-        </p>
-      </div>
-      <div className="ak-livres-grid">
-        {validLivres.map((livre, idx) => (
-          <BookCard key={idx} livre={livre} onOpenPdf={onOpenPdf} />
-        ))}
-      </div>
+    <section className={`ak-card cat-algebre ${open ? "open" : ""}`} style={{ marginBlockStart: 28 }} aria-label="Bibliothèque conseillée">
+      <button
+        type="button"
+        className="ak-card-head"
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        <span className="ak-card-n" aria-hidden="true">
+          <BookOpen size={18} />
+        </span>
+        <span className="ak-card-titles">
+          <span className="ak-card-titre">
+            Ouvrages de référence conseillés{branchNom ? ` en ${branchNom}` : ""}
+          </span>
+          <span className="ak-card-desc">
+            Cliquez pour afficher la bibliothèque et feuilleter les ouvrages au format PDF.
+          </span>
+        </span>
+        <span className="ak-badge ak-b-algebre">
+          {validLivres.length} ouvrage{validLivres.length > 1 ? "s" : ""}
+        </span>
+        <span className="ak-card-chev" aria-hidden="true">
+          <ChevronDown size={17} />
+        </span>
+      </button>
+
+      {open && (
+        <div className="ak-card-body">
+          <div className="ak-livres-grid">
+            {validLivres.map((livre, idx) => (
+              <BookCard key={idx} livre={livre} onOpenPdf={onOpenPdf} />
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

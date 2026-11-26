@@ -887,6 +887,23 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.ak-ch-tabs.is-collapsed {
+  margin-block-end: 0;
+  padding-block-end: 0;
+  border-bottom: none;
+}
+
+.ak-tab-chev {
+  flex-shrink: 0;
+  transition: transform 0.22s var(--ak-ease);
+}
+
+.ak-ch-tab.on .ak-tab-chev,
+.ak-filiere-tab.on .ak-tab-chev,
+.ak-year-head-btn[aria-expanded="true"] .ak-tab-chev {
+  transform: rotate(180deg);
+}
+
 .ak-ch-tabs::-webkit-scrollbar {
   display: none;
 }
@@ -2336,6 +2353,10 @@ button.ak-doc-card:hover .ak-doc-cta {
   scrollbar-width: none;
 }
 
+.ak-filiere-tabs.is-collapsed {
+  border-bottom: none;
+}
+
 .ak-filiere-tabs::-webkit-scrollbar {
   display: none;
 }
@@ -2381,6 +2402,24 @@ button.ak-doc-card:hover .ak-doc-cta {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.ak-year-head-btn {
+  inline-size: 100%;
+  border: none;
+  cursor: pointer;
+  color: var(--ak-ink-s);
+  font-family: "Inter", sans-serif;
+  transition: background-color 0.16s var(--ak-ease), color 0.16s var(--ak-ease);
+}
+
+.ak-year-head-btn:hover {
+  background: var(--ak-blue-tint);
+  color: var(--ak-blue);
+}
+
+[data-theme="dark"] .ak-year-head-btn:hover {
+  background: rgba(59, 130, 246, 0.12);
 }
 
 .ak-year-badge {

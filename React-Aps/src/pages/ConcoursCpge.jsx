@@ -24,8 +24,9 @@ export default function ConcoursCpge() {
 
   const [query, setQuery] = useState("");
   const [activeConcoursTag, setActiveConcoursTag] = useState("all");
-  const [openBlocks, setOpenBlocks] = useState(() => new Set(["cnc", "ccinp"]));
+  const [openBlocks, setOpenBlocks] = useState(() => new Set());
   const [activeTabs, setActiveTabs] = useState({});
+  const [openYears, setOpenYears] = useState(() => new Set());
 
   const [pdfModalData, setPdfModalData] = useState(null);
   const [videoModalData, setVideoModalData] = useState(null);
@@ -41,7 +42,19 @@ export default function ConcoursCpge() {
   };
 
   const handleSelectTab = (cid, filiere) => {
-    setActiveTabs((prev) => ({ ...prev, [cid]: filiere }));
+    setActiveTabs((prev) => ({
+      ...prev,
+      [cid]: prev[cid] === filiere ? null : filiere,
+    }));
+  };
+
+  const toggleYear = (yrKey) => {
+    setOpenYears((prev) => {
+      const next = new Set(prev);
+      if (next.has(yrKey)) next.delete(yrKey);
+      else next.add(yrKey);
+      return next;
+    });
   };
 
   const handleOpenVideo = (videoUrl, title) => {
@@ -110,38 +123,31 @@ export default function ConcoursCpge() {
       {/* ═══ HERO PLEINE LARGEUR ═══ */}
       <header className="ak-hero">
         <div className="ak-hero-in">
-          <div className="ak-hero-top">
-            <span className="ak-eyebrow">
-              <span className="ak-eyebrow-dot" aria-hidden="true" />
-              Excellence CPGE · Annales de Mathématiques
-            </span>
-
-            {isAdmin && (
-              <>
-                <span
-                  className="ak-sync-pill"
-                  title={
-                    lastSynced
-                      ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}`
-                      : "Données prêtes"
-                  }
-                >
-                  <span className="ak-sync-dot" aria-hidden="true" />
-                  {isLive ? "Synchronisé WordPress" : "Données locales"}
-                </span>
-                <button
-                  type="button"
-                  className="ak-sync-btn"
-                  onClick={() => refreshSync(true)}
-                  disabled={isSyncing}
-                  title="Actualiser depuis WordPress"
-                >
-                  <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
-                  <span>{isSyncing ? "Sync…" : "Actualiser"}</span>
-                </button>
-              </>
-            )}
-          </div>
+          {isAdmin && (
+            <div className="ak-hero-top">
+              <span
+                className="ak-sync-pill"
+                title={
+                  lastSynced
+                    ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}`
+                    : "Données prêtes"
+                }
+              >
+                <span className="ak-sync-dot" aria-hidden="true" />
+                {isLive ? "Synchronisé WordPress" : "Données locales"}
+              </span>
+              <button
+                type="button"
+                className="ak-sync-btn"
+                onClick={() => refreshSync(true)}
+                disabled={isSyncing}
+                title="Actualiser depuis WordPress"
+              >
+                <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
+                <span>{isSyncing ? "Sync…" : "Actualiser"}</span>
+              </button>
+            </div>
+          )}
 
           <h1>
             Concours de <em>Mathématiques</em>
@@ -245,12 +251,27 @@ export default function ConcoursCpge() {
       {/* ═══ BLOCS CONCOURS ═══ */}
       <main className="ak-wrapper ak-shell">
         {filteredConcours.map((c, cIdx) => {
-          const isOpen = openBlocks.has(c.id) || Boolean(query.trim());
-          const filieres = Array.from(new Set(c.sujets.map((s) => s.filiere).filter(Boolean)));
-          const currentTab = activeTabs[c.id] || filieres[0] || "MP";
-
-          const streamSujets = c.sujets.filter((s) => s.filiere === currentTab);
           const qNorm = stripAccents(query).trim();
+          const hasQuery = Boolean(qNorm);
+          const isOpen = openBlocks.has(c.id) || hasQuery;
+          const filieres = Array.from(new Set(c.sujets.map((s) => s.filiere).filter(Boolean)));
+          const autoMatchedFiliere = hasQuery
+            ? filieres.find((f) =>
+                c.sujets.some(
+                  (s) =>
+                    s.filiere === f &&
+                    stripAccents(`${s.annee ?? ""} ${s.label || ""} ${s.filiere || ""}`).includes(qNorm)
+                )
+              ) || filieres[0]
+            : null;
+          const currentTab =
+            filieres.length <= 1
+              ? filieres[0] || "MP"
+              : activeTabs[c.id] || autoMatchedFiliere || null;
+
+          const streamSujets = currentTab
+            ? c.sujets.filter((s) => s.filiere === currentTab)
+            : [];
           const searchedSujets = streamSujets.filter((s) => {
             if (!qNorm) return true;
             return stripAccents(`${s.annee ?? ""} ${s.label || ""} ${s.filiere || ""}`).includes(qNorm);
@@ -286,7 +307,11 @@ export default function ConcoursCpge() {
               {isOpen && (
                 <div style={{ borderTop: "1px solid var(--ak-br)" }}>
                   {filieres.length > 1 && (
-                    <div className="ak-filiere-tabs" role="tablist" aria-label={`Filières ${c.titre}`}>
+                    <div
+                      className={`ak-filiere-tabs ${!currentTab ? "is-collapsed" : ""}`}
+                      role="group"
+                      aria-label={`Filières ${c.titre}`}
+                    >
                       {filieres.map((f) => {
                         const isTabActive = currentTab === f;
                         const countInFiliere = c.sujets.filter((s) => s.filiere === f).length;
@@ -294,142 +319,155 @@ export default function ConcoursCpge() {
                           <button
                             key={f}
                             type="button"
-                            role="tab"
-                            aria-selected={isTabActive}
+                            aria-expanded={isTabActive}
                             className={`ak-filiere-tab ${isTabActive ? "on" : ""}`}
                             onClick={() => handleSelectTab(c.id, f)}
                           >
                             <span>Filière {f}</span>
                             <span className="ak-ch-tab-n">{countInFiliere}</span>
+                            <ChevronDown size={13} className="ak-tab-chev" aria-hidden="true" />
                           </button>
                         );
                       })}
                     </div>
                   )}
 
-                  {years.length === 0 ? (
-                    <div className="ak-empty-mini" style={{ padding: "28px 16px" }}>
-                      Aucune épreuve ne correspond à votre recherche pour ce concours.
-                    </div>
-                  ) : (
-                    <div>
-                      {years.map((yr) => {
-                        const yearSujets = searchedSujets.filter((s) => s.annee === yr);
-                        return (
-                          <div key={yr} className="ak-year-block">
-                            <div className="ak-year-head">
-                              <span className="ak-year-badge">{yr}</span>
-                              <span
-                                style={{
-                                  fontSize: "13px",
-                                  fontWeight: 600,
-                                  color: "var(--ak-ink-s)",
-                                }}
+                  {currentTab &&
+                    (years.length === 0 ? (
+                      <div className="ak-empty-mini" style={{ padding: "28px 16px" }}>
+                        Aucune épreuve ne correspond à votre recherche pour ce concours.
+                      </div>
+                    ) : (
+                      <div>
+                        {years.map((yr) => {
+                          const yearSujets = searchedSujets.filter((s) => s.annee === yr);
+                          const yrKey = `${c.id}-${currentTab}-${yr}`;
+                          const isYearOpen = openYears.has(yrKey) || hasQuery;
+                          return (
+                            <div key={yr} className="ak-year-block">
+                              <button
+                                type="button"
+                                className="ak-year-head ak-year-head-btn"
+                                aria-expanded={isYearOpen}
+                                onClick={() => toggleYear(yrKey)}
                               >
-                                Session {currentTab} {yr}
-                              </span>
+                                <span className="ak-year-badge">{yr}</span>
+                                <span
+                                  style={{
+                                    fontSize: "13px",
+                                    fontWeight: 600,
+                                    color: "var(--ak-ink-s)",
+                                    flex: 1,
+                                    textAlign: "start",
+                                  }}
+                                >
+                                  Session {currentTab} {yr} · {yearSujets.length} épreuve
+                                  {yearSujets.length > 1 ? "s" : ""}
+                                </span>
+                                <ChevronDown size={15} className="ak-tab-chev" aria-hidden="true" />
+                              </button>
+
+                              {isYearOpen &&
+                                yearSujets.map((s, sIdx) => {
+                                  const hasEnonce = Boolean(s.enonce);
+                                  const hasCorr = Boolean(s.correction);
+                                  const hasVideo = Boolean(s.video);
+
+                                  return (
+                                    <div key={sIdx} className="ak-epreuve-row">
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 10,
+                                          minWidth: 160,
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            width: 7,
+                                            height: 7,
+                                            borderRadius: "50%",
+                                            background: "var(--ak-blue-2)",
+                                            flexShrink: 0,
+                                          }}
+                                        />
+                                        <span
+                                          style={{
+                                            fontFamily: "'Outfit', sans-serif",
+                                            fontSize: "14px",
+                                            fontWeight: 600,
+                                            color: "var(--ak-ink)",
+                                          }}
+                                        >
+                                          {s.label}
+                                        </span>
+                                      </div>
+
+                                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                        {hasEnonce ? (
+                                          <button
+                                            type="button"
+                                            className="ak-btn ak-btn-exo"
+                                            onClick={() =>
+                                              handleOpenPdf(
+                                                s.enonce,
+                                                `${c.titre} · ${currentTab} ${yr} · ${s.label}`,
+                                                "Sujet"
+                                              )
+                                            }
+                                          >
+                                            <FileText size={14} />
+                                            <span>Sujet PDF</span>
+                                          </button>
+                                        ) : (
+                                          <span className="ak-btn ak-btn-soon">Sujet bientôt</span>
+                                        )}
+
+                                        {hasCorr ? (
+                                          <button
+                                            type="button"
+                                            className="ak-btn ak-btn-corr"
+                                            onClick={() =>
+                                              handleOpenPdf(
+                                                s.correction,
+                                                `${c.titre} · ${currentTab} ${yr} · ${s.label}`,
+                                                "Corrigé"
+                                              )
+                                            }
+                                          >
+                                            <CheckCircle size={14} />
+                                            <span>Corrigé PDF</span>
+                                          </button>
+                                        ) : (
+                                          <span className="ak-btn ak-btn-soon">Corrigé bientôt</span>
+                                        )}
+
+                                        {hasVideo && (
+                                          <button
+                                            type="button"
+                                            className="ak-btn ak-btn-video"
+                                            onClick={() =>
+                                              handleOpenVideo(
+                                                s.video,
+                                                `${c.titre} · ${currentTab} ${yr} · ${s.label}`
+                                              )
+                                            }
+                                          >
+                                            <Play size={12} style={{ fill: "currentColor" }} />
+                                            <span>Vidéo Solution</span>
+                                            {!(isApproved || isAdmin) && <Lock size={11} />}
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                             </div>
-
-                            {yearSujets.map((s, sIdx) => {
-                              const hasEnonce = Boolean(s.enonce);
-                              const hasCorr = Boolean(s.correction);
-                              const hasVideo = Boolean(s.video);
-
-                              return (
-                                <div key={sIdx} className="ak-epreuve-row">
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 10,
-                                      minWidth: 160,
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        width: 7,
-                                        height: 7,
-                                        borderRadius: "50%",
-                                        background: "var(--ak-blue-2)",
-                                        flexShrink: 0,
-                                      }}
-                                    />
-                                    <span
-                                      style={{
-                                        fontFamily: "'Outfit', sans-serif",
-                                        fontSize: "14px",
-                                        fontWeight: 600,
-                                        color: "var(--ak-ink)",
-                                      }}
-                                    >
-                                      {s.label}
-                                    </span>
-                                  </div>
-
-                                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                                    {hasEnonce ? (
-                                      <button
-                                        type="button"
-                                        className="ak-btn ak-btn-exo"
-                                        onClick={() =>
-                                          handleOpenPdf(
-                                            s.enonce,
-                                            `${c.titre} · ${currentTab} ${yr} · ${s.label}`,
-                                            "Sujet"
-                                          )
-                                        }
-                                      >
-                                        <FileText size={14} />
-                                        <span>Sujet PDF</span>
-                                      </button>
-                                    ) : (
-                                      <span className="ak-btn ak-btn-soon">Sujet bientôt</span>
-                                    )}
-
-                                    {hasCorr ? (
-                                      <button
-                                        type="button"
-                                        className="ak-btn ak-btn-corr"
-                                        onClick={() =>
-                                          handleOpenPdf(
-                                            s.correction,
-                                            `${c.titre} · ${currentTab} ${yr} · ${s.label}`,
-                                            "Corrigé"
-                                          )
-                                        }
-                                      >
-                                        <CheckCircle size={14} />
-                                        <span>Corrigé PDF</span>
-                                      </button>
-                                    ) : (
-                                      <span className="ak-btn ak-btn-soon">Corrigé bientôt</span>
-                                    )}
-
-                                    {hasVideo && (
-                                      <button
-                                        type="button"
-                                        className="ak-btn ak-btn-video"
-                                        onClick={() =>
-                                          handleOpenVideo(
-                                            s.video,
-                                            `${c.titre} · ${currentTab} ${yr} · ${s.label}`
-                                          )
-                                        }
-                                      >
-                                        <Play size={12} style={{ fill: "currentColor" }} />
-                                        <span>Vidéo Solution</span>
-                                        {!(isApproved || isAdmin) && <Lock size={11} />}
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                          );
+                        })}
+                      </div>
+                    ))}
                 </div>
               )}
             </article>
