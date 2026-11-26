@@ -11,6 +11,9 @@ import { getEmbedUrl, getDriveDownloadUrl } from "../utils/driveUtils.js";
  */
 export function PdfPreviewModal({ title, url, doc, docs, initialIndex = 0, onClose }) {
   const dialogRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   const titleId = useId();
   const [activeIdx, setActiveIdx] = useState(initialIndex || 0);
   const [frameLoaded, setFrameLoaded] = useState(false);
@@ -33,6 +36,7 @@ export function PdfPreviewModal({ title, url, doc, docs, initialIndex = 0, onClo
     : baseTitle;
 
   const rawUrl = activeDoc?.url || url || doc?.document_url || doc?.url || "";
+  const hasUrl = Boolean(rawUrl);
   const embedUrl = getEmbedUrl(rawUrl, "pdf") || rawUrl;
   const downloadUrl = getDriveDownloadUrl(rawUrl) || rawUrl;
 
@@ -46,69 +50,92 @@ export function PdfPreviewModal({ title, url, doc, docs, initialIndex = 0, onClo
     setFrameLoaded(false);
   }, [embedUrl]);
 
-  // Native <dialog> showModal() + close event + Safari light-dismiss fallback
+  // Native <dialog> showModal() + close event + Safari pointer-position light-dismiss fallback.
+  // Depends only on `hasUrl` (never on `rawUrl` or `onClose`) so parent re-renders
+  // (e.g. setSearchParams transitions) or multi-doc tab switches never close/re-open the dialog.
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (!dialog || !rawUrl) return;
+    if (!dialog || !hasUrl) return;
 
-    if (!dialog.open) {
-      if (typeof dialog.showModal === "function") {
-        try {
-          dialog.showModal();
-        } catch {
-          dialog.setAttribute("open", "");
-        }
-      } else {
-        dialog.setAttribute("open", "");
+    if (!dialog.open && typeof dialog.showModal === "function") {
+      try {
+        dialog.showModal();
+      } catch {
+        // Ignore if dialog is already open or detached
       }
     }
 
     const handleClose = () => {
-      onClose?.();
+      dialog.returnValue = "";
+      // Ignore stale queued `close` events fired asynchronously after a cleanup->remount
+      // cycle (e.g. React 18 StrictMode) when the dialog has already been re-opened.
+      if (dialog.open) return;
+      onCloseRef.current?.();
     };
     dialog.addEventListener("close", handleClose);
 
-    // Fallback for browsers without native closedby="any" (e.g. Safari)
-    let handleBackdropClick = null;
-    if (typeof HTMLDialogElement !== "undefined" && !("closedBy" in HTMLDialogElement.prototype)) {
-      handleBackdropClick = (event) => {
-        if (event.target !== dialog) return;
-        const rect = dialog.getBoundingClientRect();
-        const isInside =
-          rect.top <= event.clientY &&
-          event.clientY <= rect.top + rect.height &&
-          rect.left <= event.clientX &&
-          event.clientX <= rect.left + rect.width;
-        if (!isInside) {
+    // Fallback for browsers without native closedby="any" (e.g. Safari):
+    // require both pointerdown and pointerup outside the dialog box so text-selection drags
+    // ending on the backdrop do not accidentally dismiss the viewer.
+    const supportsClosedBy =
+      typeof HTMLDialogElement !== "undefined" &&
+      "closedBy" in HTMLDialogElement.prototype;
+
+    let handlePointerDown = null;
+    let handlePointerUp = null;
+
+    if (!supportsClosedBy) {
+      let pressedOutside = false;
+      const isOutside = (e) => {
+        const r = dialog.getBoundingClientRect();
+        return (
+          e.clientX < r.left ||
+          e.clientX > r.right ||
+          e.clientY < r.top ||
+          e.clientY > r.bottom
+        );
+      };
+      handlePointerDown = (e) => {
+        pressedOutside = isOutside(e);
+      };
+      handlePointerUp = (e) => {
+        if (pressedOutside && isOutside(e) && dialog.open) {
           dialog.close();
         }
+        pressedOutside = false;
       };
-      dialog.addEventListener("click", handleBackdropClick);
+      dialog.addEventListener("pointerdown", handlePointerDown);
+      dialog.addEventListener("pointerup", handlePointerUp);
     }
 
     return () => {
       dialog.removeEventListener("close", handleClose);
-      if (handleBackdropClick) {
-        dialog.removeEventListener("click", handleBackdropClick);
+      if (handlePointerDown) {
+        dialog.removeEventListener("pointerdown", handlePointerDown);
+      }
+      if (handlePointerUp) {
+        dialog.removeEventListener("pointerup", handlePointerUp);
       }
       if (dialog.open && typeof dialog.close === "function") {
         try {
           dialog.close();
-        } catch {}
+        } catch {
+          // Ignore if already detached
+        }
       }
     };
-  }, [rawUrl, onClose]);
+  }, [hasUrl]);
 
   const handleCloseClick = () => {
     const dialog = dialogRef.current;
     if (dialog && dialog.open && typeof dialog.close === "function") {
       dialog.close();
     } else {
-      onClose?.();
+      onCloseRef.current?.();
     }
   };
 
-  if (!rawUrl) return null;
+  if (!hasUrl) return null;
 
   return (
     <dialog
@@ -119,9 +146,9 @@ export function PdfPreviewModal({ title, url, doc, docs, initialIndex = 0, onClo
     >
       <div className="ak-pdf-head">
         <span className="ak-pdf-badge">PDF</span>
-        <h2 className="ak-pdf-title" id={titleId} title={displayTitle}>
+        <h1 className="ak-pdf-title" id={titleId} title={displayTitle}>
           {displayTitle}
-        </h2>
+        </h1>
         <div className="ak-pdf-actions">
           {downloadUrl && (
             <a

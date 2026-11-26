@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useCoursesSync } from "../hooks/useCoursesSync.js";
@@ -70,6 +70,7 @@ function Courses() {
   const [selectedVideoModal, setSelectedVideoModal] = useState(null);
   const [pdfModalData, setPdfModalData] = useState(null);
   const [authGateData, setAuthGateData] = useState(null);
+  const prevUrlMediaRef = useRef({ video: null, pdf: null, corr: null, isApproved: null });
 
   // Deep linking depuis l'URL (?annee=, ?branche=, ?video=, ?corr=, ?pdf=)
   useEffect(() => {
@@ -99,44 +100,77 @@ function Courses() {
     const pdfUrlParam = searchParams.get("pdf");
     const titleParam = searchParams.get("title");
     const viewParam = searchParams.get("view");
+    const prevMedia = prevUrlMediaRef.current;
+    const videoChanged = videoUrlParam !== prevMedia.video;
+    const pdfChanged = pdfUrlParam !== prevMedia.pdf;
+    const corrChanged = corrUrlParam !== prevMedia.corr;
+    const approvalChanged = prevMedia.isApproved !== null && isApproved !== prevMedia.isApproved;
 
     if (videoUrlParam) {
-      if (!isApproved) {
-        setAuthGateData({
-          contentType: "video",
-          title: titleParam || "Séance de cours (Replay)",
-        });
-      } else {
-        setSelectedVideoModal({
-          titre: titleParam || "Séance de cours (Replay)",
-          video_url: videoUrlParam,
-        });
+      if (videoChanged || approvalChanged) {
+        if (!isApproved) {
+          setAuthGateData({
+            contentType: "video",
+            title: titleParam || "Séance de cours (Replay)",
+          });
+        } else {
+          setSelectedVideoModal((prev) =>
+            prev && prev.video_url === videoUrlParam
+              ? prev
+              : {
+                  titre: titleParam || "Séance de cours (Replay)",
+                  video_url: videoUrlParam,
+                }
+          );
+        }
       }
-    } else {
+    } else if (prevMedia.video) {
       setSelectedVideoModal(null);
     }
 
     if (corrUrlParam || (pdfUrlParam && viewParam === "corr")) {
       const targetUrl = corrUrlParam || pdfUrlParam;
-      if (!isApproved) {
-        setAuthGateData({
-          contentType: "correction",
-          title: titleParam || "Correction détaillée PDF",
-        });
-      } else {
-        setPdfModalData({
-          title: titleParam || "Correction détaillée",
-          url: targetUrl,
-        });
+      if (corrChanged || pdfChanged || approvalChanged) {
+        if (!isApproved) {
+          setAuthGateData({
+            contentType: "correction",
+            title: titleParam || "Correction détaillée PDF",
+          });
+        } else {
+          setPdfModalData((prev) =>
+            prev && prev.url === targetUrl
+              ? prev
+              : {
+                  title: titleParam || "Correction détaillée",
+                  url: targetUrl,
+                  isCorrection: true,
+                }
+          );
+        }
       }
     } else if (pdfUrlParam) {
-      setPdfModalData({
-        title: titleParam || "Document pédagogique",
-        url: pdfUrlParam,
-      });
-    } else {
+      if (pdfChanged) {
+        setPdfModalData((prev) =>
+          prev && prev.url === pdfUrlParam
+            ? prev
+            : {
+                title: titleParam || "Document pédagogique",
+                url: pdfUrlParam,
+                isCorrection: false,
+              }
+        );
+      }
+    } else if (prevMedia.pdf || prevMedia.corr) {
+      // Fermer uniquement si un paramètre URL ?pdf= / ?corr= vient d'être retiré (ex: bouton Précédent)
       setPdfModalData(null);
     }
+
+    prevUrlMediaRef.current = {
+      video: videoUrlParam,
+      pdf: pdfUrlParam,
+      corr: corrUrlParam,
+      isApproved,
+    };
   }, [searchParams, curriculum, selectedYear, isApproved]);
 
   // Ferme les modales protégées si l'accès membre est révoqué (sans fermer les PDF gratuits)
@@ -287,7 +321,14 @@ function Courses() {
     setSearchParams(newParams, { replace: true });
   };
 
-  const openPdf = ({ url, title, docs, initialIndex = 0 }) => {
+  const openPdf = (arg, legacyTitle) => {
+    const payload =
+      typeof arg === "string"
+        ? { url: arg, title: legacyTitle }
+        : arg && typeof arg === "object"
+        ? arg
+        : {};
+    const { url, title, docs, initialIndex = 0 } = payload;
     if (!url) return;
     if (!docs) {
       const newParams = new URLSearchParams(searchParams);
@@ -295,7 +336,13 @@ function Courses() {
       if (title) newParams.set("title", title);
       setSearchParams(newParams, { replace: false });
     }
-    setPdfModalData({ url, title: title || "Document pédagogique", docs, initialIndex });
+    setPdfModalData({
+      url,
+      title: title || "Document pédagogique",
+      docs,
+      initialIndex,
+      isCorrection: false,
+    });
   };
 
   const openCorrection = (url, title, docs = null, initialIndex = 0) => {
@@ -324,12 +371,19 @@ function Courses() {
 
   const closePdf = () => {
     setPdfModalData(null);
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete("pdf");
-    newParams.delete("corr");
-    newParams.delete("title");
-    newParams.delete("view");
-    setSearchParams(newParams, { replace: true });
+    if (
+      searchParams.has("pdf") ||
+      searchParams.has("corr") ||
+      searchParams.has("title") ||
+      searchParams.has("view")
+    ) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("pdf");
+      newParams.delete("corr");
+      newParams.delete("title");
+      newParams.delete("view");
+      setSearchParams(newParams, { replace: true });
+    }
   };
 
   const statCols = stats.livres > 0 ? 6 : 5;

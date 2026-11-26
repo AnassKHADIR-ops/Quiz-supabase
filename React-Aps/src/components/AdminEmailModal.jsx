@@ -15,6 +15,8 @@ export default function AdminEmailModal({
 }) {
   const titleId = useId();
   const dialogRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   const recipientName =
     recipient?.full_name || recipient?.student_name || recipient?.name || "";
@@ -68,7 +70,8 @@ export default function AdminEmailModal({
 
     const handleClose = () => {
       dialog.returnValue = "";
-      onClose?.();
+      if (dialog.open) return;
+      onCloseRef.current?.();
     };
     dialog.addEventListener("close", handleClose);
 
@@ -110,7 +113,7 @@ export default function AdminEmailModal({
       dialog.removeEventListener("pointerdown", handlePointerDown);
       dialog.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [onClose]);
+  }, []);
 
   const handleCopy = async () => {
     try {

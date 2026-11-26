@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { usePasserelleBacSync } from "../hooks/usePasserelleBacSync.js";
@@ -34,6 +34,7 @@ export default function PasserelleBac() {
   const [videoModalData, setVideoModalData] = useState(null);
   const [pdfModalData, setPdfModalData] = useState(null);
   const [authGateData, setAuthGateData] = useState(null);
+  const prevUrlMediaRef = useRef({ video: null, pdf: null, corr: null, isApproved: null });
 
   // Deep linking depuis l'URL
   useEffect(() => {
@@ -41,44 +42,83 @@ export default function PasserelleBac() {
     const corrParam = searchParams.get("corr");
     const pdfParam = searchParams.get("pdf");
     const titleParam = searchParams.get("title");
+    const prevMedia = prevUrlMediaRef.current;
+    const videoChanged = videoParam !== prevMedia.video;
+    const pdfChanged = pdfParam !== prevMedia.pdf;
+    const corrChanged = corrParam !== prevMedia.corr;
+    const approvalChanged = prevMedia.isApproved !== null && isApproved !== prevMedia.isApproved;
 
     if (videoParam) {
-      if (!isApproved) {
-        setAuthGateData({
-          contentType: "video",
-          title: titleParam || "Vidéo d'explication",
-        });
-      } else {
-        setVideoModalData({
-          titre: titleParam || "Vidéo d'explication",
-          video_url: videoParam,
-        });
+      if (videoChanged || approvalChanged) {
+        if (!isApproved) {
+          setAuthGateData({
+            contentType: "video",
+            title: titleParam || "Vidéo d'explication",
+          });
+        } else {
+          setVideoModalData((prev) =>
+            prev && prev.video_url === videoParam
+              ? prev
+              : {
+                  titre: titleParam || "Vidéo d'explication",
+                  video_url: videoParam,
+                }
+          );
+        }
       }
-    } else {
+    } else if (prevMedia.video) {
       setVideoModalData(null);
     }
 
     if (corrParam) {
-      if (!isApproved) {
-        setAuthGateData({
-          contentType: "correction",
-          title: titleParam || "Correction détaillée PDF",
-        });
-      } else {
-        setPdfModalData({
-          title: titleParam || "Correction détaillée",
-          url: corrParam,
-        });
+      if (corrChanged || approvalChanged) {
+        if (!isApproved) {
+          setAuthGateData({
+            contentType: "correction",
+            title: titleParam || "Correction détaillée PDF",
+          });
+        } else {
+          setPdfModalData((prev) =>
+            prev && prev.url === corrParam
+              ? prev
+              : {
+                  title: titleParam || "Correction détaillée",
+                  url: corrParam,
+                  isCorrection: true,
+                }
+          );
+        }
       }
     } else if (pdfParam) {
-      setPdfModalData({
-        title: titleParam || "Document pédagogique",
-        url: pdfParam,
-      });
-    } else {
+      if (pdfChanged) {
+        setPdfModalData((prev) =>
+          prev && prev.url === pdfParam
+            ? prev
+            : {
+                title: titleParam || "Document pédagogique",
+                url: pdfParam,
+                isCorrection: false,
+              }
+        );
+      }
+    } else if (prevMedia.pdf || prevMedia.corr) {
       setPdfModalData(null);
     }
+
+    prevUrlMediaRef.current = {
+      video: videoParam,
+      pdf: pdfParam,
+      corr: corrParam,
+      isApproved,
+    };
   }, [searchParams, isApproved]);
+
+  useEffect(() => {
+    if (!isApproved) {
+      setVideoModalData(null);
+      setPdfModalData((prev) => (prev?.isCorrection ? null : prev));
+    }
+  }, [isApproved]);
 
   const handleOpenPdf = (url, title) => {
     if (!url) return;
@@ -86,7 +126,7 @@ export default function PasserelleBac() {
     newParams.set("pdf", url);
     if (title) newParams.set("title", title);
     setSearchParams(newParams, { replace: false });
-    setPdfModalData({ title, url });
+    setPdfModalData({ title, url, isCorrection: false });
   };
 
   const handleOpenCorrection = (url, title) => {
@@ -102,7 +142,7 @@ export default function PasserelleBac() {
     newParams.set("corr", url);
     if (title) newParams.set("title", title);
     setSearchParams(newParams, { replace: false });
-    setPdfModalData({ title, url });
+    setPdfModalData({ title, url, isCorrection: true });
   };
 
   const handleOpenVideo = (url, title) => {
@@ -123,11 +163,13 @@ export default function PasserelleBac() {
 
   const handleClosePdf = () => {
     setPdfModalData(null);
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete("pdf");
-    newParams.delete("corr");
-    newParams.delete("title");
-    setSearchParams(newParams, { replace: true });
+    if (searchParams.has("pdf") || searchParams.has("corr") || searchParams.has("title")) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("pdf");
+      newParams.delete("corr");
+      newParams.delete("title");
+      setSearchParams(newParams, { replace: true });
+    }
   };
 
   const handleCloseVideo = () => {
