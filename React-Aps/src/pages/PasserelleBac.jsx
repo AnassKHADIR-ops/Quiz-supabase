@@ -1,42 +1,32 @@
-import { useState, useEffect, useMemo } from "react";
-import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { usePasserelleBacSync } from "../hooks/usePasserelleBacSync.js";
 import SecureVideoModal from "../components/SecureVideoModal.jsx";
 import AuthGateModal from "../components/AuthGateModal.jsx";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 import {
-  getEmbedUrl,
-  getDownloadUrl,
-  getDrivePreviewUrl,
-  getDriveDownloadUrl,
-} from "../utils/driveUtils.js";
-import {
-  BookOpen,
-  FileText,
-  CheckCircle,
-  PlayCircle,
-  Video,
-  Search,
-  Lock,
-  ShieldCheck,
-  Download,
-  Sparkles,
-  ArrowRight,
-  ArrowLeft,
-  X,
-  RefreshCw,
-  GraduationCap,
   Award,
+  CheckCircle,
+  FileText,
+  Lock,
+  PenLine,
+  Play,
+  RefreshCw,
+  Search,
+  X,
 } from "../components/Icon.jsx";
+import { formatChapterNum, stripAccents } from "../utils/academicUtils.js";
 
 export default function PasserelleBac() {
-  const { user, isApproved, isAdmin } = useAuth();
-  const navigate = useNavigate();
+  const { isApproved, isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // WordPress live data sync (poll only if admin)
-  const { passerelleBacData, isSyncing, isLive, lastSynced, refreshSync } = usePasserelleBacSync(null, isAdmin ? 15000 : 0);
+  // Synchronisation WordPress en direct (polling uniquement pour l'administrateur)
+  const { passerelleBacData, isSyncing, isLive, lastSynced, refreshSync } = usePasserelleBacSync(
+    null,
+    isAdmin ? 15000 : 0
+  );
 
   const [activeCategory, setActiveCategory] = useState(() => searchParams.get("cat") || "all");
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") || "");
@@ -45,7 +35,7 @@ export default function PasserelleBac() {
   const [pdfModalData, setPdfModalData] = useState(null);
   const [authGateData, setAuthGateData] = useState(null);
 
-  // Deep linking handling from URL
+  // Deep linking depuis l'URL
   useEffect(() => {
     const videoParam = searchParams.get("video");
     const corrParam = searchParams.get("corr");
@@ -90,7 +80,6 @@ export default function PasserelleBac() {
     }
   }, [searchParams, isApproved]);
 
-  // Handle open actions
   const handleOpenPdf = (url, title) => {
     if (!url) return;
     const newParams = new URLSearchParams(searchParams);
@@ -102,11 +91,6 @@ export default function PasserelleBac() {
 
   const handleOpenCorrection = (url, title) => {
     if (!url) return;
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set("corr", url);
-    if (title) newParams.set("title", title);
-    setSearchParams(newParams, { replace: false });
-
     if (!isApproved) {
       setAuthGateData({
         contentType: "correction",
@@ -114,16 +98,15 @@ export default function PasserelleBac() {
       });
       return;
     }
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("corr", url);
+    if (title) newParams.set("title", title);
+    setSearchParams(newParams, { replace: false });
     setPdfModalData({ title, url });
   };
 
   const handleOpenVideo = (url, title) => {
     if (!url) return;
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set("video", url);
-    if (title) newParams.set("title", title);
-    setSearchParams(newParams, { replace: false });
-
     if (!isApproved) {
       setAuthGateData({
         contentType: "video",
@@ -131,10 +114,11 @@ export default function PasserelleBac() {
       });
       return;
     }
-    setVideoModalData({
-      titre: title || "Vidéo Corrigé",
-      video_url: url,
-    });
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("video", url);
+    if (title) newParams.set("title", title);
+    setSearchParams(newParams, { replace: false });
+    setVideoModalData({ titre: title || "Vidéo Corrigé", video_url: url });
   };
 
   const handleClosePdf = () => {
@@ -154,679 +138,231 @@ export default function PasserelleBac() {
     setSearchParams(newParams, { replace: true });
   };
 
-  // Filter themes and items based on search and selected category
-  const filteredThemes = useMemo(() => {
-    const themes = (passerelleBacData?.themes || []).filter((t) => t && typeof t === "object");
-    const q = searchQuery.toLowerCase().trim();
+  const allThemes = useMemo(
+    () => (passerelleBacData?.themes || []).filter((t) => t && typeof t === "object"),
+    [passerelleBacData]
+  );
 
-    return themes
+  const filteredThemes = useMemo(() => {
+    const q = stripAccents(searchQuery).trim();
+    return allThemes
       .map((theme) => {
-        // Check category match
         if (activeCategory !== "all" && theme.id !== activeCategory && theme.categorie !== activeCategory) {
           return null;
         }
-
         const safeItems = (Array.isArray(theme.items) ? theme.items : []).filter(
           (item) => item && typeof item === "object"
         );
-
         if (!q) return { ...theme, items: safeItems };
 
         const themeMatch =
-          String(theme?.titre || "").toLowerCase().includes(q) ||
-          (theme?.meta && String(theme.meta).toLowerCase().includes(q));
-
+          stripAccents(theme.titre).includes(q) || (theme.meta && stripAccents(theme.meta).includes(q));
         const matchedItems = safeItems.filter(
           (item) =>
-            String(item?.label || "").toLowerCase().includes(q) ||
-            (item?.sous && String(item.sous).toLowerCase().includes(q))
+            stripAccents(item.label).includes(q) || (item.sous && stripAccents(item.sous).includes(q))
         );
 
-        if (themeMatch) {
-          return { ...theme, items: safeItems };
-        }
-
-        if (matchedItems.length > 0) {
-          return {
-            ...theme,
-            items: matchedItems,
-          };
-        }
-
+        if (themeMatch) return { ...theme, items: safeItems };
+        if (matchedItems.length > 0) return { ...theme, items: matchedItems };
         return null;
       })
       .filter(Boolean);
-  }, [passerelleBacData, activeCategory, searchQuery]);
+  }, [allThemes, activeCategory, searchQuery]);
 
-  // Statistics counters
   const stats = useMemo(() => {
-    const themes = (passerelleBacData?.themes || []).filter((t) => t && typeof t === "object");
     let sujetsCount = 0;
     let exercicesCount = 0;
     let correctionsCount = 0;
     let videosCount = 0;
 
-    for (const t of themes) {
+    for (const t of allThemes) {
       const isSujetTheme = t.id === "sujets" || t.categorie === "sujets";
       for (const item of (Array.isArray(t.items) ? t.items : []).filter((it) => it && typeof it === "object")) {
-        if (isSujetTheme) {
-          sujetsCount++;
-        } else {
-          exercicesCount++;
-        }
-        if (item.correction) {
-          correctionsCount++;
-        }
-        if (Array.isArray(item.video)) {
-          videosCount += item.video.length;
-        } else if (item.video) {
-          videosCount++;
-        }
+        if (isSujetTheme) sujetsCount++;
+        else exercicesCount++;
+        if (item.correction) correctionsCount++;
+        if (Array.isArray(item.video)) videosCount += item.video.length;
+        else if (item.video) videosCount++;
       }
     }
 
     return { sujetsCount, exercicesCount, correctionsCount, videosCount };
-  }, [passerelleBacData]);
+  }, [allThemes]);
 
   const categoriesList = useMemo(() => {
     const validCats = (passerelleBacData?.categories || []).filter((c) => c && typeof c === "object");
-    return [
-      { id: "all", label: "🌟 Tous les Modules" },
-      ...validCats,
-    ];
-  }, [passerelleBacData]);
+    return validCats.map((cat) => {
+      const count = allThemes
+        .filter((t) => t.id === cat.id || t.categorie === cat.id)
+        .reduce((acc, t) => acc + (Array.isArray(t.items) ? t.items.filter(Boolean).length : 0), 0);
+      return { ...cat, count };
+    });
+  }, [passerelleBacData, allThemes]);
+
+  const totalDocs = stats.sujetsCount + stats.exercicesCount;
 
   return (
-    <div className="passerelle-bac-page">
-      <style>{`
-        .passerelle-bac-page {
-          min-height: 100vh;
-          background: var(--bg);
-          color: var(--text);
-          padding-bottom: 60px;
-        }
-        .pb-hero {
-          background: linear-gradient(145deg, var(--surface) 0%, rgba(217, 161, 58, 0.08) 50%, var(--surface) 100%);
-          border-bottom: 1px solid var(--border);
-          padding: 48px 24px 36px;
-          text-align: center;
-          position: relative;
-          overflow: hidden;
-        }
-        .pb-hero::after {
-          content: "";
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 3px;
-          background: linear-gradient(90deg, transparent, rgba(217, 161, 58, 0.4), #d9a13a, rgba(217, 161, 58, 0.4), transparent);
-        }
-        .pb-eyebrow {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          color: #b57809;
-          background: rgba(181, 120, 9, 0.1);
-          border: 1px solid rgba(181, 120, 9, 0.25);
-          padding: 6px 16px;
-          border-radius: 30px;
-          margin-bottom: 16px;
-        }
-        .pb-eyebrow::before {
-          content: "";
-          width: 6px;
-          height: 6px;
-          background: #b57809;
-          border-radius: 50%;
-        }
-        .pb-title {
-          font-size: clamp(28px, 4.5vw, 44px);
-          font-weight: 800;
-          letter-spacing: -0.02em;
-          color: var(--text);
-          margin-bottom: 14px;
-          line-height: 1.2;
-        }
-        .pb-title em {
-          font-style: normal;
-          color: #d97706;
-          background: linear-gradient(135deg, #d97706, #b45309);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-        .pb-desc {
-          font-size: 15.5px;
-          color: var(--text-muted);
-          max-width: 680px;
-          margin: 0 auto 24px;
-          line-height: 1.65;
-        }
-        .pb-badges {
-          display: flex;
-          gap: 10px;
-          justify-content: center;
-          flex-wrap: wrap;
-          margin-bottom: 24px;
-        }
-        .pb-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 14px;
-          border-radius: 30px;
-          font-size: 12px;
-          font-weight: 600;
-        }
-        .pb-badge-bac {
-          background: rgba(37, 99, 235, 0.1);
-          color: #2563eb;
-          border: 1px solid rgba(37, 99, 235, 0.2);
-        }
-        .pb-badge-prepa {
-          background: rgba(16, 185, 129, 0.1);
-          color: #059669;
-          border: 1px solid rgba(16, 185, 129, 0.2);
-        }
-        .pb-badge-elite {
-          background: rgba(217, 119, 6, 0.1);
-          color: #d97706;
-          border: 1px solid rgba(217, 119, 6, 0.25);
-        }
+    <div className="ak-page">
+      {/* ═══ HERO PLEINE LARGEUR ═══ */}
+      <header className="ak-hero">
+        <div className="ak-hero-in">
+          <div className="ak-hero-top">
+            <span className="ak-eyebrow">
+              <span className="ak-eyebrow-dot" aria-hidden="true" />
+              Concours d'entrée 1ère Année CPGE · Lycée → Sup
+            </span>
 
-        /* Stats Row */
-        .pb-stats-row {
-          display: flex;
-          justify-content: center;
-          background: var(--surface);
-          border-bottom: 1px solid var(--border);
-          flex-wrap: wrap;
-        }
-        .pb-stat-item {
-          padding: 18px 28px;
-          text-align: center;
-          border-right: 1px solid var(--border);
-          flex: 1;
-          min-width: 130px;
-        }
-        .pb-stat-item:last-child {
-          border-right: none;
-        }
-        .pb-stat-num {
-          font-size: 28px;
-          font-weight: 800;
-          color: #d97706;
-          line-height: 1;
-        }
-        .pb-stat-label {
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--text-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          margin-top: 6px;
-        }
-
-        /* Container */
-        .pb-container {
-          max-width: 1100px;
-          margin: 0 auto;
-          padding: 28px 20px 0;
-        }
-
-        /* Toolbar */
-        .pb-toolbar {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          margin-bottom: 24px;
-        }
-        .pb-filters {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-        .pb-filter-btn {
-          padding: 9px 18px;
-          border-radius: 30px;
-          border: 1.5px solid var(--border);
-          background: var(--surface);
-          color: var(--text);
-          font-size: 13.5px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
-        }
-        .pb-filter-btn:hover {
-          border-color: #d9a13a;
-          color: #d97706;
-          background: rgba(217, 161, 58, 0.08);
-        }
-        .pb-filter-btn.active {
-          background: linear-gradient(135deg, #d97706, #b45309);
-          color: #ffffff;
-          border-color: #d97706;
-          box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25);
-        }
-
-        .pb-search-sync-row {
-          display: flex;
-          gap: 12px;
-          align-items: center;
-          flex-wrap: wrap;
-        }
-        .pb-search-box {
-          flex: 1;
-          min-width: 260px;
-          position: relative;
-        }
-        .pb-search-input {
-          width: 100%;
-          padding: 11px 40px 11px 40px;
-          border-radius: 12px;
-          border: 1.5px solid var(--border);
-          background: var(--surface);
-          color: var(--text);
-          font-size: 14px;
-          font-weight: 500;
-          transition: border-color 0.2s;
-        }
-        .pb-search-input:focus {
-          outline: none;
-          border-color: #d97706;
-          box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
-        }
-        .pb-search-ic {
-          position: absolute;
-          left: 14px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--text-muted);
-          pointer-events: none;
-        }
-        .pb-search-clear {
-          position: absolute;
-          right: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: none;
-          border: none;
-          color: var(--text-muted);
-          cursor: pointer;
-          display: grid;
-          place-items: center;
-        }
-
-        /* Live Sync Badge */
-        .pb-sync-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 14px;
-          border-radius: 10px;
-          font-size: 12px;
-          font-weight: 600;
-          border: 1px solid var(--border);
-          background: var(--surface);
-          color: var(--text-muted);
-        }
-        .pb-sync-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: #10b981;
-          box-shadow: 0 0 8px #10b981;
-        }
-        .pb-sync-refresh-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 9px 14px;
-          border-radius: 10px;
-          border: 1.5px solid var(--border);
-          background: var(--surface);
-          color: var(--text);
-          font-size: 13px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .pb-sync-refresh-btn:hover {
-          border-color: #d97706;
-          color: #d97706;
-        }
-
-        /* Theme Card Block */
-        .pb-theme-block {
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 16px;
-          overflow: hidden;
-          margin-bottom: 24px;
-          box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
-        }
-        .pb-theme-header {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          padding: 20px 24px;
-          border-bottom: 1px solid var(--border);
-          background: var(--surface);
-        }
-        .pb-theme-icon {
-          width: 48px;
-          height: 48px;
-          min-width: 48px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 22px;
-          border: 1px solid var(--border);
-          background: rgba(217, 161, 58, 0.1);
-        }
-        .pb-theme-info {
-          flex: 1;
-          min-width: 0;
-        }
-        .pb-theme-title {
-          font-size: 19px;
-          font-weight: 700;
-          color: var(--text);
-          margin-bottom: 4px;
-        }
-        .pb-theme-meta {
-          font-size: 13px;
-          color: var(--text-muted);
-          line-height: 1.45;
-        }
-        .pb-theme-count {
-          font-size: 12px;
-          font-weight: 700;
-          color: #d97706;
-          background: rgba(217, 119, 6, 0.1);
-          border: 1px solid rgba(217, 119, 6, 0.2);
-          padding: 4px 12px;
-          border-radius: 20px;
-          white-space: nowrap;
-        }
-
-        /* Item Row */
-        .pb-item-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 16px 24px;
-          border-top: 1px solid var(--border);
-          gap: 16px;
-          flex-wrap: wrap;
-          transition: background 0.18s ease;
-        }
-        .pb-item-row:hover {
-          background: rgba(217, 161, 58, 0.04);
-        }
-        .pb-item-label {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          font-size: 14.5px;
-          font-weight: 600;
-          color: var(--text);
-          min-width: 220px;
-          flex: 1;
-          line-height: 1.5;
-        }
-        .pb-item-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          flex-shrink: 0;
-          background: #d9a13a;
-        }
-        .pb-item-actions {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-          align-items: center;
-        }
-
-        /* Action Buttons */
-        .pb-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 7px 14px;
-          border-radius: 8px;
-          font-size: 12.5px;
-          font-weight: 600;
-          text-decoration: none;
-          border: 1.5px solid transparent;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          white-space: nowrap;
-        }
-        .pb-btn:hover {
-          transform: translateY(-1px);
-        }
-        .pb-btn:active {
-          transform: none;
-        }
-
-        .pb-btn-pdf {
-          background: rgba(37, 99, 235, 0.08);
-          color: #2563eb;
-          border-color: rgba(37, 99, 235, 0.22);
-        }
-        .pb-btn-pdf:hover {
-          background: rgba(37, 99, 235, 0.15);
-          box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
-        }
-
-        .pb-btn-corr {
-          background: rgba(16, 185, 129, 0.1);
-          color: #059669;
-          border-color: rgba(16, 185, 129, 0.25);
-        }
-        .pb-btn-corr:hover {
-          background: rgba(16, 185, 129, 0.18);
-          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
-        }
-
-        .pb-btn-video {
-          background: rgba(220, 38, 38, 0.08);
-          color: #dc2626;
-          border-color: rgba(220, 38, 38, 0.22);
-        }
-        .pb-btn-video:hover {
-          background: rgba(220, 38, 38, 0.15);
-          box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
-        }
-
-        /* Banner info box */
-        .pb-info-box {
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-left: 4px solid #d97706;
-          border-radius: 12px;
-          padding: 18px 22px;
-          margin-top: 24px;
-          display: flex;
-          gap: 16px;
-          align-items: flex-start;
-        }
-        .pb-info-text {
-          font-size: 13.5px;
-          color: var(--text-muted);
-          line-height: 1.6;
-        }
-        .pb-info-text strong {
-          color: var(--text);
-        }
-      `}</style>
-
-      {/* Hero Header */}
-      <section className="pb-hero">
-        <div className="pb-eyebrow">
-          Concours d'entrée en 1ère Année CPGE & Transition Lycée → Sup
-        </div>
-        <h1 className="pb-title">
-          Passerelle <em>Bac → Prépa</em>
-        </h1>
-        <p className="pb-desc">
-          Modules d'approfondissement, devoirs d'entraînement et annales officielles des concours
-          d'entrée pour réussir votre intégration en CPGE MPSI, PCSI & TSI (Al Zahrawi, LYDEX Benguerir, LYMED Tétouan).
-        </p>
-
-        <div className="pb-badges">
-          <span className="pb-badge pb-badge-bac">🎓 Terminale Maths Expertes</span>
-          <span className="pb-badge pb-badge-prepa">📐 Niveau 1ère Année CPGE</span>
-          <span className="pb-badge pb-badge-elite">🏆 Concours d'Excellence</span>
-        </div>
-      </section>
-
-      {/* Stats Counter Bar */}
-      <section className="pb-stats-row">
-        <div className="pb-stat-item">
-          <div className="pb-stat-num">{stats.sujetsCount}</div>
-          <div className="pb-stat-label">Sujets de Concours</div>
-        </div>
-        <div className="pb-stat-item">
-          <div className="pb-stat-num">{stats.exercicesCount}</div>
-          <div className="pb-stat-label">Exercices Ciblés</div>
-        </div>
-        <div className="pb-stat-item">
-          <div className="pb-stat-num">{stats.correctionsCount}</div>
-          <div className="pb-stat-label">Corrigés Détaillés</div>
-        </div>
-        <div className="pb-stat-item">
-          <div className="pb-stat-num">{stats.videosCount}</div>
-          <div className="pb-stat-label">Vidéos Explicatives</div>
-        </div>
-      </section>
-
-      {/* Main Content Area */}
-      <main className="pb-container">
-        {/* Navigation back */}
-        <div style={{ marginBottom: 20 }}>
-          <Link
-            to="/"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              fontSize: "13.5px",
-              fontWeight: 600,
-              color: "var(--text-muted)",
-              textDecoration: "none",
-            }}
-          >
-            <ArrowLeft size={16} /> Retour à l'accueil
-          </Link>
-        </div>
-
-        {/* Filters and Search Toolbar */}
-        <div className="pb-toolbar">
-          {/* Category Pill Filters */}
-          <div className="pb-filters">
-            {categoriesList.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                className={`pb-filter-btn ${activeCategory === cat.id ? "active" : ""}`}
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  const p = new URLSearchParams(searchParams);
-                  if (cat.id === "all") p.delete("cat");
-                  else p.set("cat", cat.id);
-                  setSearchParams(p, { replace: false });
-                }}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Search bar + Live Sync */}
-          <div className="pb-search-sync-row">
-            <div className="pb-search-box">
-              <Search className="pb-search-ic" size={17} />
-              <input
-                type="text"
-                className="pb-search-input"
-                placeholder="Rechercher un sujet, exercice (ex: Zahrawi, Hölder, Gamma, Möbius)..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  const p = new URLSearchParams(searchParams);
-                  if (e.target.value.trim()) p.set("q", e.target.value);
-                  else p.delete("q");
-                  setSearchParams(p, { replace: true });
-                }}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  className="pb-search-clear"
-                  onClick={() => {
-                    setSearchQuery("");
-                    const p = new URLSearchParams(searchParams);
-                    p.delete("q");
-                    setSearchParams(p, { replace: true });
-                  }}
-                  aria-label="Effacer"
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-
-            {/* Sync status and refresh button (Visible only to Administrator) */}
             {isAdmin && (
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <div className="pb-sync-badge">
-                  <span className="pb-sync-dot" />
-                  <span>{isLive ? "WordPress Synchronisé" : "Données Locales"}</span>
-                </div>
+              <>
+                {isLive && (
+                  <span
+                    className="ak-sync-pill"
+                    title={
+                      lastSynced
+                        ? `Dernière synchronisation : ${new Date(lastSynced).toLocaleTimeString()}`
+                        : "Synchronisé WordPress"
+                    }
+                  >
+                    <span className="ak-sync-dot" aria-hidden="true" />
+                    Synchronisé WordPress
+                  </span>
+                )}
                 <button
                   type="button"
-                  className="pb-sync-refresh-btn"
+                  className="ak-sync-btn"
                   onClick={() => refreshSync(null, true)}
                   disabled={isSyncing}
                   title="Forcer la mise à jour depuis anasskhadir.com"
                 >
-                  <RefreshCw size={14} className={isSyncing ? "spinner" : ""} />
-                  <span>{isSyncing ? "Mise à jour..." : "Actualiser"}</span>
+                  <RefreshCw size={12} className={isSyncing ? "spin-animate" : ""} />
+                  <span>{isSyncing ? "Mise à jour…" : "Actualiser"}</span>
                 </button>
-              </div>
+              </>
+            )}
+          </div>
+
+          <h1>
+            Passerelle <em>Bac → Prépa</em>
+          </h1>
+          <p>
+            Modules d'approfondissement, devoirs d'entraînement et annales officielles des concours
+            d'entrée en CPGE MPSI, PCSI &amp; TSI (Al Zahrawi, LYDEX Benguerir, LYMED Tétouan).
+          </p>
+        </div>
+      </header>
+
+      {/* ═══ BARRE DE STATISTIQUES FLOTTANTE ═══ */}
+      <div className="ak-shell ak-stats-wrap">
+        <div
+          className="ak-stats-row cols-4"
+          style={{ "--ak-stat-cols": 4 }}
+          aria-label="Statistiques Bac vers Prépa"
+        >
+          <div className="ak-stat">
+            <div className="ak-stat-n">{stats.sujetsCount}</div>
+            <div className="ak-stat-l">Sujets de Concours</div>
+          </div>
+          <div className="ak-stat">
+            <div className="ak-stat-n">{stats.exercicesCount}</div>
+            <div className="ak-stat-l">Exercices Ciblés</div>
+          </div>
+          <div className="ak-stat">
+            <div className="ak-stat-n">{stats.correctionsCount}</div>
+            <div className="ak-stat-l">Corrigés Détaillés</div>
+          </div>
+          <div className="ak-stat">
+            <div className="ak-stat-n">{stats.videosCount}</div>
+            <div className="ak-stat-l">Vidéos Explicatives</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ FILTRES & RECHERCHE ═══ */}
+      <div className="ak-filters">
+        <div className="ak-shell ak-filters-in">
+          <div className="ak-filter-block">
+            <div className="ak-filter-label">Filtrer par module</div>
+            <div className="ak-filter-row" role="group" aria-label="Filtrer par module">
+              <button
+                type="button"
+                className={`ak-fb ${activeCategory === "all" ? "on" : ""}`}
+                onClick={() => {
+                  setActiveCategory("all");
+                  const p = new URLSearchParams(searchParams);
+                  p.delete("cat");
+                  setSearchParams(p, { replace: false });
+                }}
+              >
+                <span>Tous les modules</span>
+                <span className="ak-fb-cnt">{totalDocs}</span>
+              </button>
+              {categoriesList.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  className={`ak-fb ${activeCategory === cat.id ? "on" : ""}`}
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+                    const p = new URLSearchParams(searchParams);
+                    p.set("cat", cat.id);
+                    setSearchParams(p, { replace: false });
+                  }}
+                >
+                  <span>{cat.label}</span>
+                  {cat.count > 0 && <span className="ak-fb-cnt">{cat.count}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="ak-search-box">
+            <span className="ak-search-ic" aria-hidden="true">
+              <Search size={16} />
+            </span>
+            <input
+              type="search"
+              className="ak-search"
+              autoComplete="off"
+              placeholder="Rechercher un sujet, exercice (Zahrawi, Hölder…)"
+              aria-label="Rechercher un sujet ou exercice"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                const p = new URLSearchParams(searchParams);
+                if (e.target.value.trim()) p.set("q", e.target.value);
+                else p.delete("q");
+                setSearchParams(p, { replace: true });
+              }}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                className="ak-search-clear"
+                onClick={() => {
+                  setSearchQuery("");
+                  const p = new URLSearchParams(searchParams);
+                  p.delete("q");
+                  setSearchParams(p, { replace: true });
+                }}
+                aria-label="Effacer la recherche"
+              >
+                <X size={13} />
+              </button>
             )}
           </div>
         </div>
+      </div>
 
-        {/* Themes and Items Listing */}
+      {/* ═══ THÈMES & RESSOURCES ═══ */}
+      <main className="ak-wrapper ak-shell">
         {filteredThemes.length === 0 ? (
-          <div
-            style={{
-              padding: "48px 24px",
-              textAlign: "center",
-              background: "var(--surface)",
-              borderRadius: 16,
-              border: "1px dashed var(--border)",
-              marginTop: 20,
-            }}
-          >
-            <p style={{ fontSize: "16px", color: "var(--text-muted)", marginBottom: 12 }}>
-              Aucun résultat trouvé pour votre recherche <strong>"{searchQuery}"</strong>.
+          <div className="ak-empty">
+            <p style={{ marginBottom: 12 }}>
+              Aucun résultat trouvé pour <strong>« {searchQuery} »</strong>.
             </p>
             <button
               type="button"
-              className="btn btn-secondary btn-sm"
+              className="ak-btn ak-btn-pdf"
               onClick={() => {
                 setSearchQuery("");
                 setActiveCategory("all");
@@ -837,123 +373,131 @@ export default function PasserelleBac() {
             </button>
           </div>
         ) : (
-          filteredThemes.map((theme) => {
+          filteredThemes.map((theme, tIdx) => {
+            const safeItems = (theme.items || []).filter((it) => it && typeof it === "object");
+            const catClass =
+              theme.id === "analyse"
+                ? "cat-analyse"
+                : theme.id === "algebre"
+                ? "cat-algebre"
+                : "cat-geometrie";
+
             return (
-              <section key={theme.id} className="pb-theme-block">
-                {/* Theme Header */}
-                <div className="pb-theme-header">
-                  <div className="pb-theme-icon">{theme.icon || "📚"}</div>
-                  <div className="pb-theme-info">
-                    <h2 className="pb-theme-title">{theme.titre}</h2>
-                    {theme.meta && <p className="pb-theme-meta">{theme.meta}</p>}
-                  </div>
-                  <div className="pb-theme-count">
-                    {theme.items?.length || 0} document{(theme.items?.length || 0) > 1 ? "s" : ""}
-                  </div>
+              <section
+                key={theme.id || tIdx}
+                className={`ak-card open ${catClass}`}
+                style={{ animationDelay: `${Math.min(tIdx * 0.04, 0.25).toFixed(3)}s` }}
+              >
+                <div className="ak-card-head" style={{ cursor: "default" }}>
+                  <span className="ak-card-n">{formatChapterNum(tIdx + 1)}</span>
+                  <span className="ak-card-titles">
+                    <span className="ak-card-titre">{theme.titre}</span>
+                    {theme.meta && <span className="ak-card-desc">{theme.meta}</span>}
+                  </span>
+                  <span className="ak-badge ak-b-default">
+                    {safeItems.length} document{safeItems.length > 1 ? "s" : ""}
+                  </span>
                 </div>
 
-                {/* Items List */}
-                <div className="pb-theme-body">
-                  {(theme.items || []).map((item, idx) => {
-                    const hasEnonce = Boolean(item.enonce);
-                    const hasCorrection = Boolean(item.correction);
-                    const hasVideo = Boolean(item.video);
-                    const isMultiPartVideo = Array.isArray(item.video);
+                <div className="ak-card-body">
+                  <div className="ak-doc-list" data-count={safeItems.length}>
+                    {safeItems.map((item, idx) => {
+                      const hasEnonce = Boolean(item.enonce);
+                      const hasCorrection = Boolean(item.correction);
+                      const hasVideo = Boolean(item.video);
+                      const isMultiPartVideo = Array.isArray(item.video);
 
-                    return (
-                      <div key={item.id || idx} className="pb-item-row">
-                        <div className="pb-item-label">
-                          <span className="pb-item-dot" />
-                          <span>{item.label}</span>
-                        </div>
+                      return (
+                        <div key={item.id || idx} className="ak-doc-line-wrap">
+                          <div className="ak-doc-line">
+                            <span className="ak-doc-line-ic" aria-hidden="true">
+                              <PenLine size={15} />
+                            </span>
+                            <span className="ak-doc-line-txt">
+                              <span className="ak-doc-line-t">{item.label}</span>
+                              {item.sous && <span className="ak-doc-line-d">{item.sous}</span>}
+                            </span>
 
-                        <div className="pb-item-actions">
-                          {/* Énoncé PDF (Open for everyone) */}
-                          {hasEnonce && (
-                            <button
-                              type="button"
-                              className="pb-btn pb-btn-pdf"
-                              onClick={() => handleOpenPdf(item.enonce, `Sujet : ${item.label}`)}
-                            >
-                              <FileText size={14} />
-                              <span>Sujet PDF</span>
-                            </button>
-                          )}
-
-                          {/* Correction PDF (Gated for members) */}
-                          {hasCorrection && (
-                            <button
-                              type="button"
-                              className="pb-btn pb-btn-corr"
-                              onClick={() => handleOpenCorrection(item.correction, `Correction : ${item.label}`)}
-                              title={isApproved ? "Voir le corrigé détaillé" : "Réservé aux membres — Cliquez pour vous connecter"}
-                            >
-                              <CheckCircle size={14} />
-                              <span>Corrigé PDF</span>
-                              {!isApproved && <Lock size={12} style={{ opacity: 0.85, marginLeft: 2 }} />}
-                            </button>
-                          )}
-
-                          {/* Vidéos (Gated for members, with multi-part support) */}
-                          {hasVideo && (
-                            <>
-                              {isMultiPartVideo ? (
-                                item.video.map((vUrl, partIdx) => (
-                                  <button
-                                    key={partIdx}
-                                    type="button"
-                                    className="pb-btn pb-btn-video"
-                                    onClick={() =>
-                                      handleOpenVideo(
-                                        vUrl,
-                                        `${item.label} · Partie ${partIdx + 1}`
-                                      )
-                                    }
-                                    title={isApproved ? "Regarder la vidéo" : "Réservé aux membres — Cliquez pour vous connecter"}
-                                  >
-                                    <PlayCircle size={14} />
-                                    <span>Partie {partIdx + 1}</span>
-                                    {!isApproved && <Lock size={12} style={{ opacity: 0.85, marginLeft: 2 }} />}
-                                  </button>
-                                ))
-                              ) : (
+                            <span className="ak-doc-line-b">
+                              {hasEnonce && (
                                 <button
                                   type="button"
-                                  className="pb-btn pb-btn-video"
-                                  onClick={() =>
-                                    handleOpenVideo(item.video, `Vidéo : ${item.label}`)
-                                  }
-                                  title={isApproved ? "Regarder la vidéo" : "Réservé aux membres — Cliquez pour vous connecter"}
+                                  className="ak-btn ak-btn-exo"
+                                  onClick={() => handleOpenPdf(item.enonce, `Sujet : ${item.label}`)}
                                 >
-                                  <PlayCircle size={14} />
-                                  <span>Vidéo Corrigé</span>
-                                  {!isApproved && <Lock size={12} style={{ opacity: 0.85, marginLeft: 2 }} />}
+                                  <FileText size={14} />
+                                  <span>Sujet PDF</span>
                                 </button>
                               )}
-                            </>
-                          )}
+
+                              {hasCorrection && (
+                                <button
+                                  type="button"
+                                  className="ak-btn ak-btn-corr"
+                                  onClick={() =>
+                                    handleOpenCorrection(item.correction, `Correction : ${item.label}`)
+                                  }
+                                >
+                                  <CheckCircle size={14} />
+                                  <span>Corrigé PDF</span>
+                                  {!isApproved && <Lock size={11} />}
+                                </button>
+                              )}
+
+                              {hasVideo &&
+                                (isMultiPartVideo ? (
+                                  item.video.map((vUrl, partIdx) => (
+                                    <button
+                                      key={partIdx}
+                                      type="button"
+                                      className="ak-btn ak-btn-video"
+                                      onClick={() =>
+                                        handleOpenVideo(vUrl, `${item.label} · Partie ${partIdx + 1}`)
+                                      }
+                                    >
+                                      <Play size={12} style={{ fill: "currentColor" }} />
+                                      <span>Partie {partIdx + 1}</span>
+                                      {!isApproved && <Lock size={11} />}
+                                    </button>
+                                  ))
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="ak-btn ak-btn-video"
+                                    onClick={() =>
+                                      handleOpenVideo(item.video, `Vidéo : ${item.label}`)
+                                    }
+                                  >
+                                    <Play size={12} style={{ fill: "currentColor" }} />
+                                    <span>Vidéo Corrigé</span>
+                                    {!isApproved && <Lock size={11} />}
+                                  </button>
+                                ))}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </section>
             );
           })
         )}
 
-        {/* Pedagogical Note */}
-        <div className="pb-info-box">
-          <Award size={24} style={{ color: "#d97706", flexShrink: 0, marginTop: 2 }} />
-          <div className="pb-info-text">
-            <strong>Conseil méthodologique :</strong> Ces épreuves et exercices sont conçus pour évaluer
-            votre capacité de raisonnement abstrait, la maîtrise des quantificateurs logiques et votre rigueur
-            de rédaction. Travaillez chaque sujet en temps libre avant de consulter les corrigés et vidéos explicatives.
+        {/* Conseil méthodologique */}
+        <div className="ak-note">
+          <span className="ak-note-ic" aria-hidden="true">
+            <Award size={17} />
+          </span>
+          <div className="ak-note-txt">
+            <strong>Conseil méthodologique :</strong> Ces épreuves et exercices développent la
+            rigueur de rédaction et la maîtrise des quantificateurs logiques. Travaillez chaque
+            sujet avant de consulter les corrigés et vidéos explicatives.
           </div>
         </div>
       </main>
 
-      {/* PDF Modal */}
       {pdfModalData && (
         <PdfPreviewModal
           title={pdfModalData.title}
@@ -962,7 +506,6 @@ export default function PasserelleBac() {
         />
       )}
 
-      {/* Video Modal */}
       {videoModalData && (
         <SecureVideoModal
           videoUrl={videoModalData.video_url}
@@ -971,7 +514,6 @@ export default function PasserelleBac() {
         />
       )}
 
-      {/* Member Access Gate Modal */}
       {authGateData && (
         <AuthGateModal
           isOpen={true}

@@ -23,6 +23,24 @@ export function sanitizeCurriculum(raw) {
       ? arr.filter((x) => x != null && (typeof x === "object" || (allowString && typeof x === "string" && x.trim() !== "")))
       : [];
 
+  const sanitizeItemWithNested = (item) => {
+    if (!item || typeof item !== "object") return item;
+    const out = { ...item };
+    if (Array.isArray(out.supports)) {
+      out.supports = out.supports.filter((x) => x && typeof x === "object");
+    }
+    if (Array.isArray(out.seances)) {
+      out.seances = out.seances.filter((x) => x != null && (typeof x === "object" || typeof x === "string"));
+    }
+    if (Array.isArray(out.corr)) {
+      out.corr = out.corr.filter((x) => x != null && (typeof x === "object" || typeof x === "string"));
+    }
+    if (Array.isArray(out.v)) {
+      out.v = out.v.filter((x) => x != null && (typeof x === "object" || typeof x === "string"));
+    }
+    return out;
+  };
+
   const sanitizeYear = (yrObj, fallbackYr) => {
     if (!yrObj || !Array.isArray(yrObj.branches) || yrObj.branches.length === 0) {
       return fallbackYr;
@@ -38,12 +56,13 @@ export function sanitizeCurriculum(raw) {
           id: ch.id || `${b.id || "ch"}-${ch.n ?? cIdx + 1}`,
           n: ch.n ?? cIdx + 1,
           titre: typeof ch.titre === "string" ? ch.titre : `Chapitre ${cIdx + 1}`,
-          cours: sanitizeList(ch.cours),
-          sessions: Array.isArray(ch.sessions) ? sanitizeList(ch.sessions) : undefined,
+          description: ch.description || ch.desc || ch.meta || "",
+          cours: sanitizeList(ch.cours).map(sanitizeItemWithNested),
+          sessions: Array.isArray(ch.sessions) ? sanitizeList(ch.sessions).map(sanitizeItemWithNested) : undefined,
           fiches: sanitizeList(ch.fiches, true),
-          tds: sanitizeList(ch.tds),
-          items: Array.isArray(ch.items) ? sanitizeList(ch.items) : undefined,
-          videos: sanitizeList(ch.videos, true),
+          tds: sanitizeList(ch.tds).map(sanitizeItemWithNested),
+          items: Array.isArray(ch.items) ? sanitizeList(ch.items).map(sanitizeItemWithNested) : undefined,
+          videos: sanitizeList(ch.videos, true).map((v) => (typeof v === "object" ? sanitizeItemWithNested(v) : v)),
         })),
         livres: sanitizeList(b.livres),
       }));
@@ -93,30 +112,26 @@ export function normalizeChArray(chList, branchId) {
       if (cleanTds.length > 0) {
         const premierTd = cleanTds[0];
         if (premierTd.exo) enonce_url = premierTd.exo;
-        if (premierTd.corr) correction_url = premierTd.corr;
+        if (typeof premierTd.corr === "string" && premierTd.corr) correction_url = premierTd.corr;
       }
 
-      if (cleanCours.length > 0) {
-        const premierCours = cleanCours[0];
-        if (premierCours.u && !fiche_url) fiche_url = premierCours.u;
-        if (premierCours.video) video_url = premierCours.video;
-      }
+      const explicitFicheUrl = fiche_url;
 
       return {
         id,
         n: num,
         titre: ch.titre || `Chapitre ${num}`,
         cat: cat === "probabilites" ? "proba" : cat,
-        badge: ch.badge || (cat === "algebre" ? "Algèbre" : cat === "analyse" ? "Analyse" : cat === "proba" ? "Probabilités" : "Cours"),
+        badge: ch.badge || (cat === "algebre" ? "Algèbre" : cat === "analyse" ? "Analyse" : cat === "proba" || cat === "probabilites" ? "Probabilités" : cat === "geometrie" ? "Géométrie" : "Cours"),
         description: ch.description || ch.meta || ch.desc || "",
-        fiche_url,
+        fiche_url: explicitFicheUrl,
         enonce_url,
         correction_url,
         video_url,
         cours: cleanCours,
-        fiches: cleanFiches.length > 0 ? cleanFiches : (fiche_url ? [{ t: "Fiche de résumé", u: fiche_url }] : []),
+        fiches: cleanFiches.length > 0 ? cleanFiches : (explicitFicheUrl ? [{ t: "Fiche de résumé", sous: "L'essentiel du chapitre", u: explicitFicheUrl }] : []),
         tds: cleanTds,
-        videos: cleanVideos.length > 0 ? cleanVideos : (video_url ? [{ titre: "Vidéo d'explication", url: video_url }] : []),
+        videos: cleanVideos,
       };
     });
 }

@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import { resultsApi } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
-import { ArrowLeft, Eye, Inbox } from "../components/Icon.jsx";
+import { Eye, Inbox } from "../components/Icon.jsx";
 
 const tooltipStyle = { background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)", fontSize: "0.85rem" };
 
@@ -95,14 +95,9 @@ function StudentProfile() {
   return (
     <div className="page">
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
-        <button className="btn btn-secondary" style={{ padding: "7px 14px" }} onClick={() => navigate(-1)}>
-          <ArrowLeft size={16} /> Retour
-        </button>
-        <div>
-          <h1 style={{ fontSize: "1.6rem", fontWeight: 800 }}>Analyse de l'étudiant</h1>
-          <p style={{ color: "var(--text-muted)" }}>Historique et performances</p>
-        </div>
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ fontSize: "1.6rem", fontWeight: 800 }}>Analyse de l'étudiant</h1>
+        <p style={{ color: "var(--text-muted)" }}>Historique et performances</p>
       </div>
 
       {/* Stats */}

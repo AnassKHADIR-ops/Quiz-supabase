@@ -53,11 +53,11 @@ function AKLogo({ size = 40 }) {
         width: size,
         height: size,
         borderRadius: "var(--radius)",
-        background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #d97706 100%)",
+        background: "linear-gradient(135deg, #132a4f 0%, #1d4ed8 55%, #3b82f6 100%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 2px 8px rgba(59,130,246,0.35)",
+        boxShadow: "0 3px 10px rgba(29, 78, 216, 0.3)",
         flexShrink: 0,
       }}
     >

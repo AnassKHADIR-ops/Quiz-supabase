@@ -526,7 +526,7 @@ export default function AuthGateModal({
         <div
           style={{
             position: "relative",
-            background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #7c3aed 100%)",
+            background: "linear-gradient(135deg, #132a4f 0%, #1d4ed8 55%, #3b82f6 100%)",
             padding: "24px 20px 18px",
             color: "white",
           }}

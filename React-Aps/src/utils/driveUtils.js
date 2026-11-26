@@ -2,7 +2,7 @@
  * Utility functions for Google Drive & Video URLs, thumbnails, embed URLs and preview links.
  */
 
-// Extract Google Drive File ID from various URL formats
+// Extract Google Drive File or Folder ID from various URL formats
 export function extractDriveFileId(urlOrId) {
   if (!urlOrId) return null;
   const str = String(urlOrId).trim();
@@ -11,16 +11,24 @@ export function extractDriveFileId(urlOrId) {
   const matchD = str.match(/\/d\/([a-zA-Z0-9_-]+)/);
   if (matchD) return matchD[1];
 
-  // Pattern 2: ?id={FILE_ID} or &id={FILE_ID}
+  // Pattern 2: /folders/{FOLDER_ID}
+  const matchFolder = str.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (matchFolder) return matchFolder[1];
+
+  // Pattern 3: ?id={FILE_ID} or &id={FILE_ID}
   const matchId = str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (matchId) return matchId[1];
 
-  // Pattern 3: Raw file ID
+  // Pattern 4: Raw file ID
   if (/^[a-zA-Z0-9_-]{20,}$/.test(str)) {
     return str;
   }
 
   return null;
+}
+
+export function isDriveFolderUrl(url) {
+  return typeof url === "string" && url.includes("drive.google.com") && url.includes("/folders/");
 }
 
 // Generate direct image thumbnail URLs for <img> tags
@@ -108,7 +116,16 @@ export function getEmbedUrl(url, type = "pdf") {
     return `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&controls=1&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=0&cc_load_policy=0`;
   }
 
-  // 2. Google Drive to Preview URL
+  // 2. Google Drive Folder to Embedded Folder View
+  if (isDriveFolderUrl(str)) {
+    const folderId = extractDriveFileId(str);
+    if (folderId) {
+      return `https://drive.google.com/embeddedfolderview?id=${folderId}#list`;
+    }
+    return str;
+  }
+
+  // 3. Google Drive File to Preview URL
   const driveId = extractDriveFileId(str);
   if (driveId) {
     return `https://drive.google.com/file/d/${driveId}/preview`;
@@ -125,8 +142,10 @@ export function getDrivePreviewUrl(urlOrId) {
 // Generate direct download URL
 export function getDownloadUrl(url) {
   if (!url) return "";
-  const driveId = extractDriveFileId(url);
-  return driveId ? `https://drive.google.com/uc?export=download&id=${driveId}` : url;
+  const str = String(url).trim();
+  if (isDriveFolderUrl(str)) return str;
+  const driveId = extractDriveFileId(str);
+  return driveId ? `https://drive.google.com/uc?export=download&id=${driveId}` : str;
 }
 
 export function getDriveDownloadUrl(urlOrId) {

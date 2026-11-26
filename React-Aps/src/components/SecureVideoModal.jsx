@@ -210,7 +210,7 @@ function SecureVideoModal({ chapter, videoUrl, title, onClose }) {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 6,
-                  background: "linear-gradient(135deg, #4361ee, #7c3aed)",
+                  background: "linear-gradient(135deg, #132a4f, #1d4ed8)",
                   color: "white",
                   border: "none",
                 }}
